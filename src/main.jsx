@@ -1,0 +1,22 @@
+import { StrictMode } from 'react'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.jsx'
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import theme from './theme.js';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <App />
+    </LocalizationProvider>
+    </BrowserRouter>
+  </React.StrictMode>
+);
