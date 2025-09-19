@@ -8,6 +8,8 @@ export default function MasterForm() {
   const [openMenu, setOpenMenu] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const role = localStorage.getItem("userRole"); // 👈 get user role
+
   const handleLogout = () => {
     localStorage.clear();
     setSidebarOpen(false);
@@ -56,60 +58,65 @@ export default function MasterForm() {
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <ul className="main-menu">
-  {/* Dashboard */}
-  <li>
-    <Link
-      to="/master/dashboard"
-      className="menu-btn admin-btn ins"
-      onClick={handleLinkClick}
-    >
-      <FaTachometerAlt className="menu-icon" />
-      <span>Dashboard</span>
-    </Link>
-  </li>
+          {/* Dashboard - always show */}
+          <li>
+            <Link
+              to="/master/dashboard"
+              className="menu-btn admin-btn ins"
+              onClick={handleLinkClick}
+            >
+              <FaTachometerAlt className="menu-icon" />
+              <span>Dashboard</span>
+            </Link>
+          </li>
 
-  {/* Admin with Submenu */}
-  <li>
-    <button
-      className={`menu-btn admin-btn ${openMenu === "admin" ? "open" : ""}`}
-      onClick={() => toggleMenu("admin")}
-      aria-expanded={openMenu === "admin"}
-    >
-      <FaUsers className="menu-icon" />
-      <span>Admin</span>
-      <span className="expand-icon">
-        {openMenu === "admin" ? "▼" : "▶"}
-      </span>
-    </button>
+          {/* Show other menus only if NOT Assessor */}
+          {role !== "Assessor" && (
+            <>
+              {/* Admin with Submenu */}
+              <li>
+                <button
+                  className={`menu-btn admin-btn ${
+                    openMenu === "admin" ? "open" : ""
+                  }`}
+                  onClick={() => toggleMenu("admin")}
+                  aria-expanded={openMenu === "admin"}
+                >
+                  <FaUsers className="menu-icon" />
+                  <span>Admin</span>
+                  <span className="expand-icon">
+                    {openMenu === "admin" ? "▼" : "▶"}
+                  </span>
+                </button>
 
-    <ul className={`submenu ${openMenu === "admin" ? "open" : ""}`}>
-      
-      <li>
-        <Link to="/master/usercreation" onClick={handleLinkClick}>
-          User Creation
-        </Link>
-      </li>
-      <li>
-        <Link to="/master/users" onClick={handleLinkClick}>
-          Users Manintenance
-        </Link>
-      </li>
-    </ul>
-  </li>
+                <ul className={`submenu ${openMenu === "admin" ? "open" : ""}`}>
+                  <li>
+                    <Link to="/master/usercreation" onClick={handleLinkClick}>
+                      User Creation
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/master/users" onClick={handleLinkClick}>
+                      Users Maintenance
+                    </Link>
+                  </li>
+                </ul>
+              </li>
 
-  {/* Inspection (no submenu) */}
-  <li>
-    <Link
-      to="/master/landing"
-      className="menu-btn admin-btn ins"
-      onClick={handleLinkClick}
-    >
-      <FaClipboardCheck className="menu-icon" />
-      <span>Inspection</span>
-    </Link>
-  </li>
-</ul>
-
+              {/* Inspection */}
+              <li>
+                <Link
+                  to="/master/landing"
+                  className="menu-btn admin-btn ins"
+                  onClick={handleLinkClick}
+                >
+                  <FaClipboardCheck className="menu-icon" />
+                  <span>Inspection</span>
+                </Link>
+              </li>
+            </>
+          )}
+        </ul>
 
         <div className="sidebar-footer">
           <button className="logout-btn" onClick={handleLogout}>

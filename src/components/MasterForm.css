@@ -36,7 +36,7 @@
 /* Sidebar */
 .sidebar {
   width: 220px;
-  background-color: #025373;
+  background-color: #288397;
   color: white;
   padding: 15px;
   overflow-y: auto;
@@ -133,10 +133,11 @@
 
 /* Admin button with different color */
 .admin-btn {
-  background-color: #7b1fa2;
+  background-color: #036d91;
+  border: 1px solid;
 }
 .admin-btn:hover {
-  background-color: #4a0072;
+  background-color: #036d91;
 }
 
 /* Expand icon */
@@ -153,6 +154,7 @@
   overflow: hidden;
   max-height: 0;
   transition: max-height 0.28s ease, padding 0.22s ease;
+  
 }
 
 .submenu.open {

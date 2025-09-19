@@ -94,7 +94,11 @@ const LocoForm = () => {
     });
 
     try {
-      await api.post("InfoLocosFinal/submit", data);
+     await api.post("InfoLocosFinal/submit", data, {
+  headers: {
+    "Content-Type": "multipart/form-data",
+  },
+});
       navigate("/walkaroundinspect");
     } catch (err) {
       console.error("Submit error:", err);

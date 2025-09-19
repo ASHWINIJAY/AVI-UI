@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Table, Button, Modal, Form } from "react-bootstrap";
 import api from "../api/axios";
-
+import Loader from "../components/Loader";
 const UserMaintenance = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +47,8 @@ const UserMaintenance = () => {
   };
 
   return (
+     <>
+      {loading && <Loader fullscreen />}
     <div className="p-4">
       <h3>User Maintenance</h3>
       {loading ? (
@@ -143,6 +145,7 @@ const UserMaintenance = () => {
         </Modal.Footer>
       </Modal>
     </div>
+    </>
   );
 };
 

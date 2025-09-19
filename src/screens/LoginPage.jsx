@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 
 import api from "../api/axios";
 import { Form, Button, Container, Row, Col, Alert, Card } from "react-bootstrap";
-
+import Loader from "../components/Loader"; // 👈 common loader
 const LoginPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -20,6 +21,7 @@ const LoginPage = () => {
     }
 
     try {
+      setLoading(true);
       const response = await api.post("Auth/login", {
         username,
         password,
@@ -29,15 +31,16 @@ const LoginPage = () => {
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("userId", response.data.userId);
       localStorage.setItem("userRole", response.data.userRole);
-if (response.data.userRole === "Super User") {
-        navigate("/master/dashboard"); // goes to MasterForm
-      }
-      else if (response.data.userRole === "Assessor") {
-        navigate("/dashboard"); // goes to MasterForm
-      }
-       else {
-        navigate("/landing"); // normal flow
-      }
+      localStorage.setItem("name", response.data.name);
+      const role = (response.data.userRole || "").trim().toLowerCase();
+
+if (role === "super user") {
+  navigate("/master/welcome");
+} else if (role === "assessor") {
+  navigate("/master/welcome");
+} else {
+  navigate("/landing");
+}
       // Redirect to LandingPage
      // navigate("/landing");
     } catch (err) {
@@ -48,9 +51,14 @@ if (response.data.userRole === "Super User") {
         setError("Something went wrong. Please try again.");
       }
     }
+    finally {
+      setLoading(false); // hide loader
+    }
   };
 
   return (
+    <>
+      {loading && <Loader fullscreen />}
     <Container fluid className="d-flex justify-content-center align-items-center" style={{backgroundColor: "#025373", height: "82.5vh", maxWidth: "100%"}}>
       <Row>
         <Col>
@@ -88,6 +96,7 @@ if (response.data.userRole === "Super User") {
         </Col>
       </Row>
     </Container>
+    </>
   );
 };
 

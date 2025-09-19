@@ -22,6 +22,7 @@ import RoofInspect from "./screens/RoofInspect.jsx";
 import DashBoardItems from "./screens/DashBoardItems.jsx";
 import UserCreationForm from "./screens/UserCreationForm.jsx";
 import UserMaintenance from "./screens/UserMaintenance.jsx";
+import WelcomePage from "./screens/WelcomePage.jsx";
 import MasterForm from "./screens/MasterForm.jsx";
 
 // ✅ Auth guard
@@ -51,7 +52,7 @@ export default function AppRoutes() {
       <Route
         path="/master"
         element={
-          <RoleBasedRoute allowedRoles={["Super User"]}>
+          <RoleBasedRoute allowedRoles={["Super User", "Assessor"]}>
             <MasterForm />
           </RoleBasedRoute>
         }
@@ -62,6 +63,7 @@ export default function AppRoutes() {
         <Route path="locoform" element={<LocoForm />} />
         <Route path="usercreation" element={<UserCreationForm />} />
         <Route path="users" element={<UserMaintenance />} />
+        <Route path="welcome" element={<WelcomePage />} />
         <Route path="walkaroundinspect" element={<WalkAroundInspect />} />
         <Route path="frontlocoinspect" element={<FrontLocoInspect />} />
         <Route path="shortnoseinspect" element={<ShortNoseInspect />} />
@@ -87,6 +89,14 @@ export default function AppRoutes() {
         element={
           <PrivateRoute>
             <LandingPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/welcome"
+        element={
+          <PrivateRoute>
+            <WelcomePage />
           </PrivateRoute>
         }
       />

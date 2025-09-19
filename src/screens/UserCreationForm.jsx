@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Container, Form, Row, Col, Button, Modal } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
-
+import Loader from "../components/Loader"; // 👈 common loader
 const UserCreationForm = () => {
   const navigate = useNavigate();
 
@@ -18,7 +18,7 @@ const UserCreationForm = () => {
   const [errors, setErrors] = useState({});
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
+ const [loading, setLoading] = useState(false);
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -59,6 +59,7 @@ const UserCreationForm = () => {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
+      setLoading(true);
       await api.post("/auth/create", formData); // Adjust API endpoint
       alert("User created successfully!");
       navigate("/master/dashboard");
@@ -71,12 +72,15 @@ const UserCreationForm = () => {
     } finally {
       setSubmitting(false);
       setShowConfirm(false);
+      setLoading(false);
     }
   };
 
   const handleCancel = () => navigate("/master/dashboard");
 
   return (
+     <>
+      {loading && <Loader fullscreen />}
     <Container className="mt-5 d-flex justify-content-center">
       <Form
         className="p-4 border rounded shadow-sm"
@@ -203,6 +207,7 @@ const UserCreationForm = () => {
         </Modal.Footer>
       </Modal>
     </Container>
+     </>
   );
 };
 
