@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+
+import api from "../api/axios";
 import { Form, Button, Container, Row, Col, Alert, Card } from "react-bootstrap";
 
 const LoginPage = () => {
@@ -19,7 +20,7 @@ const LoginPage = () => {
     }
 
     try {
-      const response = await axios.post("http://41.87.206.94/AVIapi/api/Auth/login", {
+      const response = await api.post("Auth/login", {
         username,
         password,
       });
@@ -28,9 +29,17 @@ const LoginPage = () => {
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("userId", response.data.userId);
       localStorage.setItem("userRole", response.data.userRole);
-
+if (response.data.userRole === "Super User") {
+        navigate("/master/dashboard"); // goes to MasterForm
+      }
+      else if (response.data.userRole === "Assessor") {
+        navigate("/dashboard"); // goes to MasterForm
+      }
+       else {
+        navigate("/landing"); // normal flow
+      }
       // Redirect to LandingPage
-      navigate("/landing");
+     // navigate("/landing");
     } catch (err) {
       console.error(err);
       if (err.response && err.response.status === 401) {

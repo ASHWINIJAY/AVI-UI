@@ -3,7 +3,7 @@ import { Container, Row, Col, Button, Modal } from "react-bootstrap";
 import Box from "@mui/material/Box";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { DataGrid } from "@mui/x-data-grid";
-import axios from "axios";
+import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
 
 const partDescriptions = [
@@ -95,7 +95,7 @@ const LeftMidDoorInspect = () => {
       Rows: formattedRows,
     };
     try {
-      await axios.post("http://41.87.206.94/AVIapi/api/LeftMidDoorInspect/submit", payload);
+      await api.post("LeftMidDoorInspect/submit", payload);
       navigate("/cirbreakpaninspect");
     } catch (err) {
       console.error(err);

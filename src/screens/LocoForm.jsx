@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Container, Form, Row, Col, Button, Modal, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api/axios";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
@@ -34,8 +34,8 @@ const LocoForm = () => {
   // Auto-populate InventoryNum, LocoType, NetBookVal and GPS
   useEffect(() => {
     if (storedLocoNumber) {
-      axios
-        .get(`http://41.87.206.94/AVIapi/api/InfoLocosFinal/${storedLocoNumber}`)
+      api
+        .get(`InfoLocosFinal/${storedLocoNumber}`)
         .then((res) =>
           setFormData((prev) => ({
             ...prev,
@@ -94,7 +94,7 @@ const LocoForm = () => {
     });
 
     try {
-      await axios.post("http://41.87.206.94/AVIapi/api/InfoLocosFinal/submit", data);
+      await api.post("InfoLocosFinal/submit", data);
       navigate("/walkaroundinspect");
     } catch (err) {
       console.error("Submit error:", err);

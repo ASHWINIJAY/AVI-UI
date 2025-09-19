@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://41.87.206.94/AVIapi/api", // update port if needed
+  baseURL: import.meta.env.VITE_API_BASE_URL, // update port if needed
   headers: {
     "Content-Type": "application/json",
   },

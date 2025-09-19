@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Button, Modal, Image, Form, Card } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
-import axios from "axios";
+import api from "../api/axios";
 
 const DashBoardItems = () => {
   const [dashboardData, setDashboardData] = useState([]);
@@ -21,7 +21,7 @@ const DashBoardItems = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await axios.get("http://41.87.206.94/AVIapi/api/DashBoardItems");
+      const response = await api.get("DashBoardItems");
       setDashboardData(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Error fetching dashboard items:", err);
@@ -42,7 +42,7 @@ const DashBoardItems = () => {
 
     let list = Array.isArray(photos) ? photos.flatMap(p => p.split(";")) : photos.split(";");
     list = list.filter(Boolean).map(p => p.replace(/\\/g, "/"));
-    const baseUrl = "http://41.87.206.94/AVIapi/";
+    const baseUrl = import.meta.env.VITE_API_BASE_URL;
     const formatted = list.map(p => (p.startsWith("uploads/") ? baseUrl + p : baseUrl + "uploads/" + p));
 
     setPhotoList(formatted);

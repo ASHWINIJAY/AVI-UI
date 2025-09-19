@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api/axios";
 import { Container, Row, Col, Form, Button, Alert, Card } from "react-bootstrap";
 
 const LandingPage = () => {
@@ -19,8 +19,8 @@ const LandingPage = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
-        "http://41.87.206.94/AVIapi/api/Landing/validateLoco",
+      const response = await api.post(
+        "Landing/validateLoco",
         { locoNumber },
         {
           headers: { Authorization: `Bearer ${token}` },
