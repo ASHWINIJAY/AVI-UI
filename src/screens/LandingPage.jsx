@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { Container, Row, Col, Form, Button, Alert, Card } from "react-bootstrap";
-
+import Loader from "../components/Loader"; // 👈 common loader
 const LandingPage = () => {
   const [locoNumber, setLocoNumber] = useState("");
   const [error, setError] = useState("");
   const [locoList, setLocoList] = useState([]);
   const navigate = useNavigate();
-
+const [loading, setLoading] = useState(false);
   // 🔹 Fetch loco list from API on mount
   useEffect(() => {
     const fetchLocos = async () => {
@@ -46,7 +46,7 @@ const LandingPage = () => {
 
     try {
       const token = localStorage.getItem("token");
-
+setLoading(true);
       // 🔹 Try validating with API
       const response = await api.post(
         "Landing/validateLoco",
@@ -84,9 +84,14 @@ const LandingPage = () => {
         setError("No cached loco list available. Please connect to internet.");
       }
     }
+    finally{
+      setLoading(false);
+    }
   };
 
   return (
+    <>
+          {loading && <Loader fullscreen />}
     <Container
       fluid
       className="d-flex justify-content-center align-items-center"
@@ -129,6 +134,7 @@ const LandingPage = () => {
         </Col>
       </Row>
     </Container>
+    </>
   );
 };
 

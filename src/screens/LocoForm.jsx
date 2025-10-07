@@ -4,11 +4,11 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-
+import Loader from "../components/Loader"; // 👈 common loader
 const LocoForm = () => {
   const navigate = useNavigate();
   const storedLocoNumber = localStorage.getItem("locoNumber");
-
+const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     LocoNumTxt: storedLocoNumber || "",
     GpsLat: "",
@@ -31,9 +31,9 @@ const LocoForm = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Auto-populate InventoryNum, LocoType, NetBookVal and GPS
+  // === Load loco details and GPS ===
   useEffect(() => {
-    if (storedLocoNumber) {
+    if (storedLocoNumber && navigator.onLine) {
       api
         .get(`InfoLocosFinal/${storedLocoNumber}`)
         .then((res) =>
@@ -56,8 +56,14 @@ const LocoForm = () => {
         }));
       });
     }
+
+    // ✅ Try to sync any pending offline data
+   // window.addEventListener("online", syncOfflineData);
+
+   // return () => window.removeEventListener("online", syncOfflineData);
   }, [storedLocoNumber]);
 
+  // === Input change handlers ===
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -78,6 +84,7 @@ const LocoForm = () => {
     }));
   };
 
+  // === Offline submission fallback ===
   const handleSubmit = async () => {
     setSubmitting(true);
     const data = new FormData();
@@ -94,24 +101,44 @@ const LocoForm = () => {
     });
 
     try {
-     await api.post("InfoLocosFinal/submit", data, {
-  headers: {
-    "Content-Type": "multipart/form-data",
-  },
-});
-      navigate("/walkaroundinspect");
+      setLoading(true);
+      if (navigator.onLine) {
+        // ✅ Online — send to API
+        await api.post("InfoLocosFinal/submit", data, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        navigate("/walkaroundinspect");
+      } 
     } catch (err) {
       console.error("Submit error:", err);
-      alert("Error submitting form");
+       const isOffline =
+    !navigator.onLine ||
+    err.message === "Network Error" ||
+    err.code === "ERR_NETWORK";
+
+  if (isOffline) {
+    const offlineData = JSON.parse(localStorage.getItem("offlineForms") || "[]");
+        offlineData.push({ ...formData, timestamp: new Date().toISOString() });
+        localStorage.setItem("offlineForms", JSON.stringify(offlineData));
+        alert("No internet connection. Data saved locally and will sync automatically.");
+        navigate("/walkaroundinspect");
+  }
     } finally {
       setSubmitting(false);
       setShowConfirm(false);
+      setLoading(false);
     }
   };
 
+  // === Sync offline data when back online ===
+  
+
   const handleCancel = () => navigate("/landing");
 
+  // === UI ===
   return (
+    <>
+          {loading && <Loader fullscreen />}
     <Container className="mt-5 d-flex justify-content-center">
       <Form
         className="p-4 border rounded shadow-sm"
@@ -121,11 +148,13 @@ const LocoForm = () => {
           Info Capture
         </h3>
 
+        {/* Loco Number */}
         <Form.Group className="mb-3">
           <Form.Label>Loco Number</Form.Label>
           <Form.Control type="text" name="LocoNumTxt" value={formData.LocoNumTxt} readOnly required />
         </Form.Group>
 
+        {/* GPS */}
         <Row>
           <Col>
             <Form.Group className="mb-3">
@@ -141,6 +170,7 @@ const LocoForm = () => {
           </Col>
         </Row>
 
+        {/* Loco Photo */}
         <Form.Group className="mb-3">
           <Form.Label>Loco Photo</Form.Label>
           <Form.Control
@@ -153,6 +183,7 @@ const LocoForm = () => {
           {previews.loco && <Image src={previews.loco} thumbnail className="mt-2" />}
         </Form.Group>
 
+        {/* Program Maintenance */}
         <Form.Group className="mb-3">
           <Form.Label>Program Maintenance</Form.Label>
           <Form.Select name="ProMainSelect" value={formData.ProMainSelect} onChange={handleChange} required>
@@ -162,6 +193,7 @@ const LocoForm = () => {
           </Form.Select>
         </Form.Group>
 
+        {/* Fleet Renewal */}
         <Form.Group className="mb-3">
           <Form.Label>Fleet Renewal Program</Form.Label>
           <Form.Select name="FleetRenewSelect" value={formData.FleetRenewSelect} onChange={handleChange} required>
@@ -172,6 +204,7 @@ const LocoForm = () => {
           </Form.Select>
         </Form.Group>
 
+        {/* Body Damage */}
         <Form.Group className="mb-3">
           <Form.Label>Body Damage</Form.Label>
           <Form.Select name="BodyDamageTxt" value={formData.BodyDamageTxt} onChange={handleChange} required>
@@ -206,6 +239,7 @@ const LocoForm = () => {
           </>
         )}
 
+        {/* Lifting */}
         <Form.Group className="mb-3">
           <Form.Label>Lifting Required</Form.Label>
           <Form.Select name="LiftingReqTxt" value={formData.LiftingReqTxt} onChange={handleChange} required>
@@ -246,6 +280,7 @@ const LocoForm = () => {
           </>
         )}
 
+        {/* Readonly Info */}
         <Form.Group className="mb-3">
           <Form.Label>Inventory Number</Form.Label>
           <Form.Control type="text" name="InventoryNumTxt" value={formData.InventoryNumTxt} readOnly />
@@ -288,6 +323,7 @@ const LocoForm = () => {
         </Modal.Footer>
       </Modal>
     </Container>
+    </>
   );
 };
 

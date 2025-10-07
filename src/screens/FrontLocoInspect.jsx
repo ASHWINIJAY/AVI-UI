@@ -5,7 +5,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { DataGrid } from "@mui/x-data-grid";
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
-
+import Loader from "../components/Loader"; // 👈 common loader
 const partDescriptions = [
   "Head light bulbs",
   "Head light cover",
@@ -21,6 +21,7 @@ const partDescriptions = [
 
 const FrontLocoInspect = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const isMobile = useMediaQuery("(max-width:768px)");
 
   const [rows, setRows] = useState([]);
@@ -98,15 +99,32 @@ const FrontLocoInspect = () => {
       Rows: formattedRows,
     };
     try {
+      setLoading(true);
       await api.post("FrontLocoInspect/submit", payload);
       navigate("/shortnoseinspect");
     } catch (err) {
       console.error(err);
-      alert("Error submitting form");
+       const isOffline =
+    !navigator.onLine ||
+    err.message === "Network Error" ||
+    err.code === "ERR_NETWORK";
+
+  if (isOffline) {
+   const offlineData = JSON.parse(localStorage.getItem("offlineFrontLoco") || "[]");
+  offlineData.push(payload);
+  localStorage.setItem("offlineFrontLoco", JSON.stringify(offlineData));
+  alert("No internet connection. Data saved locally and will sync automatically.");
+  navigate("/shortnoseinspect");
+  }
+    }
+    finally{
+      setLoading(false);
     }
   };
 
   return (
+    <>
+          {loading && <Loader fullscreen />}
     <Container className="mt-4" style={{marginBottom : "1rem"}}>
       <h3 className="text-center mb-4" style={{ fontWeight: "bold", fontFamily: "Poppins, sans-serif", color : "white" }}>
         Front Loco Inspect
@@ -272,6 +290,7 @@ const FrontLocoInspect = () => {
         </Modal.Footer>
       </Modal>
     </Container>
+    </>
   );
 };
 
