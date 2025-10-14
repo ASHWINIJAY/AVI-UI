@@ -25,8 +25,10 @@ import UserCreationForm from "./screens/UserCreationForm.jsx";
 import UserMaintenance from "./screens/UserMaintenance.jsx";
 import WelcomePage from "./screens/WelcomePage.jsx";
 import MasterForm from "./screens/MasterForm.jsx";
-import { syncOfflineData } from "./utils/offlineSync";
-
+import ChooseInspect from "./screens/ChooseInspect.jsx";
+import WagonLandingPage from "./screens/WagonLandingPage.jsx";
+import { hasOfflineData, syncOfflineData } from "./utils/offlineSync";
+import api from "./api/axios";
 // ✅ Auth guard
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -44,21 +46,58 @@ const RoleBasedRoute = ({ allowedRoles, children }) => {
 
 export default function AppRoutes() {
   useEffect(() => {
-    // Sync immediately if online
-    syncOfflineData();
+  let syncInProgress = false;
+ const checkInternetConnection = async () => {
+    try {
+     const token = localStorage.getItem("token");
+        const response = await api.get("Landing/list", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-    // Sync when coming back online
-    const handleOnline = () => {
-      console.log("🌐 Connection restored, syncing offline data...");
-      syncOfflineData();
-    };
+        if (response.data) {
+          return true;
+        }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  // ✅ Helper to safely run sync (avoid multiple triggers)
+  const trySyncOfflineData = async () => {
+    if (!hasOfflineData()) return;
+    const isActuallyOnline = await checkInternetConnection();
+    if (!isActuallyOnline || syncInProgress) return;
+    syncInProgress = true;
+    console.log("🌐 Internet available, syncing offline data...");
+    try {
+      await syncOfflineData();
+    } catch (err) {
+      console.error("⚠️ Error during offline sync:", err);
+    } finally {
+      syncInProgress = false;
+    }
+  };
 
-    window.addEventListener("online", handleOnline);
+  // ✅ 1️⃣ Run once when app loads and internet is available
+  if (navigator.onLine) {
+    trySyncOfflineData();
+  }
 
-    return () => {
-      window.removeEventListener("online", handleOnline);
-    };
-  }, []);
+  // ✅ 2️⃣ Listen for actual connection restore event
+  window.addEventListener("online", trySyncOfflineData);
+
+  // ✅ 3️⃣ Optional: periodically check connection status
+  const intervalId = setInterval(() => {
+    if (navigator.onLine) trySyncOfflineData();
+  }, 10000); // every 10 seconds
+
+  // ✅ Cleanup
+  return () => {
+    window.removeEventListener("online", trySyncOfflineData);
+    clearInterval(intervalId);
+  };
+}, []);
+
 
   return (
     <>
@@ -75,6 +114,8 @@ export default function AppRoutes() {
             </RoleBasedRoute>
           }
         >
+          <Route path="choose" element={<ChooseInspect />} />
+           <Route path="wagon" element={<WagonLandingPage />} />
           <Route path="landing" element={<LandingPage />} />
           <Route path="dashboard" element={<DashBoardItems />} />
           <Route path="locoform" element={<LocoForm />} />
@@ -99,7 +140,8 @@ export default function AppRoutes() {
           <Route path="coupgearinspect" element={<CoupGearInspect />} />
           <Route path="roofinspect" element={<RoofInspect />} />
         </Route>
-
+<Route path="/choose" element={<PrivateRoute><ChooseInspect /></PrivateRoute>} />
+          <Route path="/wagon" element={<PrivateRoute><WagonLandingPage /></PrivateRoute>} />
         {/* Normal users → existing flat routes */}
         <Route path="/landing" element={<PrivateRoute><LandingPage /></PrivateRoute>} />
         <Route path="/welcome" element={<PrivateRoute><WelcomePage /></PrivateRoute>} />

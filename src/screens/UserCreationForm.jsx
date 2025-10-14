@@ -76,7 +76,7 @@ const UserCreationForm = () => {
     }
   };
 
-  const handleCancel = () => navigate("/master/dashboard");
+  const handleCancel = () => navigate("/master/welcome");
 
   return (
      <>

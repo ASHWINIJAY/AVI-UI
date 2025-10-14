@@ -30,7 +30,7 @@ const LoginPage = () => {
     } else if (normalizedRole === "assessor") {
       navigate("/master/welcome");
     } else {
-      navigate("/landing");
+      navigate("/choose");
     }
   };
 

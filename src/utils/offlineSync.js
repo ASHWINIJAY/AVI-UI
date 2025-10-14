@@ -4,8 +4,28 @@ const OFFLINE_KEYS = [
   { key: "offlineForms", url: "InfoLocosFinal/submit", isFormData: true },
   { key: "offlineWalkForms", url: "WalkInspect/submit", isFormData: false },
    { key: "offlineFrontLoco", url: "FrontLocoInspect/submit", isFormData: false },
+   { key: "offlineShortNose", url: "ShortNoseInspect/submit", isFormData: false },
+   { key: "offlineCabLoco", url: "CabLocoInspect/submit", isFormData: false },
+   { key: "offlineElectCab", url: "ElectCabInspect/submit", isFormData: false },
+   { key: "offlineBatSwitch", url: "BatSwitchInspect/submit", isFormData: false },
+   { key: "offlineLeftMidDoor", url: "LeftMidDoorInspect/submit", isFormData: false },
+   { key: "offlineBotLeftPan", url: "BotLeftPanInspect/submit", isFormData: false },
+   { key: "offlineCenAir", url: "CenAirInspect/submit", isFormData: false },
+   { key: "offlineCirBreakPan", url: "CirBreakPanInspect/submit", isFormData: false },
+   { key: "offlineComFan", url: "ComFanInspect/submit", isFormData: false },
+   { key: "offlineCoupGear", url: "CoupGearInspect/submit", isFormData: false },
+   { key: "offlineEndDeck", url: "EndDeckInspect/submit", isFormData: false },
+   { key: "offlineEngineDeck", url: "EngineDeckInspect/submit", isFormData: false },
+   { key: "offlineMidPan", url: "MidPanInspect/submit", isFormData: false },
+   { key: "offlineRoofInspect", url: "RoofInspect/submit", isFormData: false },
+   { key: "offlineTopRightPan", url: "TopRightPanInspect/submit", isFormData: false },
 ];
-
+export function hasOfflineData() {
+  return OFFLINE_KEYS.some(({ key }) => {
+    const data = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(data) && data.length > 0;
+  });
+}
 export async function syncOfflineData() {
   console.log("🌐 Checking for offline data to sync...");
 

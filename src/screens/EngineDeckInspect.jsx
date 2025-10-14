@@ -5,7 +5,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { DataGrid } from "@mui/x-data-grid";
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
-
+import Loader from "../components/Loader";
 const partDescriptions = [
    "A-Side Car body inertial filter screen",
    "Dynamic Braking Grid Resistor A-side, A1 Common grid",
@@ -22,7 +22,7 @@ const partDescriptions = [
 const EngineDeckInspect = () => {
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
-
+const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const locoNumber = localStorage.getItem("locoNumber");
@@ -101,12 +101,28 @@ const EngineDeckInspect = () => {
       await api.post("EngineDeckInspect/submit", payload);
       navigate("/comfaninspect");
     } catch (err) {
-      console.error(err);
-      alert("Error submitting form");
+      const isOffline =
+    !navigator.onLine ||
+    err.message === "Network Error" ||
+    err.code === "ERR_NETWORK";
+
+  if (isOffline) {
+   const offlineData = JSON.parse(localStorage.getItem("offlineEngineDeck") || "[]");
+  offlineData.push(payload);
+  localStorage.setItem("offlineEngineDeck", JSON.stringify(offlineData));
+  alert("No internet connection. Data saved locally and will sync automatically.");
+  navigate("/comfaninspect");
+  }
+    }
+    finally
+    {
+      setLoading(false);
     }
   };
 
   return (
+    <>
+                              {loading && <Loader fullscreen />}
     <Container className="mt-4" style={{marginBottom : "1rem"}}>
       <h3 className="text-center mb-4" style={{ fontWeight: "bold", fontFamily: "Poppins, sans-serif", color : "white" }}>
         Engine & Above Deck Inspect
@@ -272,6 +288,7 @@ const EngineDeckInspect = () => {
         </Modal.Footer>
       </Modal>
     </Container>
+    </>
   );
 };
 

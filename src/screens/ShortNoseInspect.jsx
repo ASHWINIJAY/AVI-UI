@@ -5,6 +5,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { DataGrid } from "@mui/x-data-grid";
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
+ import Loader from "../components/Loader";// 👈 common loader
 
 const partDescriptions = [
    "Battery box",
@@ -22,7 +23,7 @@ const partDescriptions = [
 const ShortNoseInspect = () => {
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
-
+const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const locoNumber = localStorage.getItem("locoNumber");
@@ -98,15 +99,33 @@ const ShortNoseInspect = () => {
       Rows: formattedRows,
     };
     try {
+      setLoading(true);
       await api.post("ShortNoseInspect/submit", payload);
       navigate("/cablocoinspect");
     } catch (err) {
       console.error(err);
-      alert("Error submitting form");
+       const isOffline =
+    !navigator.onLine ||
+    err.message === "Network Error" ||
+    err.code === "ERR_NETWORK";
+
+  if (isOffline) {
+   const offlineData = JSON.parse(localStorage.getItem("offlineShortNose") || "[]");
+  offlineData.push(payload);
+  localStorage.setItem("offlineShortNose", JSON.stringify(offlineData));
+  alert("No internet connection. Data saved locally and will sync automatically.");
+  navigate("/cablocoinspect");
+  }
+    }
+    finally
+    {
+      setLoading(false);
     }
   };
 
   return (
+    <>
+              {loading && <Loader fullscreen />}
     <Container className="mt-4" style={{marginBottom : "1rem"}}>
       <h3 className="text-center mb-4" style={{ fontWeight: "bold", fontFamily: "Poppins, sans-serif", color : "white" }}>
         Short Nose Inspect
@@ -272,6 +291,7 @@ const ShortNoseInspect = () => {
         </Modal.Footer>
       </Modal>
     </Container>
+    </>
   );
 };
 

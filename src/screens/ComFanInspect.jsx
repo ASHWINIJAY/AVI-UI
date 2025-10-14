@@ -5,7 +5,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { DataGrid } from "@mui/x-data-grid";
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
-
+import Loader from "../components/Loader";// 👈 common loader
 const partDescriptions = [
    "Compressor exhauster complete",
    "Intercooler",
@@ -22,7 +22,7 @@ const partDescriptions = [
 const ComFanInspect = () => {
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
-
+const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const locoNumber = localStorage.getItem("locoNumber");
@@ -98,15 +98,33 @@ const ComFanInspect = () => {
       Rows: formattedRows,
     };
     try {
+      setLoading(false);
       await api.post("ComFanInspect/submit", payload);
       navigate("/enddeckinspect");
     } catch (err) {
       console.error(err);
-      alert("Error submitting form");
+       const isOffline =
+    !navigator.onLine ||
+    err.message === "Network Error" ||
+    err.code === "ERR_NETWORK";
+
+  if (isOffline) {
+   const offlineData = JSON.parse(localStorage.getItem("offlineComFan") || "[]");
+  offlineData.push(payload);
+  localStorage.setItem("offlineComFan", JSON.stringify(offlineData));
+  alert("No internet connection. Data saved locally and will sync automatically.");
+  navigate("/enddeckinspect");
+  }
+    }
+    finally
+    {
+      setLoading(false);
     }
   };
 
   return (
+     <>
+                  {loading && <Loader fullscreen />}
     <Container className="mt-4" style={{marginBottom : "1rem"}}>
       <h3 className="text-center mb-4" style={{ fontWeight: "bold", fontFamily: "Poppins, sans-serif", color : "white" }}>
         Compressor Fan Inspect
@@ -272,6 +290,7 @@ const ComFanInspect = () => {
         </Modal.Footer>
       </Modal>
     </Container>
+  </>
   );
 };
 

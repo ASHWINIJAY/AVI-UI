@@ -48,9 +48,8 @@ const [loading, setLoading] = useState(false);
       const token = localStorage.getItem("token");
 setLoading(true);
       // 🔹 Try validating with API
-      const response = await api.post(
-        "Landing/validateLoco",
-        { locoNumber },
+      const response = await api.get(
+        `Landing/validateLoco/${locoNumber}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -58,6 +57,14 @@ setLoading(true);
 
       if (response.data.isValid) {
         localStorage.setItem("locoNumber", locoNumber);
+        if (response.data.locoClass) {
+          localStorage.setItem("locoClass", response.data.locoClass);
+        }
+        if(response.data.message!=null)
+        {
+          alert(response.data.message)
+          return;
+        }
         navigate("/locoform");
       } else {
         setError("Invalid Loco Number. Please enter a valid one.");

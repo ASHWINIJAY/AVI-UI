@@ -5,7 +5,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { DataGrid } from "@mui/x-data-grid";
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
-
+import Loader from "../components/Loader";// 👈 common loader
 const partDescriptions = [
    "150 Amp Alt field circuit breaker",
    "Aux gen Field Circuit Breaker",
@@ -19,7 +19,7 @@ const partDescriptions = [
 const LeftMidDoorInspect = () => {
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
-
+const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const locoNumber = localStorage.getItem("locoNumber");
@@ -95,15 +95,32 @@ const LeftMidDoorInspect = () => {
       Rows: formattedRows,
     };
     try {
+      setLoading(true);
       await api.post("LeftMidDoorInspect/submit", payload);
       navigate("/cirbreakpaninspect");
     } catch (err) {
-      console.error(err);
-      alert("Error submitting form");
+        const isOffline =
+    !navigator.onLine ||
+    err.message === "Network Error" ||
+    err.code === "ERR_NETWORK";
+
+  if (isOffline) {
+   const offlineData = JSON.parse(localStorage.getItem("offlineLeftMidDoor") || "[]");
+  offlineData.push(payload);
+  localStorage.setItem("offlineLeftMidDoor", JSON.stringify(offlineData));
+  alert("No internet connection. Data saved locally and will sync automatically.");
+  navigate("/cirbreakpaninspect");
+  }
+    }
+    finally
+    {
+      setLoading(false);
     }
   };
 
   return (
+     <>
+                              {loading && <Loader fullscreen />}
     <Container className="mt-4" style={{marginBottom : "1rem"}}>
       <h3 className="text-center mb-4" style={{ fontWeight: "bold", fontFamily: "Poppins, sans-serif", color : "white" }}>
         Left Middle Door Inspect
@@ -269,6 +286,7 @@ const LeftMidDoorInspect = () => {
         </Modal.Footer>
       </Modal>
     </Container>
+    </>
   );
 };
 

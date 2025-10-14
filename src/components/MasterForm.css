@@ -36,7 +36,7 @@
 /* Sidebar */
 .sidebar {
   width: 220px;
-  background-color: #288397;
+  background-color: #35727f;
   color: white;
   padding: 15px;
   overflow-y: auto;
@@ -199,7 +199,7 @@
 /* Content area */
 .content {
   flex: 1;
-  background: #f4f6f8;
+  background: #0388a6;
   padding: 20px;
   min-height: 100vh;
 }

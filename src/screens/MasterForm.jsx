@@ -106,7 +106,7 @@ export default function MasterForm() {
               {/* Inspection */}
               <li>
                 <Link
-                  to="/master/landing"
+                  to="/master/choose"
                   className="menu-btn admin-btn ins"
                   onClick={handleLinkClick}
                 >
