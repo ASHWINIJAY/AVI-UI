@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { FaTachometerAlt, FaUsers, FaClipboardCheck } from "react-icons/fa";
+import { FaTachometerAlt, FaUsers, FaClipboardCheck, FaMapPin } from "react-icons/fa";
 import "../components/MasterForm.css";
 
 export default function MasterForm() {
@@ -67,6 +67,16 @@ export default function MasterForm() {
             >
               <FaTachometerAlt className="menu-icon" />
               <span>Dashboard</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/master/map"
+              className="menu-btn admin-btn ins"
+              onClick={handleLinkClick}
+            >
+              <FaMapPin className="menu-icon" />
+              <span>Live Tracking</span>
             </Link>
           </li>
 

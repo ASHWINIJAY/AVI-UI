@@ -1,64 +1,211 @@
 import React, { useEffect, useState } from "react";
-import { Container, Row, Col, Button, Modal } from "react-bootstrap";
+import { Container, Row, Col, Button, Modal, Form, Image, Alert } from "react-bootstrap";
 import Box from "@mui/material/Box";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { DataGrid } from "@mui/x-data-grid";
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
-import Loader from "../components/Loader";// 👈 common loader
+import Loader from "../components/Loader";
+
 const partDescriptions = [
-   "Coupler complete AAR type",
-   "Yoke assembly",
-   "Mounting bushes",
-   "Yoke pin",
-   "Key",
-   "Cotter pin",
-   "Coupler support",
-   "Coupler",
-   "Knuckle",
-   "Knuckle pin",
-   "Gravity lock",
-   "Gravity lock lifter",
-   "Gravity lock release handle"
+  "No.1 end pilots A-side",
+  "No.1 end pilot’s B-side",
+  "No.1 end coupler",
+  "No.1 End Drag box",
+  "No.1 End Yoke Assembly",
+  "No.1 End Yoke Support",
+  "No.1 End Buffer Box",
+  "No.1 end coupler support",
+  "No.1B-side steps hand rail"
 ];
 
 const CoupGearInspect = () => {
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
-const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const locoNumber = localStorage.getItem("locoNumber");
   const userID = localStorage.getItem("userId");
+  var locoClass = localStorage.getItem("locoClass");
+  const [formId, setFormId] = useState("");
+  const [selectAllGood, setSelectAllGood] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [pendingRowId, setPendingRowId] = useState(null);
+  const [pendingField, setPendingField] = useState(null);
+  const [error1, setError1] = useState("");
+  const [photo, setPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [capturedPhotos, setCapturedPhotos] = useState({});
 
   useEffect(() => {
-    const initialRows = partDescriptions.map((desc, index) => ({
-      Id: index + 1,
-      PartDescr: desc,
-      Good: "No",
-      Refurbish: "No",
-      Missing: "No",
-      DamageReplaced: "No",
-      ReplacementValue: "",
-      RefurbishValue: "",
-    }));
-    setRows(initialRows);
-  }, []);
+    let inspectFormId = "";
 
-  const handleCheckboxChange = (id, field) => {
+    if (locoClass === "D34") {
+      inspectFormId = "CG001";
+    }
+    else if (locoClass === "D35") {
+      inspectFormId = "CG002";
+    }
+else
+{
+ locoClass = "D35"
+  inspectFormId = "CG002";
+}
+    setFormId(inspectFormId);
+
+    const fetchParts = async () => {
+      try {
+       // alert(inspectFormId);
+        const response = await api.get(
+          `WalkInspect/getParts/${locoClass}/${inspectFormId}`
+        );
+        const partDescriptions = response.data;
+
+        const initialRows = partDescriptions.map((desc, index) => ({
+          Id: index + 1,
+          PartDescr: desc,
+          Good: "No",
+          Refurbish: "No",
+          Missing: "No",
+          DamageReplaced: "No",
+          RefurbishValue: "",
+        }));
+        setRows(initialRows);
+      }
+      catch (err) {
+
+      }
+        
+    };
+
+    fetchParts();
+  }, [locoClass]);
+
+  useEffect(() => {
+    const allGood = rows.length > 0 && rows.every((row) => row.Good === "Yes");
+    setSelectAllGood(allGood);
+  }, [rows]);
+
+  const handleSelectAllGood = () => {
+    const newValue = !selectAllGood;
+    setSelectAllGood(newValue);
+    setRows(prev =>
+      prev.map(r => ({
+        ...r,
+        Good: newValue ? "Yes" : "No",
+        Refurbish: "No",
+        Missing: "No",
+        DamageReplaced: "No",
+      }))
+    );
+  };
+
+const handleCheckboxChange = async (id, field) => {
+  setRows(prevRows =>
+    prevRows.map(row => {
+      if (row.Id !== id) return row; // ✅ don't touch other rows
+
+      // toggle the clicked checkbox
+      const updatedRow = {
+        ...row,
+        Good: field === "Good" ? (row.Good === "Yes" ? "No" : "Yes") : "No",
+        Refurbish: field === "Refurbish" ? (row.Refurbish === "Yes" ? "No" : "Yes") : "No",
+        Missing: field === "Missing" ? (row.Missing === "Yes" ? "No" : "Yes") : "No",
+        DamageReplaced: field === "DamageReplaced" ? (row.DamageReplaced === "Yes" ? "No" : "Yes") : "No",
+      };
+
+      // Ensure only one checkbox is Yes per row
+      Object.keys(updatedRow).forEach(key => {
+        if (["Good", "Refurbish", "Missing", "DamageReplaced"].includes(key) && key !== field) {
+          updatedRow[key] = "No";
+        }
+      });
+
+      return updatedRow;
+    })
+  );
+
+  // ✅ If the field is Refurbish → fetch cost for that row
+  if (field === "Refurbish") {
+    const row = rows.find(r => r.Id === id);
+    try {
+      const response = await api.get("WalkInspect/getPartCost", {
+        params: {
+          locoClass: locoClass,
+          partDescription: row.PartDescr,
+          field: "Refurbish",
+        },
+      });
+
+      const cost = response.data.refurbishCost;
+      setRows(prev =>
+        prev.map(r =>
+          r.Id === id ? { ...r, RefurbishValue: cost } : r
+        )
+      );
+    } catch (err) {
+      console.error("Error fetching refurbish cost:", err);
+    }
+  }
+
+  // ✅ If DamageReplaced → open modal
+  if (field === "DamageReplaced") {
+    setPendingRowId(id);
+    setShowModal(true);
+  }
+};
+
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPhoto(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSave = () => {
+    setError1("");
+
+    if (!photo) {
+      setError1("Photo is required.");
+      return;
+    }
+
+
     setRows((prev) =>
       prev.map((row) =>
-        row.Id === id
+        row.Id === pendingRowId
           ? {
               ...row,
-              Good: field === "Good" ? "Yes" : "No",
-              Refurbish: field === "Refurbish" ? "Yes" : "No",
-              Missing: field === "Missing" ? "Yes" : "No",
-              DamageReplaced: field === "DamageReplaced" ? "Yes" : "No",
+              Good: "No",
+              Refurbish: "No",
+              Missing: "No",
+              DamageReplaced: "Yes",
             }
           : row
       )
     );
+
+    setCapturedPhotos((prev) => ({
+      ...prev,
+      [pendingRowId]: photo,
+    }));
+
+    setShowModal(false);
+    setPendingRowId(null);
+    setPendingField(null);
+    setPhoto(null);
+    setPhotoPreview(null);
+  };
+
+  const handleCancel = () => {
+    setShowModal(false);
+    setPendingRowId(null);
+    setPendingField(null);
+    setPhoto(null);
+    setPhotoPreview(null);
   };
 
   const handleInputChange = (id, field, value) => {
@@ -82,6 +229,19 @@ const [loading, setLoading] = useState(false);
         alert("UserID missing");
         return;
     }
+const invalidRows = rows.filter(
+    (row) =>
+      row.Good !== "Yes" &&
+      row.Refurbish !== "Yes" &&
+      row.Missing !== "Yes" &&
+      row.DamageReplaced !== "Yes"
+  );
+
+  if (invalidRows.length > 0) {
+    const rowIds = invalidRows.map((r) => r.Id).join(", ");
+    alert(`Each part must have at least one option selected`);
+    return;
+  }
 
     const formattedRows = rows.map(row => ({
         Id: row.Id,
@@ -94,7 +254,7 @@ const [loading, setLoading] = useState(false);
         RefurbishValue: row.RefurbishValue || ""
     }));
 
-    const payload = {
+   const payload = {
       LocoNumber: parseInt(locoNumber),
       UserID : userID,
       InspectFormID: "CGI001",
@@ -127,7 +287,7 @@ const [loading, setLoading] = useState(false);
 
   return (
     <>
-                          {loading && <Loader fullscreen />}
+                                  {loading && <Loader fullscreen />}
     <Container className="mt-4" style={{marginBottom : "1rem"}}>
       <h3 className="text-center mb-4" style={{ fontWeight: "bold", fontFamily: "Poppins, sans-serif", color : "white" }}>
         Couplers & Gears Inspect
@@ -135,44 +295,47 @@ const [loading, setLoading] = useState(false);
 
       {isMobile ? (
         <Box>
+          <div 
+            className="mb-2 p-2 rounded" 
+            style={{ backgroundColor: "white", display: "inline-flex", alignItems: "center", gap: "8px" }}
+          >
+            <input
+              type="checkbox"
+              checked={selectAllGood}
+              onChange={handleSelectAllGood}
+              style={{ width: "28px", height: "28px", cursor: "pointer" }} // bigger checkbox
+            />
+            <span style={{ fontWeight: "bold" }}>Select All Good</span>
+          </div>
           {rows.map((row) => (
             <Box key={row.Id} className="mb-3 p-2 border rounded" bgcolor={"white"}>
               <div style={{height: "auto", paddingBottom: "7px"}}><strong style={{paddingRight: "3px"}}>Num:</strong> {row.Id}</div>
               <div style={{height: "auto", paddingBottom: "7px"}}><strong style={{paddingRight: "3px"}}>Part:</strong> {row.PartDescr}</div>
 
               {["Good", "Refurbish", "Missing", "DamageReplaced"].map((field) => (
-                <div key={field} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "4px", height: "35px" }}>
-                  <label>{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                <div
+                  key={field}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginTop: "6px",
+                    padding: "4px 8px",
+                    backgroundColor: "#f8f9fa", // light background
+                    borderRadius: "6px",
+                  }}
+                >
+                  <label style={{ fontWeight: "500" }}>
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                  </label>
                   <input
                     type="checkbox"
-                    style={{height: "20px", width: "20px"}}
                     checked={row[field] === "Yes"}
                     onChange={() => handleCheckboxChange(row.Id, field)}
+                    style={{ width: "26px", height: "26px", cursor: "pointer" }} // bigger, easier to tap
                   />
                 </div>
               ))}
-
-              <div style={{ marginTop: "4px" }}>
-                <label>Replacement Value</label>
-                <input
-                  type="text"
-                  value={row.ReplacementValue}
-                  disabled={row.DamageReplaced !== "Yes"}
-                  onChange={(e) => handleInputChange(row.Id, "ReplacementValue", e.target.value)}
-                  className="form-control mt-1"
-                />
-              </div>
-
-              <div style={{ marginTop: "4px" }}>
-                <label>Refurbish Value</label>
-                <input
-                  type="text"
-                  value={row.RefurbishValue}
-                  disabled={row.Refurbish !== "Yes"}
-                  onChange={(e) => handleInputChange(row.Id, "RefurbishValue", e.target.value)}
-                  className="form-control mt-1"
-                />
-              </div>
             </Box>
           ))}
         </Box>
@@ -187,7 +350,27 @@ const [loading, setLoading] = useState(false);
               {
                 field: "Good",
                 headerName: "Good",
-                width: 120,
+                width: 130,
+                renderHeader: () => (
+                  <div style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "7px", // space between checkbox and label
+                    paddingTop: "4px",
+                    paddingBottom: "4px",
+                    paddingLeft: "5px"
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={selectAllGood}
+                      onChange={handleSelectAllGood}
+                      style={{ transform: "scale(1.5)", cursor: "pointer" }} // bigger checkbox
+                    />
+                    <span>Good</span>
+                  </div>
+                ),
                 renderCell: (params) => (
                   <input
                     type="checkbox"
@@ -236,38 +419,6 @@ const [loading, setLoading] = useState(false);
                   />
                 ),
               },
-              {
-                field: "ReplacementValue",
-                headerName: "Replacement Value",
-                width: 150,
-                display: "flex",
-                alignItems: "center",
-                renderCell: (params) => (
-                  <input
-                    type="text"
-                    value={params.value}
-                    disabled={params.row.DamageReplaced !== "Yes"}
-                    onChange={(e) => handleInputChange(params.row.Id, "ReplacementValue", e.target.value)}
-                    className="form-control"
-                  />
-                ),
-              },
-              {
-                field: "RefurbishValue",
-                headerName: "Refurbish Value",
-                width: 150,
-                display: "flex",
-                alignItems: "center",
-                renderCell: (params) => (
-                  <input
-                    type="text"
-                    value={params.value}
-                    disabled={params.row.Refurbish !== "Yes"}
-                    onChange={(e) => handleInputChange(params.row.Id, "RefurbishValue", e.target.value)}
-                    className="form-control"
-                  />
-                ),
-              },
             ]}
             pageSize={10}
           />
@@ -289,6 +440,47 @@ const [loading, setLoading] = useState(false);
           </Button>
           <Button variant="primary" onClick={handleSubmit}>
             Yes, Continue
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showModal} onHide={handleCancel} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Photo of Damage</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {error1 && <Alert variant="danger">{error1}</Alert>}
+          <Form.Group controlId="formFile" className="mb-3">
+            <Form.Label>Capture or Upload Photo</Form.Label>
+            <Form.Control
+              type="file"
+              accept="image/*"
+              capture="environment" // Opens camera on mobile
+              onChange={handleFileChange}
+            />
+          </Form.Group>
+          {photoPreview && (
+            <div className="text-center">
+              <Image
+                src={photoPreview}
+                alt="Preview"
+                thumbnail
+                style={{
+                  maxWidth: "100%",
+                  height: "auto",
+                  borderRadius: "10px",
+                  marginTop: "10px",
+                }}
+              />
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCancel}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSave}>
+            Save Photo
           </Button>
         </Modal.Footer>
       </Modal>

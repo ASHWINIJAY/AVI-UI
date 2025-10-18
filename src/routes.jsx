@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter,Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import LoginPage from "./screens/LoginPage.jsx";
 import LandingPage from "./screens/LandingPage.jsx";
@@ -27,6 +27,7 @@ import WelcomePage from "./screens/WelcomePage.jsx";
 import MasterForm from "./screens/MasterForm.jsx";
 import ChooseInspect from "./screens/ChooseInspect.jsx";
 import WagonLandingPage from "./screens/WagonLandingPage.jsx";
+import MapView from "./screens/MapView";
 import { hasOfflineData, syncOfflineData } from "./utils/offlineSync";
 import api from "./api/axios";
 // ✅ Auth guard
@@ -101,6 +102,7 @@ export default function AppRoutes() {
 
   return (
     <>
+    
       <Routes>
         {/* Public Route */}
         <Route path="/" element={<LoginPage />} />
@@ -117,6 +119,7 @@ export default function AppRoutes() {
           <Route path="choose" element={<ChooseInspect />} />
            <Route path="wagon" element={<WagonLandingPage />} />
           <Route path="landing" element={<LandingPage />} />
+          <Route path="map" element={<MapView />} />
           <Route path="dashboard" element={<DashBoardItems />} />
           <Route path="locoform" element={<LocoForm />} />
           <Route path="usercreation" element={<UserCreationForm />} />
