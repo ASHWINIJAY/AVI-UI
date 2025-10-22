@@ -47,19 +47,20 @@ const [loading, setLoading] = useState(false);
     try {
       const token = localStorage.getItem("token");
 setLoading(true);
+const locoNumberInt = parseInt(locoNumber, 10);
       // 🔹 Try validating with API
       const response = await api.get(
-        `Landing/validateLoco/${locoNumber}`,
+        `Landing/validateLoco/${locoNumberInt}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
       if (response.data.isValid) {
-        localStorage.setItem("locoNumber", locoNumber);
-        if (response.data.locoClass) {
-          localStorage.setItem("locoClass", response.data.locoClass);
-        }
+        localStorage.setItem("locoNumber", locoNumberInt.toString());
+        localStorage.setItem("locoClass", response.data.locoClass);
+        localStorage.setItem("locoModel", response.data.locoModel);
+        
         if(response.data.message!=null)
         {
           alert(response.data.message)
@@ -127,6 +128,7 @@ setLoading(true);
                   <Form.Control
                     type="text"
                     placeholder="Enter Loco Number"
+                    autoComplete="off"
                     value={locoNumber}
                     onChange={(e) => setLocoNumber(e.target.value)}
                   />

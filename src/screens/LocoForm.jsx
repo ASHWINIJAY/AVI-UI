@@ -64,7 +64,7 @@ const [loading, setLoading] = useState(false);
   }, [storedLocoNumber]);
 
   // === Input change handlers ===
-  const handleChange = (e) => {
+ const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -107,7 +107,7 @@ const [loading, setLoading] = useState(false);
         await api.post("InfoLocosFinal/submit", data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        navigate("/walkaroundinspect");
+        navigate("/inspection");
       } 
     } catch (err) {
       console.error("Submit error:", err);
@@ -121,7 +121,7 @@ const [loading, setLoading] = useState(false);
         offlineData.push({ ...formData, timestamp: new Date().toISOString() });
         localStorage.setItem("offlineForms", JSON.stringify(offlineData));
         alert("No internet connection. Data saved locally and will sync automatically.");
-        navigate("/walkaroundinspect");
+        navigate("/inspection");
   }
     } finally {
       setSubmitting(false);
@@ -139,7 +139,7 @@ const [loading, setLoading] = useState(false);
   return (
     <>
           {loading && <Loader fullscreen />}
-    <Container className="mt-5 d-flex justify-content-center">
+     <Container className="mt-5 d-flex justify-content-center">
       <Form
         className="p-4 border rounded shadow-sm"
         style={{ maxWidth: "600px", width: "100%", backgroundColor: "white", marginBottom: "3rem" }}
@@ -148,13 +148,11 @@ const [loading, setLoading] = useState(false);
           Info Capture
         </h3>
 
-        {/* Loco Number */}
         <Form.Group className="mb-3">
           <Form.Label>Loco Number</Form.Label>
           <Form.Control type="text" name="LocoNumTxt" value={formData.LocoNumTxt} readOnly required />
         </Form.Group>
 
-        {/* GPS */}
         <Row>
           <Col>
             <Form.Group className="mb-3">
@@ -170,7 +168,6 @@ const [loading, setLoading] = useState(false);
           </Col>
         </Row>
 
-        {/* Loco Photo */}
         <Form.Group className="mb-3">
           <Form.Label>Loco Photo</Form.Label>
           <Form.Control
@@ -183,7 +180,6 @@ const [loading, setLoading] = useState(false);
           {previews.loco && <Image src={previews.loco} thumbnail className="mt-2" />}
         </Form.Group>
 
-        {/* Program Maintenance */}
         <Form.Group className="mb-3">
           <Form.Label>Program Maintenance</Form.Label>
           <Form.Select name="ProMainSelect" value={formData.ProMainSelect} onChange={handleChange} required>
@@ -193,7 +189,6 @@ const [loading, setLoading] = useState(false);
           </Form.Select>
         </Form.Group>
 
-        {/* Fleet Renewal */}
         <Form.Group className="mb-3">
           <Form.Label>Fleet Renewal Program</Form.Label>
           <Form.Select name="FleetRenewSelect" value={formData.FleetRenewSelect} onChange={handleChange} required>
@@ -204,7 +199,6 @@ const [loading, setLoading] = useState(false);
           </Form.Select>
         </Form.Group>
 
-        {/* Body Damage */}
         <Form.Group className="mb-3">
           <Form.Label>Body Damage</Form.Label>
           <Form.Select name="BodyDamageTxt" value={formData.BodyDamageTxt} onChange={handleChange} required>
@@ -234,12 +228,11 @@ const [loading, setLoading] = useState(false);
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Body Repair Value</Form.Label>
-              <Form.Control type="text" name="BodyRepairVal" value={formData.BodyRepairVal} onChange={handleChange} />
+              <Form.Control type="text" name="BodyRepairVal" autoComplete="off" value={formData.BodyRepairVal} onChange={handleChange} />
             </Form.Group>
           </>
         )}
 
-        {/* Lifting */}
         <Form.Group className="mb-3">
           <Form.Label>Lifting Required</Form.Label>
           <Form.Select name="LiftingReqTxt" value={formData.LiftingReqTxt} onChange={handleChange} required>
@@ -280,7 +273,6 @@ const [loading, setLoading] = useState(false);
           </>
         )}
 
-        {/* Readonly Info */}
         <Form.Group className="mb-3">
           <Form.Label>Inventory Number</Form.Label>
           <Form.Control type="text" name="InventoryNumTxt" value={formData.InventoryNumTxt} readOnly />

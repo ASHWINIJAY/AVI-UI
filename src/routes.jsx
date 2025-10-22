@@ -28,6 +28,7 @@ import MasterForm from "./screens/MasterForm.jsx";
 import ChooseInspect from "./screens/ChooseInspect.jsx";
 import WagonLandingPage from "./screens/WagonLandingPage.jsx";
 import MapView from "./screens/MapView";
+import InspectionProcess from './screens/InspectionProcess.jsx';
 import { hasOfflineData, syncOfflineData } from "./utils/offlineSync";
 import api from "./api/axios";
 // ✅ Auth guard
@@ -122,6 +123,10 @@ export default function AppRoutes() {
           <Route path="map" element={<MapView />} />
           <Route path="dashboard" element={<DashBoardItems />} />
           <Route path="locoform" element={<LocoForm />} />
+          <Route
+        path="/inspection/:formId?"
+        element={<InspectionProcess/>}
+      />
           <Route path="usercreation" element={<UserCreationForm />} />
           <Route path="users" element={<UserMaintenance />} />
           <Route path="welcome" element={<WelcomePage />} />
@@ -150,6 +155,10 @@ export default function AppRoutes() {
         <Route path="/welcome" element={<PrivateRoute><WelcomePage /></PrivateRoute>} />
         <Route path="/dashboard" element={<PrivateRoute><DashBoardItems /></PrivateRoute>} />
         <Route path="/locoform" element={<PrivateRoute><LocoForm /></PrivateRoute>} />
+        <Route
+        path="/inspection/:formId?"
+        element={<PrivateRoute><InspectionProcess/></PrivateRoute>}
+      />
         <Route path="/walkaroundinspect" element={<PrivateRoute><WalkAroundInspect /></PrivateRoute>} />
         <Route path="/frontlocoinspect" element={<PrivateRoute><FrontLocoInspect /></PrivateRoute>} />
         <Route path="/shortnoseinspect" element={<PrivateRoute><ShortNoseInspect /></PrivateRoute>} />
