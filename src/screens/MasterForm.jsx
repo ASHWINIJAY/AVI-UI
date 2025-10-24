@@ -110,6 +110,11 @@ export default function MasterForm() {
                       Users Maintenance
                     </Link>
                   </li>
+                  <li>
+                    <Link to="/master/teamcreation" onClick={handleLinkClick}>
+                      Team Creation
+                    </Link>
+                  </li>
                 </ul>
               </li>
 

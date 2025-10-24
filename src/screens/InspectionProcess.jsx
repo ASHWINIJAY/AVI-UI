@@ -15,10 +15,10 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import axios from "../api/axios";
 
 const formIdsByLocoModel = {
-  GE34: ["BD001", "FL001", "SN001", "CL001", "EC001", "BS001", "OD001", "BC001", "AC001", "ED001", "CF001", "DE001", "RF001"],
-  GE35: ["BD001", "FL001", "SN001", "CL001", "EC001", "BS001", "OD001", "BC001", "MG001", "ED001", "CF001", "DE001", "RF001"],
-  GE36: ["BD001", "FL001", "SN001", "CL001", "EC001", "CA001", "MG001", "ED001", "CF001", "DE001", "RF001"],
-  E18: ["WA001", "FL001", "BL001", "EC001", "LV001", "CO001", "HT001", "MA001", "EX001", "HS001", "MC001", "ES001", "HV001", "CC001", "CT001", "RF001"]
+GM34: ["BD001", "FL001", "SN001", "CL001", "EL001", "BS001", "LM001", "CB001", "TR001", "MP001", "BL001", "CA001", "ED001", "CF001", "DE001", "RF001"],
+GM35: ["WA001", "FL001", "SN001", "CL001", "EL001", "BS001", "LM001", "CB001", "TR001", "MP001", "BL001", "CA001", "ED001", "CF001", "DE001", "RF001"],
+GM36: ["WA001", "FL001", "SN001", "BV001", "CL001", "EC001", "CB001", "BS001", "LM001", "LC001", "TR001", "BP001", "CA001", "ED001", "CF001", "DE001", "RF001"],
+E18: ["BD001", "FL001", "BE001", "EE001", "LV001", "CR001", "HV001", "MA001", "EH001", "MB001", "HS001", "ES001", "HC001", "CC001", "CT001", "RF001"] 
 };
 
 const InspectionProcess = () => {
@@ -77,7 +77,7 @@ const InspectionProcess = () => {
         const res = await axios.get(
           `/Inspection/GetParts?locoModel=${encodeURIComponent(
             locoModel
-          )}&formId=${encodeURIComponent(effectiveFormId)}&_=${Date.now()}`
+          )}&formId=HC001&_=${Date.now()}`
         );
 
         const data = Array.isArray(res.data) ? res.data : [];
@@ -383,6 +383,7 @@ const InspectionProcess = () => {
     try {
       await axios.post("/Inspection/SubmitInspection", dtos);
       setInfo("Inspection submitted successfully.");
+      navigate("/walkaroundinspect");
     } catch (ex) {
       console.error(ex);
       setError("Submit failed.");

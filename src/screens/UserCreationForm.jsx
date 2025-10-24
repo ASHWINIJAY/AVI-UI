@@ -170,6 +170,7 @@ const UserCreationForm = () => {
             <option value="Super User">Super User</option>
             <option value="Inspection">Inspection</option>
             <option value="Assessor">Assessor</option>
+            <option value="Asset Monitor">Asset Monitor</option>
           </Form.Select>
           <Form.Control.Feedback type="invalid">{errors.userRole}</Form.Control.Feedback>
         </Form.Group>

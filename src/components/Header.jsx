@@ -13,7 +13,9 @@ export default function Header() {
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
     localStorage.removeItem("userRole");
-    localStorage.removeItem("locoNumber") // Clear JWT and user info
+    localStorage.removeItem("locoNumber");
+    localStorage.removeItem("locoClass");
+    localStorage.removeItem("locoModel");
     navigate("/");   // Redirect to login page
   };
 

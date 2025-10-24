@@ -130,6 +130,7 @@ const UserMaintenance = () => {
                   <option value="Super User">Super User</option>
                   <option value="Inspection">Inspection</option>
                   <option value="Assessor">Assessor</option>
+                  <option value="Asset Monitor">Asset Monitor</option>
                 </Form.Select>
               </Form.Group>
             </Form>
