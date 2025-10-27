@@ -30,6 +30,7 @@ import WagonLandingPage from "./screens/WagonLandingPage.jsx";
 import MapView from "./screens/MapView";
 import InspectionProcess from './screens/InspectionProcess.jsx';
 import CreateTeam from "./screens/CreateTeam.jsx";
+import TeamMaintenance from "./screens/TeamMaintenance.jsx";
 import { hasOfflineData, syncOfflineData } from "./utils/offlineSync";
 import api from "./api/axios";
 // ✅ Auth guard
@@ -113,7 +114,7 @@ export default function AppRoutes() {
         <Route
           path="/master"
           element={
-            <RoleBasedRoute allowedRoles={["Super User", "Assessor"]}>
+            <RoleBasedRoute allowedRoles={["Super User", "Assessor", "Asset Monitor"]}>
               <MasterForm />
             </RoleBasedRoute>
           }
@@ -130,6 +131,7 @@ export default function AppRoutes() {
       />
           <Route path="usercreation" element={<UserCreationForm />} />
           <Route path="teamcreation" element={<CreateTeam />} />
+          <Route path="teams" element={<TeamMaintenance />} />
           <Route path="users" element={<UserMaintenance />} />
           <Route path="welcome" element={<WelcomePage />} />
           <Route path="walkaroundinspect" element={<WalkAroundInspect />} />

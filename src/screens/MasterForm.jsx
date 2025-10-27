@@ -81,7 +81,7 @@ export default function MasterForm() {
           </li>
 
           {/* Show other menus only if NOT Assessor */}
-          {role !== "Assessor" && (
+          {role !== "Assessor" && role !=="Asset Monitor" && (
             <>
               {/* Admin with Submenu */}
               <li>
@@ -113,6 +113,11 @@ export default function MasterForm() {
                   <li>
                     <Link to="/master/teamcreation" onClick={handleLinkClick}>
                       Team Creation
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/master/teams" onClick={handleLinkClick}>
+                      Teams Maintenance
                     </Link>
                   </li>
                 </ul>
