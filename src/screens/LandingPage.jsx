@@ -55,7 +55,8 @@ const locoNumberInt = parseInt(locoNumber, 10);
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
+      
+console.log(response.data);
       if (response.data.isValid) {
         localStorage.setItem("locoNumber", locoNumberInt.toString());
         localStorage.setItem("locoClass", response.data.locoClass);
@@ -63,16 +64,36 @@ const locoNumberInt = parseInt(locoNumber, 10);
         
         if(response.data.message!=null)
         {
-          alert(response.data.message)
+          alert(response.data.message);
           return;
         }
-        navigate("/locoform");
+        if (response?.data?.locoModel === null || response?.data?.locoModel === "") {
+  alert("Missing Loco Model, Please enter a valid one")
+          return;
+}
+        navigate("/locoinfo");
       } else {
-        setError("Invalid Loco Number. Please enter a valid one.");
+        
+        if (response?.data?.locoModel === null || response?.data?.locoModel === "") {
+  alert("Missing Loco Model, Please enter a valid one")
+          return;
+}
+else{
+if(response.data.message!=null)
+        {
+          alert(response.data.message);
+          return;
+        }
+}
       }
     } catch (err) {
       console.warn("API failed, fallback to offline validation:", err);
 
+      if (err.response.status === 404) 
+      {
+        alert("LocoModel not found, Please try another loco number");
+          return;
+      }
       // 🔹 Offline validation from stored list
       const cached = localStorage.getItem("locoList");
       if (cached) {
@@ -84,7 +105,7 @@ const locoNumberInt = parseInt(locoNumber, 10);
 
         if (exists) {
           localStorage.setItem("locoNumber", locoNumber);
-          navigate("/locoform");
+          navigate("/locoinfo");
         } else {
           setError("Invalid Loco Number (offline check).");
         }

@@ -90,7 +90,17 @@ const UserCreationForm = () => {
         <h3 className="text-center mb-4" style={{ fontWeight: "bold" }}>
           Create New User
         </h3>
-
+ <Form.Group className="mb-3">
+          <Form.Label>Login User Name</Form.Label>
+          <Form.Control
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            isInvalid={!!errors.username}
+          />
+          <Form.Control.Feedback type="invalid">{errors.username}</Form.Control.Feedback>
+        </Form.Group>
         <Form.Group className="mb-3">
           <Form.Label>Name</Form.Label>
           <Form.Control
@@ -115,17 +125,7 @@ const UserCreationForm = () => {
           <Form.Control.Feedback type="invalid">{errors.email}</Form.Control.Feedback>
         </Form.Group>
 
-        <Form.Group className="mb-3">
-          <Form.Label>Login User Name</Form.Label>
-          <Form.Control
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            isInvalid={!!errors.username}
-          />
-          <Form.Control.Feedback type="invalid">{errors.username}</Form.Control.Feedback>
-        </Form.Group>
+       
 
         <Row>
           <Col>

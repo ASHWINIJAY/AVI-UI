@@ -50,7 +50,7 @@ const FrontLocoInspect = () => {
     }
 else
 {
- locoClass = "D35"
+ //locoClass = "D35"
   inspectFormId = "FL002";
 }
     setFormId(inspectFormId);
@@ -59,7 +59,7 @@ else
       try {
        // alert(inspectFormId);
         const response = await api.get(
-          `WalkInspect/getParts/${locoClass}/${inspectFormId}`
+          `WalkInspect/getParts/${locoClass.trim()}/${inspectFormId}`
         );
         const partDescriptions = response.data;
 

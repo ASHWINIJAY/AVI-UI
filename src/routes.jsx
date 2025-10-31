@@ -31,6 +31,77 @@ import MapView from "./screens/MapView";
 import InspectionProcess from './screens/InspectionProcess.jsx';
 import CreateTeam from "./screens/CreateTeam.jsx";
 import TeamMaintenance from "./screens/TeamMaintenance.jsx";
+import WagonInfo from './screens/WagonInfo.jsx';
+import WAWagonInspect from './screens/WAWagonInspect.jsx';
+import WagonPartsInspect from './screens/WagonPartsInspect.jsx';
+import AirBrakePartsInspect from './screens/AirBrakePartsInspect.jsx';
+import VacBrakePartsInspect from './screens/VacBrakePartsInspect.jsx';
+import WagonFloorInspect from './screens/WagonFloorInspect.jsx';
+import LocoInfoCapture from './screens/LocoInfoCapture.jsx';
+import E18BD001Inspect from './screens/E18Inspections/E18BD001Inspect.jsx';
+import E18FL001Inspect from './screens/E18Inspections/E18FL001Inspect.jsx';
+import E18BE001Inspect from './screens/E18Inspections/E18BE001Inspect.jsx';
+import E18CC001Inspect from './screens/E18Inspections/E18CC001Inspect.jsx';
+import E18CR001Inspect from './screens/E18Inspections/E18CR001Inspect.jsx';
+import E18CT001Inspect from './screens/E18Inspections/E18CT001Inspect.jsx';
+import E18EE001Inspect from './screens/E18Inspections/E18EE001Inspect.jsx';
+import E18EH001Inspect from './screens/E18Inspections/E18EH001Inspect.jsx';
+import E18ES001Inspect from './screens/E18Inspections/E18ES001Inspect.jsx';
+import E18HC001Inspect from './screens/E18Inspections/E18HC001Inspect.jsx';
+import E18HS001Inspect from './screens/E18Inspections/E18HS001Inspect.jsx';
+import E18HV001Inspect from './screens/E18Inspections/E18HV001Inspect.jsx';
+import E18LV001Inspect from './screens/E18Inspections/E18LV001Inspect.jsx';
+import E18MA001Inspect from './screens/E18Inspections/E18MA001Inspect.jsx';
+import E18MB001Inspect from './screens/E18Inspections/E18MB001Inspect.jsx';
+import E18RF001Inspect from './screens/E18Inspections/E18RF001Inspect.jsx';
+
+
+import GM34BD001Inspect from './screens/GM34Inspections/GM34BD001Inspect.jsx';
+import GM34WalkInspectForm from './screens/GM34Inspections/GM34WalkInspectForm.jsx';
+
+import GM35WA001Inspect from './screens/GM35Inspections/GM35WA001Inspect.jsx';
+import GM36WA001Inspect from './screens/GM36Inspections/GM36WA001Inspect.jsx';
+
+import GE34BD001Inspect from './screens/GE34Inspections/GE34BD001Inspect.jsx';
+import GE34FL001Inspect from './screens/GE34Inspections/GE34FL001Inspect.jsx';
+import GE34SN001Inspect from './screens/GE34Inspections/GE34SN001Inspect.jsx';
+import GE34CL001Inspect from './screens/GE34Inspections/GE34CL001Inspect.jsx';
+import GE34EC001Inspect from './screens/GE34Inspections/GE34EC001Inspect.jsx';
+import GE34BS001Inspect from './screens/GE34Inspections/GE34BS001Inspect.jsx';
+import GE34OD001Inspect from './screens/GE34Inspections/GE34OD001Inspect.jsx';
+import GE34BC001Inspect from './screens/GE34Inspections/GE34BC001Inspect.jsx';
+import GE34AC001Inspect from './screens/GE34Inspections/GE34AC001Inspect.jsx';
+import GE34ED001Inspect from './screens/GE34Inspections/GE34ED001Inspect.jsx';
+import GE34CF001Inspect from './screens/GE34Inspections/GE34CF001Inspect.jsx';
+import GE34DE001Inspect from './screens/GE34Inspections/GE34DE001Inspect.jsx';
+import GE34RF001Inspect from './screens/GE34Inspections/GE34RF001Inspect.jsx';
+
+import GE35BD001Inspect from './screens/GE35Inspections/GE35BD001Inspect.jsx';
+import GE35FL001Inspect from './screens/GE35Inspections/GE35FL001Inspect.jsx';
+import GE35SN001Inspect from './screens/GE35Inspections/GE35SN001Inspect.jsx';
+import GE35CL001Inspect from './screens/GE35Inspections/GE35CL001Inspect.jsx';
+import GE35EC001Inspect from './screens/GE35Inspections/GE35EC001Inspect.jsx';
+import GE35BS001Inspect from './screens/GE35Inspections/GE35BS001Inspect.jsx';
+import GE35RF001Inspect from './screens/GE35Inspections/GE35RF001Inspect.jsx';
+import GE35DE001Inspect from './screens/GE35Inspections/GE35DE001Inspect.jsx';
+import GE35ED001Inspect from './screens/GE35Inspections/GE35ED001Inspect.jsx';
+import GE35CF001Inspect from './screens/GE35Inspections/GE35CF001Inspect.jsx';
+import GE35OD001Inspect from './screens/GE35Inspections/GE35OD001Inspect.jsx';
+import GE35MG001Inspect from './screens/GE35Inspections/GE35MG001Inspect.jsx';
+import GE35BC001Inspect from './screens/GE35Inspections/GE35BC001Inspect.jsx';
+
+import GE36BD001Inspect from './screens/GE36Inspections/GE36BD001Inspect.jsx';
+import GE36FL001Inspect from './screens/GE36Inspections/GE36FL001Inspect.jsx';
+import GE36SN001Inspect from './screens/GE36Inspections/GE36SN001Inspect.jsx';
+import GE36CL001Inspect from './screens/GE36Inspections/GE36CL001Inspect.jsx';
+import GE36EC001Inspect from './screens/GE36Inspections/GE36EC001Inspect.jsx';
+import GE36CA001Inspect from './screens/GE36Inspections/GE36CA001Inspect.jsx';
+import GE36MG001Inspect from './screens/GE36Inspections/GE36MG001Inspect.jsx';
+import GE36ED001Inspect from './screens/GE36Inspections/GE36ED001Inspect.jsx';
+import GE36CF001Inspect from './screens/GE36Inspections/GE36CF001Inspect.jsx';
+import GE36DE001Inspect from './screens/GE36Inspections/GE36DE001Inspect.jsx';
+import GE36RF001Inspect from './screens/GE36Inspections/GE36RF001Inspect.jsx';
+
 import { hasOfflineData, syncOfflineData } from "./utils/offlineSync";
 import api from "./api/axios";
 // ✅ Auth guard
@@ -154,6 +225,263 @@ export default function AppRoutes() {
         </Route>
 <Route path="/choose" element={<PrivateRoute><ChooseInspect /></PrivateRoute>} />
           <Route path="/wagon" element={<PrivateRoute><WagonLandingPage /></PrivateRoute>} />
+           <Route
+        path="/wagoninfo"
+        element={<PrivateRoute><WagonInfo/></PrivateRoute>}
+      />
+      <Route
+        path="/locoinfo"
+        element={<PrivateRoute><LocoInfoCapture/></PrivateRoute>}
+      />
+      <Route
+        path="/E18BD001"
+        element={<PrivateRoute><E18BD001Inspect/></PrivateRoute>}
+      />
+      <Route
+        path="/E18FL001"
+        element={<PrivateRoute><E18FL001Inspect/></PrivateRoute>}
+      />
+      <Route
+  path="/E18BE001"
+  element={<PrivateRoute><E18BE001Inspect/></PrivateRoute>}
+/>
+<Route
+  path="/E18CC001"
+  element={<PrivateRoute><E18CC001Inspect/></PrivateRoute>}
+/>
+<Route
+  path="/E18CR001"
+  element={<PrivateRoute><E18CR001Inspect/></PrivateRoute>}
+/>
+<Route
+  path="/E18CT001"
+  element={<PrivateRoute><E18CT001Inspect/></PrivateRoute>}
+/>
+<Route
+  path="/E18EE001"
+  element={<PrivateRoute><E18EE001Inspect/></PrivateRoute>}
+/>
+<Route
+  path="/E18EH001"
+  element={<PrivateRoute><E18EH001Inspect/></PrivateRoute>}
+/>
+<Route
+  path="/E18ES001"
+  element={<PrivateRoute><E18ES001Inspect/></PrivateRoute>}
+/>
+<Route
+  path="/E18HC001"
+  element={<PrivateRoute><E18HC001Inspect/></PrivateRoute>}
+/>
+<Route
+  path="/E18HS001"
+  element={<PrivateRoute><E18HS001Inspect/></PrivateRoute>}
+/>
+<Route
+  path="/E18HV001"
+  element={<PrivateRoute><E18HV001Inspect/></PrivateRoute>}
+/>
+<Route
+  path="/E18LV001"
+  element={<PrivateRoute><E18LV001Inspect/></PrivateRoute>}
+/>
+<Route
+  path="/E18MA001"
+  element={<PrivateRoute><E18MA001Inspect/></PrivateRoute>}
+/>
+<Route
+  path="/E18MB001"
+  element={<PrivateRoute><E18MB001Inspect/></PrivateRoute>}
+/>
+<Route
+  path="/E18RF001"
+  element={<PrivateRoute><E18RF001Inspect/></PrivateRoute>}
+/>
+
+     <Route
+                path="/GE34BD001"
+                element={<PrivateRoute><GE34BD001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE34FL001"
+                element={<PrivateRoute><GE34FL001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE34SN001"
+                element={<PrivateRoute><GE34SN001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE34CL001"
+                element={<PrivateRoute><GE34CL001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE34EC001"
+                element={<PrivateRoute><GE34EC001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE34BS001"
+                element={<PrivateRoute><GE34BS001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE34OD001"
+                element={<PrivateRoute><GE34OD001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE34BC001"
+                element={<PrivateRoute><GE34BC001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE34AC001"
+                element={<PrivateRoute><GE34AC001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE34ED001"
+                element={<PrivateRoute><GE34ED001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE34CF001"
+                element={<PrivateRoute><GE34CF001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE34DE001"
+                element={<PrivateRoute><GE34DE001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE34RF001"
+                element={<PrivateRoute><GE34RF001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE35BD001"
+                element={<PrivateRoute><GE35BD001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE35FL001"
+                element={<PrivateRoute><GE35FL001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE35SN001"
+                element={<PrivateRoute><GE35SN001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE35MG001"
+                element={<PrivateRoute><GE35MG001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE35OD001"
+                element={<PrivateRoute><GE35OD001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE35CL001"
+                element={<PrivateRoute><GE35CL001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE35ED001"
+                element={<PrivateRoute><GE35ED001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE35DE001"
+                element={<PrivateRoute><GE35DE001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE35RF001"
+                element={<PrivateRoute><GE35RF001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE35BC001"
+                element={<PrivateRoute><GE35BC001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE35EC001"
+                element={<PrivateRoute><GE35EC001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE35BS001"
+                element={<PrivateRoute><GE35BS001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE35CF001"
+                element={<PrivateRoute><GE35CF001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE36BD001"
+                element={<PrivateRoute><GE36BD001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE36FL001"
+                element={<PrivateRoute><GE36FL001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE36SN001"
+                element={<PrivateRoute><GE36SN001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE36CL001"
+                element={<PrivateRoute><GE36CL001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE36MG001"
+                element={<PrivateRoute><GE36MG001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE36EC001"
+                element={<PrivateRoute><GE36EC001Inspect /></PrivateRoute>}
+            />
+            
+            <Route
+                path="/GE36ED001"
+                element={<PrivateRoute><GE36ED001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE36DE001"
+                element={<PrivateRoute><GE36DE001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE36CF001"
+                element={<PrivateRoute><GE36CF001Inspect /></PrivateRoute>}
+            />
+            
+            <Route
+                path="/GE36RF001"
+                element={<PrivateRoute><GE36RF001Inspect /></PrivateRoute>}
+            />
+            <Route
+                path="/GE36CA001"
+                element={<PrivateRoute><GE36CA001Inspect /></PrivateRoute>}
+            />
+      <Route
+        path="/GM34BD001"
+        element={<PrivateRoute><GM34BD001Inspect/></PrivateRoute>}
+      />
+      <Route path="/inspect/:formID" element={<GM34WalkInspectForm />} />
+
+      <Route
+        path="/GM35WA001"
+        element={<PrivateRoute><GM35WA001Inspect/></PrivateRoute>}
+      />
+      <Route
+        path="/GM36WA001"
+        element={<PrivateRoute><GM36WA001Inspect/></PrivateRoute>}
+      />
+      <Route
+        path="/walkaroundwagon"
+        element={<PrivateRoute><WAWagonInspect/></PrivateRoute>}
+      />
+      <Route
+        path="/wagonparts"
+        element={<PrivateRoute><WagonPartsInspect/></PrivateRoute>}
+      />
+      <Route
+        path="/airbrakeparts"
+        element={<PrivateRoute><AirBrakePartsInspect/></PrivateRoute>}
+      />
+      <Route
+        path="/vacbrakeparts"
+        element={<PrivateRoute><VacBrakePartsInspect/></PrivateRoute>}
+      />
+      <Route
+        path="/wagonfloor"
+        element={<PrivateRoute><WagonFloorInspect/></PrivateRoute>}
+      />
         {/* Normal users → existing flat routes */}
         <Route path="/landing" element={<PrivateRoute><LandingPage /></PrivateRoute>} />
         <Route path="/welcome" element={<PrivateRoute><WelcomePage /></PrivateRoute>} />

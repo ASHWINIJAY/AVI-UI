@@ -11,14 +11,16 @@ import {
 } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
 import useMediaQuery from "@mui/material/useMediaQuery";
-//import axios from "axios";
 import axios from "../api/axios";
 
 const formIdsByLocoModel = {
-GM34: ["BD001", "FL001", "SN001", "CL001", "EL001", "BS001", "LM001", "CB001", "TR001", "MP001", "BL001", "CA001", "ED001", "CF001", "DE001", "RF001"],
-GM35: ["WA001", "FL001", "SN001", "CL001", "EL001", "BS001", "LM001", "CB001", "TR001", "MP001", "BL001", "CA001", "ED001", "CF001", "DE001", "RF001"],
-GM36: ["WA001", "FL001", "SN001", "BV001", "CL001", "EC001", "CB001", "BS001", "LM001", "LC001", "TR001", "BP001", "CA001", "ED001", "CF001", "DE001", "RF001"],
-E18: ["BD001", "FL001", "BE001", "EE001", "LV001", "CR001", "HV001", "MA001", "EH001", "MB001", "HS001", "ES001", "HC001", "CC001", "CT001", "RF001"] 
+  GE34: ["BD001", "FL001", "SN001", "CL001", "EC001", "BS001", "OD001", "BC001", "AC001", "ED001", "CF001", "DE001", "RF001"],
+  GM34: ["BD001", "FL001", "SN001", "CL001", "EL001", "BS001", "LM001", "CB001", "TR001", "MP001", "BL001", "CA001", "ED001", "CF001", "DE001", "RF001"],
+  GE35: ["BD001", "FL001", "SN001", "CL001", "EC001", "BS001", "OD001", "BC001", "MG001", "ED001", "CF001", "DE001", "RF001"],
+  GM35: ["WA001", "FL001", "SN001", "CL001", "EL001", "BS001", "LM001", "CB001", "TR001", "MP001", "BL001", "CA001", "ED001", "CF001", "DE001", "RF001"],
+  GE36: ["BD001", "FL001", "SN001", "CL001", "EC001", "CA001", "MG001", "ED001", "CF001", "DE001", "RF001"],
+  GM36: ["WA001", "FL001", "SN001", "BV001", "CL001", "EC001", "CB001", "BS001", "LM001", "LC001", "TR001","BP001", "CA001", "ED001", "CF001", "DE001", "RF001"],
+  E18: ["BD001", "FL001", "BE001", "EE001", "LV001", "CR001", "HV001", "MA001", "EH001", "MB001", "ES001", "HC001", "CC001", "CT001", "RF001"]
 };
 
 const InspectionProcess = () => {
@@ -75,9 +77,9 @@ const InspectionProcess = () => {
         }
 
         const res = await axios.get(
-          `/Inspection/GetParts?locoModel=${encodeURIComponent(
+          `Inspection/GetParts?locoModel=${encodeURIComponent(
             locoModel
-          )}&formId=HC001&_=${Date.now()}`
+          )}&formId=${encodeURIComponent(effectiveFormId)}&_=${Date.now()}`
         );
 
         const data = Array.isArray(res.data) ? res.data : [];
@@ -130,7 +132,7 @@ const InspectionProcess = () => {
   const getPartCost = async (partId, field) => {
     try {
       const res = await axios.get(
-        `/Inspection/GetPartCost?locoModel=${encodeURIComponent(
+        `Inspection/GetPartCost?locoModel=${encodeURIComponent(
           locoModel
         )}&partId=${encodeURIComponent(partId)}&field=${encodeURIComponent(
           field
@@ -158,7 +160,7 @@ const InspectionProcess = () => {
       fd.append("photoType", photoType);
       fd.append("locoNumber", String(locoNumber));
 
-      const res = await axios.post("/Inspection/UploadPhoto", fd, {
+      const res = await axios.post("Inspection/UploadPhoto", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -175,7 +177,7 @@ const InspectionProcess = () => {
   const deletePhoto = async (photoPath) => {
     if (!photoPath) return;
     try {
-      await axios.post("/Inspection/DeletePhoto", { path: photoPath });
+      await axios.post("Inspection/DeletePhoto", { path: photoPath });
     } catch (ex) {
       console.warn("DeletePhoto failed (non-blocking)", ex);
     }
@@ -381,9 +383,8 @@ const InspectionProcess = () => {
     }));
     setSubmitting(true);
     try {
-      await axios.post("/Inspection/SubmitInspection", dtos);
+      await axios.post("Inspection/SubmitInspection", dtos);
       setInfo("Inspection submitted successfully.");
-      navigate("/walkaroundinspect");
     } catch (ex) {
       console.error(ex);
       setError("Submit failed.");
