@@ -3,7 +3,7 @@ import { Container, Row, Col, Button, Modal } from "react-bootstrap";
 import Box from "@mui/material/Box";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { DataGrid } from "@mui/x-data-grid";
-import axios from "axios";
+import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
 
 const WAInspect = () => {

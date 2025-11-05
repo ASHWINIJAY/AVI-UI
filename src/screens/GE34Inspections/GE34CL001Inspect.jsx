@@ -386,7 +386,7 @@ const GE34CL001Inspect = () => {
             width: 140,
             hidden: true,
             renderCell: (params) => (
-                <input className="form-control form-control-sm" readOnly value={params.row.RefurbishValue} />
+                <input style={{ display: "none" }} className="form-control form-control-sm" readOnly value={params.row.RefurbishValue} />
             )
         },
         {
@@ -394,7 +394,7 @@ const GE34CL001Inspect = () => {
             headerName: "Missing Value",
             width: 140,
             renderCell: (params) => (
-                <input className="form-control form-control-sm" readOnly value={params.row.MissingValue} />
+                <input style={{ display: "none" }} className="form-control form-control-sm" readOnly value={params.row.MissingValue} />
             )
         },
         {
@@ -402,7 +402,7 @@ const GE34CL001Inspect = () => {
             headerName: "Replace Value",
             width: 140,
             renderCell: (params) => (
-                <input className="form-control form-control-sm" readOnly value={params.row.ReplaceValue} />
+                <input style={{ display: "none" }} className="form-control form-control-sm" readOnly value={params.row.ReplaceValue} />
             )
         }
     ];
@@ -445,9 +445,9 @@ const GE34CL001Inspect = () => {
                                 </div>
 
                                 <div style={{ marginTop: 8 }}>
-                                    <input className="form-control form-control-sm" readOnly value={row.RefurbishValue} placeholder="Refurbish Value" />
-                                    <input className="form-control form-control-sm mt-1" readOnly value={row.MissingValue} placeholder="Missing Value" />
-                                    <input className="form-control form-control-sm mt-1" readOnly value={row.ReplaceValue} placeholder="Replace Value" />
+                                    <input style={{ display: "none" }} className="form-control form-control-sm" readOnly value={row.RefurbishValue} placeholder="Refurbish Value" />
+                                    <input style={{ display: "none" }} className="form-control form-control-sm mt-1" readOnly value={row.MissingValue} placeholder="Missing Value" />
+                                    <input style={{ display: "none" }} className="form-control form-control-sm mt-1" readOnly value={row.ReplaceValue} placeholder="Replace Value" />
                                 </div>
 
                                 <div style={{ marginTop: 8 }}>
@@ -465,9 +465,9 @@ const GE34CL001Inspect = () => {
                             initialState={{
                                 columns: {
                                     columnVisibilityModel: {
-                                        RefurbishValue: true,
-                                        MissingValue: true,
-                                        ReplaceValue: true// hide it on load
+                                        RefurbishValue: false,
+                                        MissingValue: false,
+                                        ReplaceValue: false// hide it on load
                                     },
                                 },
                             }}

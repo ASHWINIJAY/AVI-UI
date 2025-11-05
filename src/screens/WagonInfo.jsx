@@ -49,13 +49,13 @@ const WagonInfo = () => {
   const [loading, setLoading] = useState(false);
 
   // Response metadata from backend (used for navigation)
-  const [responseMeta, setResponseMeta] = useState(null);
+  const [responseMeta, setResponseMeta] = useState(null); //(Luca) Change
 
   useEffect(() => {
     if (storedWagonNumber) {
       const wagonNumberInt = parseInt(storedWagonNumber, 10);
       axios
-        .get(`/WagonInfo/${wagonNumberInt}`)
+        .get(`WagonInfo/${wagonNumberInt}`)
         .then((res) =>
           setFormData((prev) => ({
             ...prev,
@@ -68,7 +68,7 @@ const WagonInfo = () => {
 
     if (storedWagonGroup) {
       axios
-        .get(`/WagonInfo/getBrakeType/${encodeURIComponent(storedWagonGroup)}`)
+        .get(`WagonInfo/getBrakeType/${encodeURIComponent(storedWagonGroup)}`)
         .then((res) =>
           setFormData((prev) => ({
             ...prev,
@@ -111,7 +111,7 @@ const WagonInfo = () => {
     localStorage.removeItem("wagonNumber");
     localStorage.removeItem("wagonGroup");
     localStorage.removeItem("wagonType");
-    navigate("/wagonland");
+    navigate("/choose");
   };
 
   // Client-side validation before submit
@@ -120,24 +120,36 @@ const WagonInfo = () => {
 
     // Wagon photo required
     if (!formData.WagonPhoto) {
-      errors.push("Wagon Photo is required.");
-    }
+        errors.push("Wagon Photo is required.");
+      }
+
+      if (!formData.LiftingPhoto) {
+          errors.push("Lift Photo is required.");
+      }
+       
+      if (!formData.LiftDateTxt) {
+          errors.push("Lift Date is required.");
+      }
+
+      if (!formData.BrakePhoto) {
+          errors.push("Brake Photo is required.");
+      }
+
+      if (!formData.BrakeDateTxt) {
+          errors.push("Brake Date is required.");
+      }
 
     // Body photos required if BodyDamage = Yes
     if (formData.BodyDamageTxt === "Yes") {
-      if (!formData.BodyPhoto1) errors.push("Body Photo 1 is required when Body Damage = Yes.");
-      if (!formData.BodyPhoto2) errors.push("Body Photo 2 is required when Body Damage = Yes.");
-      if (!formData.BodyPhoto3) errors.push("Body Photo 3 is required when Body Damage = Yes.");
+      if (!formData.BodyPhoto1) errors.push("Body Photo 1 is required.");
+      if (!formData.BodyPhoto2) errors.push("Body Photo 2 is required.");
+      if (!formData.BodyPhoto3) errors.push("Body Photo 3 is required.");
     }
 
     // Tanker-specific checks
     if (formData.WagonTypeTxt === "Tanker") {
-      if (!formData.LiftingPhoto) errors.push("Lift Photo is required for Tanker wagons.");
-      if (!formData.LiftDateTxt) errors.push("Lift Date is required for Tanker wagons.");
       if (!formData.BarrelPhoto) errors.push("Barrel Photo is required for Tanker wagons.");
       if (!formData.BarrelDateTxt) errors.push("Barrel Date is required for Tanker wagons.");
-      if (!formData.BrakePhoto) errors.push("Brake Photo is required for Tanker wagons.");
-      if (!formData.BrakeDateTxt) errors.push("Brake Date is required for Tanker wagons.");
     }
 
     return errors;
@@ -183,23 +195,32 @@ const WagonInfo = () => {
     data.append("BodyDamage", formData.BodyDamageTxt);
     data.append("WagonGroup", formData.WagonGroupTxt);
     data.append("BrakeType", formData.BrakeTypeTxt);
-    data.append("WagonType", formData.WagonTypeTxt);
+      data.append("WagonType", formData.WagonTypeTxt);
+
+      if (formData.LiftingPhoto) {
+          data.append("LiftPhoto", formData.LiftingPhoto);
+      }
+      data.append("LiftDate", liftDate);
+
+      if (formData.BrakePhoto) {
+          data.append("BrakePhoto", formData.BrakePhoto);
+      }
+      data.append("BrakeDate", brakeDate);
 
     if (formData.WagonTypeTxt === "Tanker") {
-      if (formData.LiftingPhoto) data.append("LiftPhoto", formData.LiftingPhoto);
-      data.append("LiftDate", liftDate);
       if (formData.BarrelPhoto) data.append("BarrelPhoto", formData.BarrelPhoto);
       data.append("BarrelDate", barrelDate);
-      if (formData.BrakePhoto) data.append("BrakePhoto", formData.BrakePhoto);
-      data.append("BrakeDate", brakeDate);
     }
 
     try {
-      await axios.post("/WagonInfo/submit", data, {
+      const res = await axios.post("WagonInfo/submit", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       const meta = res.data || {};
-      setResponseMeta(meta);
+        setResponseMeta(meta);
+
+        handleNavigation(meta); //(Luca) Add
+
       setShowSuccess(true);
     } catch (err) {
       console.error(err);
@@ -208,46 +229,42 @@ const WagonInfo = () => {
     } finally {
       setLoading(false);
     }
-  };
+    };
 
+    //(Luca) Add
+    const handleNavigation = (meta) => {
+        const lift = meta.LiftLapsed ?? meta.liftLapsed ?? "N/A";
+        const brake = meta.BrakeLapsed ?? meta.brakeLapsed ?? "N/A";
+        const brakeType = meta.BrakeType ?? meta.brakeType ?? formData.BrakeTypeTxt ?? "";
+        const doors = meta.wagonDoors || "N/A";
+        const stanchions = meta.wagonStan || "N/A";
+        const twistlocks = meta.wagonTwist || "N/A";
+
+        const wagonType = formData.WagonTypeTxt;
+
+        if (lift === "No" && brake === "No") return navigate("/wagonparts");
+
+        if (lift === "Yes" && brake === "No") {
+            if (brakeType === "Air Brake" || brakeType === "Dual Brake") return navigate("/airbrakeparts");
+            if (brakeType === "Vacuum Brake") return navigate("/vacbrakeparts");
+        }
+
+        if (lift === "Yes" && brake === "Yes") {
+            if (wagonType === "Tanker") return navigate("/wagontanker");
+            if (wagonType === "Bottom Discharge") return navigate("/wagonbottom");
+
+            if ((doors === "N/A" || doors === "") && (twistlocks === "N/A" || twistlocks === "") && (stanchions === "N/A" || stanchions === ""))
+                return navigate("/wagonfloor");
+
+            if (doors === "Yes") return navigate("/wagondoors");
+            if (twistlocks === "Yes") return navigate("/wagontwist");
+            if (stanchions === "Yes") return navigate("/wagonstan");
+        }
+    };
+
+    //(Luca) Change
   const handleSuccessClose = () => {
     setShowSuccess(false);
-
-    if (!responseMeta) {
-      navigate("/wagonparts");
-      return;
-    }
-
-    const lift = (responseMeta.LiftLapsed || "").toString();
-    const brake = (responseMeta.BrakeLapsed || "").toString();
-    const brakeType = (responseMeta.BrakeType || formData.BrakeTypeTxt || "").toString();
-
-    if (lift === "No" && brake === "No") {
-      navigate("/wagonparts");
-      return;
-    }
-
-    if (lift === "Yes" && brake === "No" && brakeType === "Air Brake") {
-      navigate("/airbrakeparts");
-      return;
-    }
-
-    if (lift === "Yes" && brake === "No" && brakeType === "Vacuum Brake") {
-      navigate("/vacbrakeparts");
-      return;
-    }
-
-    if (lift === "Yes" && brake === "Yes") {
-      navigate("/wagonfloor");
-      return;
-    }
-
-    if (lift === "N/A" && brake === "N/A") {
-      navigate("/wagonparts");
-      return;
-    }
-
-    navigate("/wagonparts");
   };
 
   return (
@@ -274,13 +291,13 @@ const WagonInfo = () => {
           <Col>
             <Form.Group className="mb-3">
               <Form.Label>GPS Latitude</Form.Label>
-              <Form.Control type="text" name="GpsLat" value={formData.GpsLat} />
+              <Form.Control type="text" name="GpsLat" value={formData.GpsLat} readOnly />
             </Form.Group>
           </Col>
           <Col>
             <Form.Group className="mb-3">
               <Form.Label>GPS Longitude</Form.Label>
-              <Form.Control type="text" name="GpsLong" value={formData.GpsLong} />
+              <Form.Control type="text" name="GpsLong" value={formData.GpsLong} readOnly />
             </Form.Group>
           </Col>
         </Row>
@@ -332,23 +349,36 @@ const WagonInfo = () => {
         <Form.Group className="mb-3">
           <Form.Label>Wagon Type</Form.Label>
           <Form.Control type="text" name="WagonTypeTxt" value={formData.WagonTypeTxt} readOnly />
-        </Form.Group>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                  <Form.Label>Lift Photo</Form.Label>
+                  <Form.Control type="file" name="LiftingPhoto" accept="image/*" capture="environment" onChange={handleFileChange} />
+                  {formData.LiftingPhotoPreview && <img src={formData.LiftingPhotoPreview} alt="Lift Photo" style={{ marginTop: "10px", maxWidth: "100%", height: "auto" }} />}
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                  <Form.Label>Lift Date</Form.Label>
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <DatePicker value={formData.LiftDateTxt} onChange={(newValue) => setFormData(prev => ({ ...prev, LiftDateTxt: newValue }))} slotProps={{ textField: { fullWidth: true } }} />
+                  </LocalizationProvider>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                  <Form.Label>Brake Photo</Form.Label>
+                  <Form.Control type="file" name="BrakePhoto" accept="image/*" capture="environment" onChange={handleFileChange} />
+                  {formData.BrakePhotoPreview && <img src={formData.BrakePhotoPreview} alt="Brake Photo" style={{ marginTop: "10px", maxWidth: "100%", height: "auto" }} />}
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                  <Form.Label>Brake Test Date</Form.Label>
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <DatePicker value={formData.BrakeDateTxt} onChange={(newValue) => setFormData(prev => ({ ...prev, BrakeDateTxt: newValue }))} slotProps={{ textField: { fullWidth: true } }} />
+                  </LocalizationProvider>
+              </Form.Group>
 
         {formData.WagonTypeTxt === "Tanker" && (
           <>
-            <Form.Group className="mb-3">
-              <Form.Label>Lift Photo</Form.Label>
-              <Form.Control type="file" name="LiftingPhoto" accept="image/*" capture="environment" onChange={handleFileChange} />
-              {formData.LiftingPhotoPreview && <img src={formData.LiftingPhotoPreview} alt="Lift Photo" style={{ marginTop: "10px", maxWidth: "100%", height: "auto" }} />}
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Lift Date</Form.Label>
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DatePicker value={formData.LiftDateTxt} onChange={(newValue) => setFormData(prev => ({ ...prev, LiftDateTxt: newValue }))} slotProps={{ textField: { fullWidth: true } }} />
-              </LocalizationProvider>
-            </Form.Group>
-
             <Form.Group className="mb-3">
               <Form.Label>Barrel Photo</Form.Label>
               <Form.Control type="file" name="BarrelPhoto" accept="image/*" capture="environment" onChange={handleFileChange} />
@@ -359,19 +389,6 @@ const WagonInfo = () => {
               <Form.Label>Barrel Test Date</Form.Label>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker value={formData.BarrelDateTxt} onChange={(newValue) => setFormData(prev => ({ ...prev, BarrelDateTxt: newValue }))} slotProps={{ textField: { fullWidth: true } }} />
-              </LocalizationProvider>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Brake Photo</Form.Label>
-              <Form.Control type="file" name="BrakePhoto" accept="image/*" capture="environment" onChange={handleFileChange} />
-              {formData.BrakePhotoPreview && <img src={formData.BrakePhotoPreview} alt="Brake Photo" style={{ marginTop: "10px", maxWidth: "100%", height: "auto" }} />}
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Brake Test Date</Form.Label>
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DatePicker value={formData.BrakeDateTxt} onChange={(newValue) => setFormData(prev => ({ ...prev, BrakeDateTxt: newValue }))} slotProps={{ textField: { fullWidth: true } }} />
               </LocalizationProvider>
             </Form.Group>
           </>

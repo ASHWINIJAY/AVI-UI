@@ -58,6 +58,8 @@ import E18RF001Inspect from './screens/E18Inspections/E18RF001Inspect.jsx';
 
 import GM34BD001Inspect from './screens/GM34Inspections/GM34BD001Inspect.jsx';
 import GM34WalkInspectForm from './screens/GM34Inspections/GM34WalkInspectForm.jsx';
+import GM35WalkInspectForm from './screens/GM35Inspections/GM35WalkInspectForm.jsx';
+import GM36WalkInspectForm from './screens/GM36Inspections/GM36WalkInspectForm.jsx';
 
 import GM35WA001Inspect from './screens/GM35Inspections/GM35WA001Inspect.jsx';
 import GM36WA001Inspect from './screens/GM36Inspections/GM36WA001Inspect.jsx';
@@ -101,6 +103,12 @@ import GE36ED001Inspect from './screens/GE36Inspections/GE36ED001Inspect.jsx';
 import GE36CF001Inspect from './screens/GE36Inspections/GE36CF001Inspect.jsx';
 import GE36DE001Inspect from './screens/GE36Inspections/GE36DE001Inspect.jsx';
 import GE36RF001Inspect from './screens/GE36Inspections/GE36RF001Inspect.jsx';
+import WagonDoorsInspect from './screens/WagonDoorsInspect.jsx';
+import WagonBottomDischargeInspect from './screens/WagonBottomDischargeInspect.jsx';
+import WagonStanchionsInspect from './screens/WagonStanchionsInspect.jsx';
+import WagonTankersInspect from './screens/WagonTankersInspect.jsx';
+import WagonTwistlocksInspect from './screens/WagonTwistlocksInspect.jsx';
+
 
 import { hasOfflineData, syncOfflineData } from "./utils/offlineSync";
 import api from "./api/axios";
@@ -453,7 +461,8 @@ export default function AppRoutes() {
         element={<PrivateRoute><GM34BD001Inspect/></PrivateRoute>}
       />
       <Route path="/inspect/:formID" element={<GM34WalkInspectForm />} />
-
+<Route path="/inspectGm35/:formID" element={<GM35WalkInspectForm />} />
+<Route path="/inspectGm36/:formID" element={<GM36WalkInspectForm />} />
       <Route
         path="/GM35WA001"
         element={<PrivateRoute><GM35WA001Inspect/></PrivateRoute>}
@@ -482,6 +491,26 @@ export default function AppRoutes() {
         path="/wagonfloor"
         element={<PrivateRoute><WagonFloorInspect/></PrivateRoute>}
       />
+      <Route
+                path="/wagondoors"
+                element={<PrivateRoute><WagonDoorsInspect /></PrivateRoute>}
+            />
+            <Route
+                path="/wagonbottom"
+                element={<PrivateRoute><WagonBottomDischargeInspect /></PrivateRoute>}
+            />
+            <Route
+                path="/wagontanker"
+                element={<PrivateRoute><WagonTankersInspect /></PrivateRoute>}
+            />
+            <Route
+                path="/wagontwist"
+                element={<PrivateRoute><WagonTwistlocksInspect /></PrivateRoute>}
+            />
+            <Route
+                path="/wagonstan"
+                element={<PrivateRoute><WagonStanchionsInspect /></PrivateRoute>}
+            />
         {/* Normal users → existing flat routes */}
         <Route path="/landing" element={<PrivateRoute><LandingPage /></PrivateRoute>} />
         <Route path="/welcome" element={<PrivateRoute><WelcomePage /></PrivateRoute>} />

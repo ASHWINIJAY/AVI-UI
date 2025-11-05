@@ -6,13 +6,13 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import axios from "../../api/axios";
 
 const FORM_ORDER = [
-  "BD001", "FL001", "SN001", "CL001", "EL001", "BS001",
+  "WA001", "FL001", "SN001", "CL001", "EL001", "BS001",
   "LM001", "CB001", "TR001", "MP001", "BL001", "CA001",
   "ED001", "CF001", "DE001", "RF001"
 ];
 
 const FORM_LABELS = {
-  BD001: "Below Deck From No.1A to 1B",
+  WA001: "Below Deck From No.1A to 1B",
   FL001: "Front of Loco Above",
   SN001: "Short Nose",
   CL001: "Cab of Loco Assistant Entrance",
@@ -26,11 +26,11 @@ const FORM_LABELS = {
   CA001: "Central Air Compartment",
   ED001: "Engine and Above Deck",
   CF001: "Compressor Fan Rad Compartment",
-  DE001: "No.2 End above deck",
+  DE001: "No.2 End Above Deck",
   RF001: "Roof Top Inspect",
 };
 
-const GM34WalkInspectForm = () => {
+const GM35WalkInspectForm = () => {
   const { formID } = useParams();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
@@ -38,6 +38,7 @@ const GM34WalkInspectForm = () => {
   const storedLocoNumber = localStorage.getItem("locoNumber") ?? "";
   const storedLocoClass = localStorage.getItem("locoClass") ?? "";
   const storedLocoModel = localStorage.getItem("locoModel") ?? "";
+  const userId = localStorage.getItem("userId") ?? "";
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,12 +54,12 @@ const GM34WalkInspectForm = () => {
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [showConfirmBackModal, setShowConfirmBackModal] = useState(false);
 
-  // Fetch parts
+  // 🔹 Fetch Parts
   useEffect(() => {
     const fetchParts = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`GM34Inspect/getParts/${formID}?t=${Date.now()}`);
+        const res = await axios.get(`GM35Inspect/getParts/${formID}?t=${Date.now()}`);
         const data = Array.isArray(res.data) ? res.data : [];
         const prepared = data
           .map((p, idx) => ({
@@ -72,12 +73,13 @@ const GM34WalkInspectForm = () => {
             RefurbishValue: "0.00",
             MissingValue: "0.00",
             ReplaceValue: "0.00",
-            MissingPhoto: null,
             DamagePhoto: null,
+            MissingPhoto: null,
           }))
           .sort((a, b) => {
             const numA = parseInt((a.PartId.match(/\d+/) || ["0"])[0], 10);
             const numB = parseInt((b.PartId.match(/\d+/) || ["0"])[0], 10);
+            if (numA === numB) return a.PartId.localeCompare(b.PartId);
             return numA - numB;
           });
         setRows(prepared);
@@ -93,9 +95,7 @@ const GM34WalkInspectForm = () => {
 
   const getPartCost = async (partId, field) => {
     try {
-      const res = await axios.get(
-        `GM34Inspect/getPartCost?partId=${encodeURIComponent(partId)}&field=${encodeURIComponent(field)}`
-      );
+      const res = await axios.get(`GM35Inspect/getPartCost?partId=${encodeURIComponent(partId)}&field=${encodeURIComponent(field)}`);
       if (typeof res.data === "number") return res.data.toFixed(2);
       return String(res.data ?? "0.00");
     } catch {
@@ -113,7 +113,7 @@ const GM34WalkInspectForm = () => {
       fd.append("locoNumber", storedLocoNumber);
       fd.append("locoModel", storedLocoModel);
 
-      const res = await axios.post("GM34Inspect/UploadPhoto", fd, {
+      const res = await axios.post("GM35Inspect/UploadPhoto", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       return res.data?.path ?? null;
@@ -126,13 +126,13 @@ const GM34WalkInspectForm = () => {
   const deletePhoto = async (path) => {
     if (!path) return;
     try {
-      await axios.post("GM34Inspect/DeletePhoto", { path });
+      await axios.post("GM35Inspect/DeletePhoto", { path });
     } catch {}
   };
 
   const handleCheckboxChange = async (rowId, field) => {
     setError("");
-    const current = rows.find((r) => r.id === rowId);
+    const current = rows.find(r => r.id === rowId);
     if (!current) return;
     const willBeOn = !current[field];
 
@@ -163,23 +163,21 @@ const GM34WalkInspectForm = () => {
       if (willBeOn) openPhotoModal(rowId, "Damage");
     }
 
-    setRows((prev) => prev.map((r) => (r.id === rowId ? updated : r)));
+    setRows(prev => prev.map(r => (r.id === rowId ? updated : r)));
   };
 
   const handleSelectAllGood = (checked) => {
     setSelectAllGood(checked);
-    setRows((prev) =>
-      prev.map((r) => ({
-        ...r,
-        Good: checked,
-        Refurbish: false,
-        Missing: false,
-        Damage: false,
-        RefurbishValue: "0.00",
-        MissingValue: "0.00",
-        ReplaceValue: "0.00",
-      }))
-    );
+    setRows(prev => prev.map(r => ({
+      ...r,
+      Good: checked,
+      Refurbish: false,
+      Missing: false,
+      Damage: false,
+      RefurbishValue: "0.00",
+      MissingValue: "0.00",
+      ReplaceValue: "0.00",
+    })));
   };
 
   const openPhotoModal = (rowId, type) => {
@@ -203,36 +201,32 @@ const GM34WalkInspectForm = () => {
       setError("Photo required.");
       return;
     }
-    const row = rows.find((r) => r.id === modalRowId);
+    const row = rows.find(r => r.id === modalRowId);
     if (!row) return;
     const uploadedPath = await uploadPhoto(photoFile, row.PartId, modalPhotoType);
     if (!uploadedPath) return;
 
-    setRows((prev) =>
-      prev.map((r) =>
+    setRows(prev =>
+      prev.map(r =>
         r.id === modalRowId
-          ? {
-              ...r,
-              [modalPhotoType === "Missing" ? "MissingPhoto" : "DamagePhoto"]: uploadedPath,
-            }
+          ? { ...r, [modalPhotoType === "Missing" ? "MissingPhoto" : "DamagePhoto"]: uploadedPath }
           : r
       )
     );
-
     setShowPhotoModal(false);
     setPhotoFile(null);
     setPhotoPreview(null);
   };
 
   const handleSubmit = async () => {
-    const invalid = rows.find((r) => !r.Good && !r.Refurbish && !r.Missing && !r.Damage);
+    const invalid = rows.find(r => !r.Good && !r.Refurbish && !r.Missing && !r.Damage);
     if (invalid) {
       setShowValidationModal(true);
       return;
     }
     setSubmitting(true);
     try {
-      const dtos = rows.map((r) => ({
+      const dtos = rows.map(r => ({
         LocoNumber: storedLocoNumber,
         LocoClass: storedLocoClass,
         LocoModel: storedLocoModel,
@@ -250,9 +244,8 @@ const GM34WalkInspectForm = () => {
         ReplacePhoto: r.DamagePhoto ?? "No Photo",
       }));
 
-      await axios.post("GM34Inspect/SubmitInspection", dtos);
-      setInfo("Inspection saved successfully!");
-
+      await axios.post("GM35Inspect/SubmitInspection", dtos);
+      setInfo("Inspection submitted successfully!");
       const next = FORM_ORDER[FORM_ORDER.indexOf(formID) + 1];
       if (next) navigate(`/inspect/${next}`);
       else navigate("/choose");
@@ -283,20 +276,11 @@ const GM34WalkInspectForm = () => {
       width: 100,
       renderHeader: () => (
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <input
-            type="checkbox"
-            checked={selectAllGood}
-            onChange={(e) => handleSelectAllGood(e.target.checked)}
-          />{" "}
-          <strong>Good</strong>
+          <input type="checkbox" checked={selectAllGood} onChange={(e) => handleSelectAllGood(e.target.checked)} /> <strong>Good</strong>
         </div>
       ),
       renderCell: (params) => (
-        <input
-          type="checkbox"
-          checked={params.row.Good}
-          onChange={() => handleCheckboxChange(params.row.id, "Good")}
-        />
+        <input type="checkbox" checked={params.row.Good} onChange={() => handleCheckboxChange(params.row.id, "Good")} />
       ),
     },
     { field: "Refurbish", headerName: "Refurbish", width: 120, renderCell: (p) => <input type="checkbox" checked={p.row.Refurbish} onChange={() => handleCheckboxChange(p.row.id, "Refurbish")} /> },
@@ -308,20 +292,18 @@ const GM34WalkInspectForm = () => {
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <Container className="mt-4 mb-4">
         <h3 className="text-center mb-4" style={{ color: "white" }}>{FORM_LABELS[formID]}</h3>
-
         {info && <div style={{ color: "green", background: "white", marginBottom: 8 }}>{info}</div>}
-        {error && <div style={{ color: "red", background: "white", marginBottom: 8 }}>{error}</div>}
-
         {loading ? (
-          <div style={{ display: "flex", justifyContent: "center", padding: "2rem" }}>
-            <Spinner animation="border" />
-          </div>
+          <div style={{ display: "flex", justifyContent: "center", padding: "2rem" }}><Spinner animation="border" /></div>
         ) : (
           <div style={{ height: 580, width: "100%", background: "#fff", borderRadius: 8, padding: 8 }}>
-            <DataGrid rows={rows} columns={columns} disableRowSelectionOnClick />
+            <DataGrid
+              rows={rows}
+              columns={columns}
+              disableRowSelectionOnClick
+            />
           </div>
         )}
-
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20 }}>
           <Button variant="secondary" onClick={handleBackClick}>Back</Button>
           <Button
@@ -341,9 +323,7 @@ const GM34WalkInspectForm = () => {
 
       {/* Photo Modal */}
       <Modal show={showPhotoModal} onHide={() => setShowPhotoModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Upload {modalPhotoType} Photo</Modal.Title>
-        </Modal.Header>
+        <Modal.Header closeButton><Modal.Title>Upload {modalPhotoType} Photo</Modal.Title></Modal.Header>
         <Modal.Body>
           <input type="file" accept="image/*" onChange={handlePhotoFileChange} />
           {photoPreview && <img src={photoPreview} alt="Preview" style={{ width: "100%", marginTop: 10, borderRadius: 6 }} />}
@@ -356,24 +336,16 @@ const GM34WalkInspectForm = () => {
 
       {/* Validation Modal */}
       <Modal show={showValidationModal} onHide={() => setShowValidationModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Validation Error</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Each row must have at least one checkbox selected before continuing.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="primary" onClick={() => setShowValidationModal(false)}>OK</Button>
-        </Modal.Footer>
+        <Modal.Header closeButton><Modal.Title>Validation Error</Modal.Title></Modal.Header>
+        <Modal.Body>Each row must have at least one checkbox selected before continuing.</Modal.Body>
+        <Modal.Footer><Button variant="primary" onClick={() => setShowValidationModal(false)}>OK</Button></Modal.Footer>
       </Modal>
 
       {/* Confirm Back Modal */}
       <Modal show={showConfirmBackModal} onHide={() => setShowConfirmBackModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Navigation</Modal.Title>
-        </Modal.Header>
+        <Modal.Header closeButton><Modal.Title>Confirm Navigation</Modal.Title></Modal.Header>
         <Modal.Body>
-          Are you sure you want to go back? <br />
+          Are you sure you want to go back?<br />
           <strong>All entered data and photos will be lost.</strong>
         </Modal.Body>
         <Modal.Footer>
@@ -385,4 +357,4 @@ const GM34WalkInspectForm = () => {
   );
 };
 
-export default GM34WalkInspectForm;
+export default GM35WalkInspectForm;

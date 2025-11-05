@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../api/axios";
 import { Container, Row, Col, Form, Button, Alert, Card } from "react-bootstrap";
 
 const ChooseInspect = () => {

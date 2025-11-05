@@ -3,7 +3,7 @@ import { Container, Row, Col, Button, Modal, Image, Form, Card } from "react-boo
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import api from "../api/axios";
-import axios from "axios";
+import axios from "../api/axios";
 /*
   Requirements:
     - npm install primereact primeicons

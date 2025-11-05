@@ -198,11 +198,11 @@ const LocoInfoCapture = () => {
       return;
     }
     else if (formData.LocoModelTxt === "GM35") {
-      navigate("/GM35WA001");
+      navigate("/inspectGm35/WA001");
       return;
     }
     else if (formData.LocoModelTxt === "GM36") {
-      navigate("/GM36WA001");
+      navigate("/inspectGm36/WA001");
       return;
     }
   };

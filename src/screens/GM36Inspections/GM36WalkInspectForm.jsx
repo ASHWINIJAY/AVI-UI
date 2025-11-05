@@ -5,32 +5,33 @@ import { DataGrid } from "@mui/x-data-grid";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import axios from "../../api/axios";
 
-const FORM_ORDER = [
-  "BD001", "FL001", "SN001", "CL001", "EL001", "BS001",
-  "LM001", "CB001", "TR001", "MP001", "BL001", "CA001",
-  "ED001", "CF001", "DE001", "RF001"
+export const FORM_ORDER = [
+  "WA001", "FL001", "SN001", "BV001", "CL001", "EL001",
+  "CB001", "BS001", "LM001", "LC001", "TR001", "BP001",
+  "CA001", "ED001", "CF001", "DE001", "RF001"
 ];
 
-const FORM_LABELS = {
-  BD001: "Below Deck From No.1A to 1B",
+export const FORM_LABELS = {
+  WA001: "Below Deck From No.1A to 1B",
   FL001: "Front of Loco Above",
   SN001: "Short Nose",
+  BV001: "Brake Valve Compartment",
   CL001: "Cab of Loco Assistant Entrance",
   EL001: "Elect Cabinet Top Left",
+  CB001: "Circuit Breaker Control Panel",
   BS001: "Battery Knife Switch Compartment",
   LM001: "Left Middle Door",
-  CB001: "Circuit Breaker Control Panel",
+  LC001: "Left Control Panel",
   TR001: "Top Right Panel",
-  MP001: "Middle Panel",
-  BL001: "Bottom Left Panel",
+  BP001: "Bottom Panel",
   CA001: "Central Air Compartment",
   ED001: "Engine and Above Deck",
   CF001: "Compressor Fan Rad Compartment",
-  DE001: "No.2 End above deck",
+  DE001: "No.2 End Above Deck",
   RF001: "Roof Top Inspect",
 };
 
-const GM34WalkInspectForm = () => {
+const GM36WalkInspectForm = () => {
   const { formID } = useParams();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
@@ -58,7 +59,7 @@ const GM34WalkInspectForm = () => {
     const fetchParts = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`GM34Inspect/getParts/${formID}?t=${Date.now()}`);
+        const res = await axios.get(`GM36Inspect/getParts/${formID}?t=${Date.now()}`);
         const data = Array.isArray(res.data) ? res.data : [];
         const prepared = data
           .map((p, idx) => ({
@@ -94,7 +95,7 @@ const GM34WalkInspectForm = () => {
   const getPartCost = async (partId, field) => {
     try {
       const res = await axios.get(
-        `GM34Inspect/getPartCost?partId=${encodeURIComponent(partId)}&field=${encodeURIComponent(field)}`
+        `GM36Inspect/getPartCost?partId=${encodeURIComponent(partId)}&field=${encodeURIComponent(field)}`
       );
       if (typeof res.data === "number") return res.data.toFixed(2);
       return String(res.data ?? "0.00");
@@ -113,7 +114,7 @@ const GM34WalkInspectForm = () => {
       fd.append("locoNumber", storedLocoNumber);
       fd.append("locoModel", storedLocoModel);
 
-      const res = await axios.post("GM34Inspect/UploadPhoto", fd, {
+      const res = await axios.post("GM36Inspect/UploadPhoto", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       return res.data?.path ?? null;
@@ -126,7 +127,7 @@ const GM34WalkInspectForm = () => {
   const deletePhoto = async (path) => {
     if (!path) return;
     try {
-      await axios.post("GM34Inspect/DeletePhoto", { path });
+      await axios.post("GM36Inspect/DeletePhoto", { path });
     } catch {}
   };
 
@@ -250,7 +251,7 @@ const GM34WalkInspectForm = () => {
         ReplacePhoto: r.DamagePhoto ?? "No Photo",
       }));
 
-      await axios.post("GM34Inspect/SubmitInspection", dtos);
+      await axios.post("GM36Inspect/SubmitInspection", dtos);
       setInfo("Inspection saved successfully!");
 
       const next = FORM_ORDER[FORM_ORDER.indexOf(formID) + 1];
@@ -377,12 +378,16 @@ const GM34WalkInspectForm = () => {
           <strong>All entered data and photos will be lost.</strong>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowConfirmBackModal(false)}>Cancel</Button>
-          <Button variant="danger" onClick={confirmGoBack}>Yes, Go Back</Button>
+          <Button variant="secondary" onClick={() => setShowConfirmBackModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmGoBack}>
+            Yes, Go Back
+          </Button>
         </Modal.Footer>
       </Modal>
     </div>
   );
 };
 
-export default GM34WalkInspectForm;
+export default GM36WalkInspectForm;

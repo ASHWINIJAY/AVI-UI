@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { Container, Button, Modal, Spinner } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import axios from "../../api/axios";
+import axios from "../api/axios";
 
-const GE36CL001Inspect = () => {
+const WagonBottomDischargeInspect = () => {
     const navigate = useNavigate();
     const isMobile = useMediaQuery("(max-width:768px)");
-    const storedLocoNumber = localStorage.getItem("locoNumber") ?? "";
-    const storedLocoClass = localStorage.getItem("locoClass") ?? "";
-    const storedLocoModel = localStorage.getItem("locoModel") ?? "";
-    const [formID] = useState("CL001");
+    const storedWagonNumber = localStorage.getItem("wagonNumber") ?? "";
+    const storedWagonGroup = localStorage.getItem("wagonGroup") ?? "";
+    const storedWagonType = localStorage.getItem("wagonType") ?? "";
+    const [formID] = useState("BD002");
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectAllGood, setSelectAllGood] = useState(false);
@@ -28,16 +28,18 @@ const GE36CL001Inspect = () => {
 
     const [showConfirmBackModal, setShowConfirmBackModal] = useState(false);
 
+    const [responseMeta, setResponseMeta] = useState(null); //(Luca) Add
+
     useEffect(() => {
         const fetchParts = async () => {
             setLoading(true);
             try {
-                const res = await axios.get(`GE36CL001/getParts/${formID}?t=${Date.now()}`);
+                const res = await axios.get(`WagonBottomDischargeInspect/getParts/${formID}?t=${Date.now()}`);
                 const data = Array.isArray(res.data) ? res.data : [];
                 const prepared = data
                     .map((p, idx) => ({
                         id: idx + 1,
-                        PartId: (p.PartID ?? p.partID ?? "").toString(),
+                        PartType: (p.PartType ?? p.partType ?? "").toString(),
                         PartDescr: p.PartDescr ?? p.partDescr ?? "",
                         Good: false,
                         Refurbish: false,
@@ -48,11 +50,12 @@ const GE36CL001Inspect = () => {
                         ReplaceValue: "0.00",
                         DamagePhoto: null,
                         MissingPhoto: null,
+                        MechanismQty: 0
                     }))
                     .sort((a, b) => {
-                        const numA = parseInt((a.PartId.match(/\d+/) || ["0"])[0], 10) || 0;
-                        const numB = parseInt((b.PartId.match(/\d+/) || ["0"])[0], 10) || 0;
-                        if (numA === numB) return a.PartId.localeCompare(b.PartId);
+                        const numA = parseInt((a.PartType.match(/\d+/) || ["0"])[0], 10) || 0;
+                        const numB = parseInt((b.PartType.match(/\d+/) || ["0"])[0], 10) || 0;
+                        if (numA === numB) return a.PartType.localeCompare(b.PartType);
                         return numA - numB;
                     });
                 setRows(prepared);
@@ -79,10 +82,10 @@ const GE36CL001Inspect = () => {
         };
     }, [photoPreview]);
 
-    const getPartCost = async (partId, field) => {
+    const getPartCost = async (partType, field) => {
         try {
             const res = await axios.get(
-                `GE36CL001/getPartCost?partId=${encodeURIComponent(partId)}&field=${encodeURIComponent(field)}`
+                `WagonBottomDischargeInspect/getPartCost?partType=${encodeURIComponent(partType)}&field=${encodeURIComponent(field)}`
             );
             if (!res || res.status !== 200) return "0.00";
             // Ensure we return a string
@@ -97,18 +100,18 @@ const GE36CL001Inspect = () => {
         }
     };
 
-    const uploadPhoto = async (file, partId, photoType) => {
+    const uploadPhoto = async (file, partType, photoType) => {
         if (!file) return null;
         try {
             const fd = new FormData();
             fd.append("file", file);
             fd.append("formId", formID);
-            fd.append("partId", partId);
+            fd.append("partType", partType);
             fd.append("photoType", photoType);
-            fd.append("locoNumber", storedLocoNumber);
-            fd.append("locoModel", storedLocoModel);
+            fd.append("wagonNumber", storedWagonNumber);
+            fd.append("wagonGroup", storedWagonGroup);
 
-            const res = await axios.post("GE36CL001/UploadPhoto", fd, {
+            const res = await axios.post("WagonBottomDischargeInspect/UploadPhoto", fd, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
             if (res.data?.path) return res.data.path;
@@ -124,7 +127,7 @@ const GE36CL001Inspect = () => {
     const deletePhoto = async (photoPath) => {
         if (!photoPath) return;
         try {
-            await axios.post("GE36CL001/DeletePhoto", { path: photoPath });
+            await axios.post("WagonBottomDischargeInspect/DeletePhoto", { path: photoPath });
         } catch (ex) {
             console.warn("DeletePhoto failed", ex);
         }
@@ -166,14 +169,14 @@ const GE36CL001Inspect = () => {
             updatedRow.Good = true;
         } else if (field === "Refurbish") {
             updatedRow.Refurbish = true;
-            updatedRow.RefurbishValue = await getPartCost(current.PartId, "Refurbish");
+            updatedRow.RefurbishValue = await getPartCost(current.PartType, "Refurbish");
         } else if (field === "Missing") {
             updatedRow.Missing = true;
-            updatedRow.MissingValue = await getPartCost(current.PartId, "Missing");
+            updatedRow.MissingValue = await getPartCost(current.PartType, "Missing");
             openPhotoModal(rowId, "Missing");
         } else if (field === "Damage") {
             updatedRow.Damage = true;
-            updatedRow.ReplaceValue = await getPartCost(current.PartId, "Replace");
+            updatedRow.ReplaceValue = await getPartCost(current.PartType, "Replace");
             openPhotoModal(rowId, "Damage");
         }
 
@@ -182,9 +185,32 @@ const GE36CL001Inspect = () => {
 
 
 
-    const handleSelectAllGood = (checked) => {
+    const handleSelectAllGood = async (checked) => { //(Luca) Change
         setSelectAllGood(checked);
-        setRows((prev) => prev.map((r) => ({ ...r, Good: checked, Refurbish: false, Missing: false, Damage: false, RefurbishValue: "0.00", MissingValue: "0.00", ReplaceValue: "0.00" })));
+
+        //(Luca) Add
+        if (checked) {
+            for (const r of rows) {
+                if (r.MissingPhoto) await deletePhoto(r.MissingPhoto);
+                if (r.DamagePhoto) await deletePhoto(r.DamagePhoto);
+            }
+        }
+
+        setRows((prev) =>
+            prev.map((r) =>
+            ({
+                ...r,
+                Good: checked,
+                Refurbish: false,
+                Missing: false,
+                Damage: false,
+                RefurbishValue: "0.00",
+                MissingValue: "0.00",
+                ReplaceValue: "0.00",
+                MissingPhoto: null, //(Luca) Add
+                DamagePhoto: null //(Luca) Add
+
+            })));
     };
 
     const openPhotoModal = (rowId, photoType) => {
@@ -235,7 +261,7 @@ const GE36CL001Inspect = () => {
         const row = rows.find((r) => r.id === modalRowId);
         if (!row) { setError("Row not found."); return; }
 
-        const uploadedPath = await uploadPhoto(photoFile, row.PartId, modalPhotoType);
+        const uploadedPath = await uploadPhoto(photoFile, row.PartType, modalPhotoType);
         if (!uploadedPath) { setError("Upload failed."); return; }
 
         setRows((prev) => prev.map((r) => {
@@ -265,7 +291,7 @@ const GE36CL001Inspect = () => {
             return;
         }
 
-        if (!storedLocoNumber) {
+        if (!storedWagonNumber) {
             setError("Missing loco info.");
             return;
         }
@@ -276,33 +302,51 @@ const GE36CL001Inspect = () => {
         setSubmitting(true);
         try {
             const dtos = rows.map((r) => ({
-                LocoNumber: parseInt(storedLocoNumber),
-                LocoModel: storedLocoModel ?? "",
-                LocoClass: storedLocoClass ?? "",
+                WagonNumber: parseInt(storedWagonNumber),
+                WagonGroup: storedWagonGroup ?? "",
+                WagonType: storedWagonType ?? "",
                 FormID: formID,
-                PartID: r.PartId,
                 PartDescr: r.PartDescr ?? "",
                 GoodCheck: r.Good ? "Yes" : "No",
                 RefurbishCheck: r.Refurbish ? "Yes" : "No",
                 MissingCheck: r.Missing ? "Yes" : "No",
                 DamageCheck: r.Damage ? "Yes" : "No",
+                MechanismQty: parseInt(r.MechanismQty || 0),
                 RefurbishValue: r.RefurbishValue ?? "0.00",
                 MissingValue: r.MissingValue ?? "0.00",
                 ReplaceValue: r.ReplaceValue ?? "0.00",
                 MissingPhoto: r.MissingPhoto ?? "No Photo",
                 DamagePhoto: r.DamagePhoto ?? "No Photo",
             }));
-            await axios.post("GE36CL001/SubmitInspection", dtos,
+            const res = await axios.post("WagonBottomDischargeInspect/SubmitInspection", dtos,
                 { headers: { "Content-Type": "application/json" } }
             );
-            setInfo("Inspection submitted successfully.");
-            navigate("/GE36EC001")
+
+            const meta = res.data || {};
+            setResponseMeta(meta); // (Luca) Add
+
+            handleNavigation(meta); // (Luca) Add
+
         } catch (ex) {
             console.error(ex);
             setError("Submit failed.");
         } finally {
             setSubmitting(false);
         }
+    };
+
+    //(Luca) Add
+    const handleNavigation = (meta) => {
+        const doors = meta.wagonDoors || "N/A";
+        const stanchions = meta.wagonStan || "N/A";
+        const twistlocks = meta.wagonTwist || "N/A";
+
+        if ((doors === "N/A" || doors === "") && (twistlocks === "N/A" || twistlocks === "") && (stanchions === "N/A" || stanchions === ""))
+            return navigate("/wagonfloor");
+
+        if (doors === "Yes") return navigate("/wagondoors");
+        if (twistlocks === "Yes") return navigate("/wagontwist");
+        if (stanchions === "Yes") return navigate("/wagonstan");
     };
 
     const handleBackClick = () => {
@@ -340,7 +384,7 @@ const GE36CL001Inspect = () => {
 
     const columns = [
         { field: "id", headerName: "No.", width: 80 },
-        { field: "PartId", headerName: "Part ID", width: 120 },
+        { field: "PartType", headerName: "Part Type", width: 120 },
         { field: "PartDescr", headerName: "Description", flex: 1, minWidth: 220 },
         {
             field: "Good",
@@ -381,12 +425,29 @@ const GE36CL001Inspect = () => {
             ),
         },
         {
+            field: "MechanismQty",
+            headerName: "Mechanism Qty",
+            width: 140,
+            renderCell: (params) => (
+                <input
+                    type="number"
+                    className="form-control form-control-sm"
+                    value={params.row.MechanismQty ?? ""}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        setRows(prev =>
+                            prev.map(r => r.id === params.row.id ? { ...r, MechanismQty: value } : r)
+                        );
+                    }}
+                />
+            )
+        },
+        {
             field: "RefurbishValue",
             headerName: "Refurbish Value",
             width: 140,
-            hidden: true,
             renderCell: (params) => (
-                <input style={{ display: "none" }} className="form-control form-control-sm" readOnly value={params.row.RefurbishValue} />
+                <input className="form-control form-control-sm" readOnly value={params.row.RefurbishValue} />
             )
         },
         {
@@ -394,7 +455,7 @@ const GE36CL001Inspect = () => {
             headerName: "Missing Value",
             width: 140,
             renderCell: (params) => (
-                <input style={{ display: "none" }} className="form-control form-control-sm" readOnly value={params.row.MissingValue} />
+                <input className="form-control form-control-sm" readOnly value={params.row.MissingValue} />
             )
         },
         {
@@ -402,7 +463,7 @@ const GE36CL001Inspect = () => {
             headerName: "Replace Value",
             width: 140,
             renderCell: (params) => (
-                <input style={{ display: "none" }} className="form-control form-control-sm" readOnly value={params.row.ReplaceValue} />
+                <input className="form-control form-control-sm" readOnly value={params.row.ReplaceValue} />
             )
         }
     ];
@@ -410,7 +471,7 @@ const GE36CL001Inspect = () => {
     return (
         <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
             <Container className="mt-4 mb-4">
-                <h3 className="text-center mb-4" style={{ color: "white" }}>Cab Loco Inspect</h3>
+                <h3 className="text-center mb-4" style={{ color: "white" }}>Bottom Discharge Inspect</h3>
                 {info && <div style={{ color: "green", backgroundColor: "white", marginBottom: 8 }}>{info}</div>}
 
                 {loading ? (
@@ -424,7 +485,7 @@ const GE36CL001Inspect = () => {
 
                         {rows.map((row) => (
                             <div key={row.id} style={{ border: "1px solid #ddd", padding: 12, borderRadius: 8, marginBottom: 12, background: "#fff" }}>
-                                <div style={{ marginBottom: 6 }}><strong>{row.PartId}</strong> {row.PartDescr}</div>
+                                <div style={{ marginBottom: 6 }}><strong>{row.PartType}</strong> {row.PartDescr}</div>
 
                                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                                     <label style={{ cursor: "pointer" }}>
@@ -445,9 +506,10 @@ const GE36CL001Inspect = () => {
                                 </div>
 
                                 <div style={{ marginTop: 8 }}>
-                                    <input style={{ display: "none" }} className="form-control form-control-sm" readOnly value={row.RefurbishValue} placeholder="Refurbish Value" />
-                                    <input style={{ display: "none" }} className="form-control form-control-sm mt-1" readOnly value={row.MissingValue} placeholder="Missing Value" />
-                                    <input style={{ display: "none" }} className="form-control form-control-sm mt-1" readOnly value={row.ReplaceValue} placeholder="Replace Value" />
+                                    <input className="form-control form-control-sm" value={row.MechanismQty} placeholder="Mechanism Qty" />
+                                    <input className="form-control form-control-sm mt-1" readOnly value={row.RefurbishValue} placeholder="Refurbish Value" />
+                                    <input className="form-control form-control-sm mt-1" readOnly value={row.MissingValue} placeholder="Missing Value" />
+                                    <input className="form-control form-control-sm mt-1" readOnly value={row.ReplaceValue} placeholder="Replace Value" />
                                 </div>
 
                                 <div style={{ marginTop: 8 }}>
@@ -465,13 +527,14 @@ const GE36CL001Inspect = () => {
                             initialState={{
                                 columns: {
                                     columnVisibilityModel: {
-                                        RefurbishValue: false,
-                                        MissingValue: false,
-                                        ReplaceValue: false// hide it on load
+                                        RefurbishValue: false, //(Luca) Change
+                                        MissingValue: false, //(Luca) Change
+                                        ReplaceValue: false //(Luca) Change
                                     },
                                 },
                             }}
                             disableRowSelectionOnClick
+                            disableColumnSorting //(Luca) Add
                         />
                     </div>
                 )}
@@ -538,4 +601,4 @@ const GE36CL001Inspect = () => {
     );
 };
 
-export default GE36CL001Inspect;
+export default WagonBottomDischargeInspect;
