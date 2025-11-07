@@ -5,6 +5,7 @@ import axios from "../api/axios";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { format } from "date-fns";
+import { getCachedDataWhenOffline } from "../utils/offlineHelper";
 
 const LocoInfoCapture = () => {
   const navigate = useNavigate();
@@ -40,12 +41,15 @@ const LocoInfoCapture = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessages, setErrorMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-
+const [locoList, setLocoList] = useState([]);
+const [locoMasterList, setLocoMasterList] = useState([]);
   // Response metadata from backend (used for navigation)
   const [responseMeta, setResponseMeta] = useState(null);
 
   useEffect(() => {
     if (storedLocoNumber) {
+      try
+      {
       const locoNumberInt = parseInt(storedLocoNumber, 10);
       axios
         .get(`/LocoInfoCapture/${locoNumberInt}`)
@@ -57,6 +61,28 @@ const LocoInfoCapture = () => {
           }))
         )
         .catch((err) => console.error("Auto-populate error:", err));
+      }
+      catch{
+        const isOffline =
+            !navigator.onLine ||
+            err.message === "Network Error" ||
+            err.code === "ERR_NETWORK";
+        
+          if (isOffline) {
+            const locoNumberInt = parseInt(storedLocoNumber, 10);
+  const cacheKey = "locoMasterList";
+             const cachedData = getCachedDataWhenOffline(cacheKey, locoNumberInt);
+            if (cachedData) {
+              setFormData((prev) => ({
+                ...prev,
+                InventoryNumTxt: cachedData.inventoryNumber || "",
+                NetBookVal: cachedData.netBookValue || "N/A",
+              }));
+              
+              //return; // ✅ Stop here — don’t call API
+            }
+          }
+      }
     }
 
     if (navigator.geolocation) {
@@ -167,8 +193,24 @@ const LocoInfoCapture = () => {
       setShowSuccess(true);
     } catch (err) {
       console.error(err);
+
+      console.error("Submit error:", err);
+       const isOffline =
+    !navigator.onLine ||
+    err.message === "Network Error" ||
+    err.code === "ERR_NETWORK";
+
+  if (isOffline) {
+    const offlineData = JSON.parse(localStorage.getItem("offlineLocoCaptureForms") || "[]");
+        offlineData.push({ ...formData, timestamp: new Date().toISOString() });
+        localStorage.setItem("offlineLocoCaptureForms", JSON.stringify(offlineData));
+        alert("No internet connection. Data saved locally and will sync automatically.");
+        setShowSuccess(true);
+  }else
+  {
       setErrorMessages(["Error submitting loco info. See console for details."]);
       setShowError(true);
+}
     } finally {
       setLoading(false);
     }

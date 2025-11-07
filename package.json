@@ -20,6 +20,7 @@
     "bootstrap": "^5.3.8",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
+    "html2pdf.js": "^0.12.1",
     "leaflet": "^1.9.4",
     "primeflex": "^4.0.0",
     "primeicons": "^7.0.0",

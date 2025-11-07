@@ -23,7 +23,7 @@ const GE36RF001Inspect = () => {
     const [error, setError] = useState("");
     const [info, setInfo] = useState("");
     const [submitting, setSubmitting] = useState(false);
-
+const storedUserId = localStorage.getItem("userId") ?? "";
     const [showValidationModal, setShowValidationModal] = useState(false);
 
     const [showConfirmBackModal, setShowConfirmBackModal] = useState(false);
@@ -295,6 +295,7 @@ const GE36RF001Inspect = () => {
             await axios.post("GE36RF001/SubmitInspection", dtos,
                 { headers: { "Content-Type": "application/json" } }
             );
+            await axios.post(`Dashboard/insertLoco?locoNumber=${encodeURIComponent(parseInt(storedLocoNumber))}&userId=${encodeURIComponent(storedUserId)}`);
             setInfo("Inspection submitted successfully.");
             localStorage.removeItem("locoNumber");
             localStorage.removeItem("locoModel");

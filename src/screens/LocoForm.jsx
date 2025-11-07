@@ -5,6 +5,7 @@ import api from "../api/axios";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import Loader from "../components/Loader"; // 👈 common loader
+import { getCachedDataWhenOffline } from "../utils/offlineHelper";
 const LocoForm = () => {
   const navigate = useNavigate();
   const storedLocoNumber = localStorage.getItem("locoNumber");
@@ -117,11 +118,22 @@ const [loading, setLoading] = useState(false);
     err.code === "ERR_NETWORK";
 
   if (isOffline) {
-    const offlineData = JSON.parse(localStorage.getItem("offlineForms") || "[]");
-        offlineData.push({ ...formData, timestamp: new Date().toISOString() });
-        localStorage.setItem("offlineForms", JSON.stringify(offlineData));
-        alert("No internet connection. Data saved locally and will sync automatically.");
+     const cachedData = getCachedDataWhenOffline(cacheKey, endpoint);
+    if (cachedData) {
+      setFormData((prev) => ({
+        ...prev,
+        InventoryNumTxt: cachedData.inventoryNumber || "",
+        NetBookVal: cachedData.netBookValue || "N/A",
+      }));
+      alert("No internet connection. Data saved locally and will sync automatically.");
         navigate("/inspection");
+      //return; // ✅ Stop here — don’t call API
+    }
+    else
+    {
+
+    }
+        
   }
     } finally {
       setSubmitting(false);

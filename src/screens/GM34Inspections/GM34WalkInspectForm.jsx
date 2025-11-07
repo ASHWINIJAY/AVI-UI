@@ -52,7 +52,7 @@ const GM34WalkInspectForm = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [showConfirmBackModal, setShowConfirmBackModal] = useState(false);
-
+const storedUserId = localStorage.getItem("userId") ?? "";
   // Fetch parts
   useEffect(() => {
     const fetchParts = async () => {
@@ -255,7 +255,12 @@ const GM34WalkInspectForm = () => {
 
       const next = FORM_ORDER[FORM_ORDER.indexOf(formID) + 1];
       if (next) navigate(`/inspect/${next}`);
-      else navigate("/choose");
+      const cleanFormID = formID?.trim().toUpperCase();
+     
+if (cleanFormID === "RF001") {
+ const res = await axios.post(`Dashboard/insertLoco?locoNumber=${encodeURIComponent(parseInt(storedLocoNumber))}&userId=${encodeURIComponent(storedUserId)}`);
+  navigate("/choose");
+}
     } catch {
       setError("Submit failed.");
     } finally {

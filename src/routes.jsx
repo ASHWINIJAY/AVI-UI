@@ -54,7 +54,7 @@ import E18LV001Inspect from './screens/E18Inspections/E18LV001Inspect.jsx';
 import E18MA001Inspect from './screens/E18Inspections/E18MA001Inspect.jsx';
 import E18MB001Inspect from './screens/E18Inspections/E18MB001Inspect.jsx';
 import E18RF001Inspect from './screens/E18Inspections/E18RF001Inspect.jsx';
-
+import E18WalkInspectForm from './screens/E18Inspections/E18WalkInspectForm.jsx';
 
 import GM34BD001Inspect from './screens/GM34Inspections/GM34BD001Inspect.jsx';
 import GM34WalkInspectForm from './screens/GM34Inspections/GM34WalkInspectForm.jsx';
@@ -108,7 +108,10 @@ import WagonBottomDischargeInspect from './screens/WagonBottomDischargeInspect.j
 import WagonStanchionsInspect from './screens/WagonStanchionsInspect.jsx';
 import WagonTankersInspect from './screens/WagonTankersInspect.jsx';
 import WagonTwistlocksInspect from './screens/WagonTwistlocksInspect.jsx';
+import WagonDashboard from './screens/WagonDashboard.jsx';
 
+import PdfQuote from './pdf/PdfQuote.jsx';
+import LocoDashboard from './screens/LocoDashboard.jsx';
 
 import { hasOfflineData, syncOfflineData } from "./utils/offlineSync";
 import api from "./api/axios";
@@ -202,7 +205,10 @@ export default function AppRoutes() {
            <Route path="wagon" element={<WagonLandingPage />} />
           <Route path="landing" element={<LandingPage />} />
           <Route path="map" element={<MapView />} />
-          <Route path="dashboard" element={<DashBoardItems />} />
+          <Route path="dashboard1" element={<DashBoardItems />} />
+          <Route path="wagondashboard" element={<WagonDashboard />} />
+          <Route path="dashboard" element={<LocoDashboard />} />
+          
           <Route path="locoform" element={<LocoForm />} />
           <Route
         path="/inspection/:formId?"
@@ -305,7 +311,10 @@ export default function AppRoutes() {
   path="/E18RF001"
   element={<PrivateRoute><E18RF001Inspect/></PrivateRoute>}
 />
-
+<Route
+  path="/inspectE18"
+  element={<PrivateRoute><E18WalkInspectForm/></PrivateRoute>}
+/>
      <Route
                 path="/GE34BD001"
                 element={<PrivateRoute><GE34BD001Inspect /></PrivateRoute>}
@@ -511,10 +520,18 @@ export default function AppRoutes() {
                 path="/wagonstan"
                 element={<PrivateRoute><WagonStanchionsInspect /></PrivateRoute>}
             />
+             <Route
+                path="/wagondash"
+                element={<PrivateRoute><WagonDashboard /></PrivateRoute>}
+            />
+            <Route
+                path="/pdfquote"
+                element={<PrivateRoute><PdfQuote /></PrivateRoute>}
+            />
         {/* Normal users → existing flat routes */}
         <Route path="/landing" element={<PrivateRoute><LandingPage /></PrivateRoute>} />
         <Route path="/welcome" element={<PrivateRoute><WelcomePage /></PrivateRoute>} />
-        <Route path="/dashboard" element={<PrivateRoute><DashBoardItems /></PrivateRoute>} />
+        <Route path="/dashboard" element={<PrivateRoute><LocoDashboard /></PrivateRoute>} />
         <Route path="/locoform" element={<PrivateRoute><LocoForm /></PrivateRoute>} />
         <Route
         path="/inspection/:formId?"

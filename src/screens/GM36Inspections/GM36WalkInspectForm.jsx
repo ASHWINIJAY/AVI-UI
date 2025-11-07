@@ -6,7 +6,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import axios from "../../api/axios";
 
 export const FORM_ORDER = [
-  "WA001", "FL001", "SN001", "BV001", "CL001", "EL001",
+  "WA001", "FL001", "SN001", "BV001", "CL001", "EC001",
   "CB001", "BS001", "LM001", "LC001", "TR001", "BP001",
   "CA001", "ED001", "CF001", "DE001", "RF001"
 ];
@@ -17,7 +17,7 @@ export const FORM_LABELS = {
   SN001: "Short Nose",
   BV001: "Brake Valve Compartment",
   CL001: "Cab of Loco Assistant Entrance",
-  EL001: "Elect Cabinet Top Left",
+  EC001: "Elect Cabinet Top Left",
   CB001: "Circuit Breaker Control Panel",
   BS001: "Battery Knife Switch Compartment",
   LM001: "Left Middle Door",
@@ -39,7 +39,7 @@ const GM36WalkInspectForm = () => {
   const storedLocoNumber = localStorage.getItem("locoNumber") ?? "";
   const storedLocoClass = localStorage.getItem("locoClass") ?? "";
   const storedLocoModel = localStorage.getItem("locoModel") ?? "";
-
+const storedUserId = localStorage.getItem("userId") ?? "";
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectAllGood, setSelectAllGood] = useState(false);
@@ -255,8 +255,14 @@ const GM36WalkInspectForm = () => {
       setInfo("Inspection saved successfully!");
 
       const next = FORM_ORDER[FORM_ORDER.indexOf(formID) + 1];
-      if (next) navigate(`/inspect/${next}`);
-      else navigate("/choose");
+      if (next) navigate(`/inspectGm36/${next}`);
+      
+      const cleanFormID = formID?.trim().toUpperCase();
+     
+if (cleanFormID === "RF001") {
+ const res = await axios.post(`Dashboard/insertLoco?locoNumber=${encodeURIComponent(parseInt(storedLocoNumber))}&userId=${encodeURIComponent(storedUserId)}`);
+  navigate("/choose");
+}
     } catch {
       setError("Submit failed.");
     } finally {

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { Container, Row, Col, Form, Button, Alert, Card } from "react-bootstrap";
 import Loader from "../components/Loader"; // 👈 common loader
+import { getCachedDataWhenOffline } from "../utils/offlineHelper";
 const LandingPage = () => {
   const [locoNumber, setLocoNumber] = useState("");
   const [error, setError] = useState("");
@@ -43,11 +44,11 @@ const [loading, setLoading] = useState(false);
       setError("Loco Number is required.");
       return;
     }
-
+const locoNumberInt = parseInt(locoNumber, 10);
     try {
       const token = localStorage.getItem("token");
 setLoading(true);
-const locoNumberInt = parseInt(locoNumber, 10);
+
       // 🔹 Try validating with API
       const response = await api.get(
         `Landing/validateLoco/${locoNumberInt}`,
@@ -89,29 +90,26 @@ if(response.data.message!=null)
     } catch (err) {
       console.warn("API failed, fallback to offline validation:", err);
 
-      if (err.response.status === 404) 
+      if (err?.response?.status === 404) 
       {
         alert("LocoModel not found, Please try another loco number");
           return;
       }
-      // 🔹 Offline validation from stored list
-      const cached = localStorage.getItem("locoList");
-      if (cached) {
-        const offlineList = JSON.parse(cached);
-        const exists = offlineList.some(
-    (l) => String(l.locoNumber) === String(locoNumber) // ✅ normalize types
-  );
-
-
-        if (exists) {
-          localStorage.setItem("locoNumber", locoNumber);
-          navigate("/locoinfo");
-        } else {
-          setError("Invalid Loco Number (offline check).");
-        }
-      } else {
-        setError("No cached loco list available. Please connect to internet.");
-      }
+      //const locoNumberInt = parseInt(storedLocoNumber, 10);
+        const cacheKey = "locoMasterList";
+        console.log(cacheKey);
+                   const cachedData = getCachedDataWhenOffline(cacheKey, locoNumberInt);
+                  if (cachedData) {
+                    console.log(cachedData);
+localStorage.setItem("locoNumber", locoNumberInt.toString());
+        localStorage.setItem("locoClass", cachedData.locoClass);
+        localStorage.setItem("locoModel", cachedData.locoModel);
+        navigate("/locoinfo");
+                  }
+                  else{
+                    console.log("test");
+                  }
+      
     }
     finally{
       setLoading(false);

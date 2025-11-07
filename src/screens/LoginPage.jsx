@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { Form, Button, Container, Row, Col, Alert, Card } from "react-bootstrap";
@@ -21,6 +21,8 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+const [locoList, setLocoList] = useState([]);
+const [locoMasterList, setLocoMasterList] = useState([]);
 
   // 🔹 Helper function for navigation
   const redirectUser = (role) => {
@@ -33,6 +35,55 @@ const LoginPage = () => {
       navigate("/choose");
     }
   };
+ useEffect(() => {
+    const fetchLocos = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await api.get("Landing/list", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.data) {
+          setLocoList(response.data);
+          // Store in localStorage for offline use
+          localStorage.setItem("locoList", JSON.stringify(response.data));
+        }
+      } catch (err) {
+        console.error("Failed to fetch from API, fallback to localStorage:", err);
+        const cached = localStorage.getItem("locoList");
+        if (cached) {
+          setLocoList(JSON.parse(cached));
+        }
+      }
+    };
+
+    fetchLocos();
+  }, []);
+
+ useEffect(() => {
+    const getAllLocos = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await api.get("LocoInfoCapture/getAllLocos", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.data) {
+          setLocoMasterList(response.data);
+          // Store in localStorage for offline use
+          localStorage.setItem("locoMasterList", JSON.stringify(response.data));
+        }
+      } catch (err) {
+        console.error("Failed to fetch from API, fallback to localStorage:", err);
+        const cached = localStorage.getItem("locoMasterList");
+        if (cached) {
+          setLocoMasterList(JSON.parse(cached));
+        }
+      }
+    };
+
+    getAllLocos();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

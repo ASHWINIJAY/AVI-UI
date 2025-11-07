@@ -39,7 +39,7 @@ const GM35WalkInspectForm = () => {
   const storedLocoClass = localStorage.getItem("locoClass") ?? "";
   const storedLocoModel = localStorage.getItem("locoModel") ?? "";
   const userId = localStorage.getItem("userId") ?? "";
-
+const storedUserId = localStorage.getItem("userId") ?? "";
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectAllGood, setSelectAllGood] = useState(false);
@@ -247,8 +247,13 @@ const GM35WalkInspectForm = () => {
       await axios.post("GM35Inspect/SubmitInspection", dtos);
       setInfo("Inspection submitted successfully!");
       const next = FORM_ORDER[FORM_ORDER.indexOf(formID) + 1];
-      if (next) navigate(`/inspect/${next}`);
-      else navigate("/choose");
+      if (next) navigate(`/inspectGm35/${next}`);
+      const cleanFormID = formID?.trim().toUpperCase();
+     
+if (cleanFormID === "RF001") {
+ const res = await axios.post(`Dashboard/insertLoco?locoNumber=${encodeURIComponent(parseInt(storedLocoNumber))}&userId=${encodeURIComponent(storedUserId)}`);
+  navigate("/choose");
+}
     } catch {
       setError("Submit failed.");
     } finally {

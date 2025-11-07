@@ -111,7 +111,7 @@ const WagonInfo = () => {
     localStorage.removeItem("wagonNumber");
     localStorage.removeItem("wagonGroup");
     localStorage.removeItem("wagonType");
-    navigate("/choose");
+    navigate("/wagonland");
   };
 
   // Client-side validation before submit
@@ -248,6 +248,8 @@ const WagonInfo = () => {
             if (brakeType === "Air Brake" || brakeType === "Dual Brake") return navigate("/airbrakeparts");
             if (brakeType === "Vacuum Brake") return navigate("/vacbrakeparts");
         }
+
+        if (lift === "No" && brake === "Yes") return navigate("/wagonparts");
 
         if (lift === "Yes" && brake === "Yes") {
             if (wagonType === "Tanker") return navigate("/wagontanker");

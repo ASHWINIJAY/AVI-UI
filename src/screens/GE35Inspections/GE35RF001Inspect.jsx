@@ -11,6 +11,7 @@ const GE35RF001Inspect = () => {
     const storedLocoNumber = localStorage.getItem("locoNumber") ?? "";
     const storedLocoClass = localStorage.getItem("locoClass") ?? "";
     const storedLocoModel = localStorage.getItem("locoModel") ?? "";
+    const storedUserId = localStorage.getItem("userId") ?? "";
     const [formID] = useState("RF001");
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -294,7 +295,7 @@ const GE35RF001Inspect = () => {
             }));
             await axios.post("GE35RF001/SubmitInspection", dtos,
                 { headers: { "Content-Type": "application/json" } }
-            );
+            ); await axios.post(`Dashboard/insertLoco?locoNumber=${encodeURIComponent(parseInt(storedLocoNumber))}&userId=${encodeURIComponent(storedUserId)}`);
             setInfo("Inspection submitted successfully.");
             localStorage.removeItem("locoNumber");
             localStorage.removeItem("locoModel");

@@ -24,6 +24,7 @@ const E18RF001Inspect = () => {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [submitting, setSubmitting] = useState(false);
+const storedUserId = localStorage.getItem("userId") ?? "";
 
   useEffect(() => {
     const fetchParts = async () => {
@@ -262,6 +263,8 @@ const E18RF001Inspect = () => {
         ReplacePhoto: r.DamagePhoto ?? null, 
       }));
       await axios.post("E18RF001/SubmitInspection", dtos);
+       await axios.post(`Dashboard/insertLoco?locoNumber=${encodeURIComponent(parseInt(storedLocoNumber))}&userId=${encodeURIComponent(storedUserId)}`);
+                
       setInfo("Inspection submitted successfully.");
       navigate("/choose");
     } catch (ex) {

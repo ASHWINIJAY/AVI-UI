@@ -28,6 +28,8 @@ const WagonPartsInspect = () => {
 
     const [showConfirmBackModal, setShowConfirmBackModal] = useState(false);
 
+    const [responseMeta, setResponseMeta] = useState(null); //PLEASE ADD
+
     useEffect(() => {
         const fetchParts = async () => {
             setLoading(true);
@@ -317,16 +319,23 @@ const WagonPartsInspect = () => {
                 { headers: { "Content-Type": "application/json" } }
             );
 
+            const meta = res.data || {};
+            setResponseMeta(meta); //PLEASE ADD
+
             const brakeType = res.data?.brakeType;
+            const brakeLapsed = res.data?.brakeLapsed;
 
             setInfo("Inspection submitted successfully.");
 
-            if (brakeType === "Air Brake" || brakeType === "Dual Brake") {
+            if (brakeType === "Air Brake" || brakeType === "Dual Brake" && brakeLapsed === "No" || brakeLapsed === "N/A") {
                 navigate("/airbrakeparts");
-            } else if (brakeType === "Vacuum Brake") {
+                return;
+            } else if (brakeType === "Vacuum Brake" && brakeLapsed === "No" || brakeLapsed === "N/A") {
                 navigate("/vacbrakeparts");
-            } else {
-                console.warn("Unknown brake type:", brakeType);
+                return;
+            } else if (brakeLapsed === "Yes") {
+                handleNavigation(meta); //PLEASE ADD
+                return;
             }
 
         } catch (ex) {
@@ -335,6 +344,20 @@ const WagonPartsInspect = () => {
         } finally {
             setSubmitting(false);
         }
+    };
+
+    //PLEASE ADD
+    const handleNavigation = (meta) => {
+        const doors = meta.wagonDoors || "N/A";
+        const stanchions = meta.wagonStan || "N/A";
+        const twistlocks = meta.wagonTwist || "N/A";
+
+        if ((doors === "N/A" || doors === "") && (twistlocks === "N/A" || twistlocks === "") && (stanchions === "N/A" || stanchions === ""))
+            return navigate("/wagonfloor");
+
+        if (doors === "Yes") return navigate("/wagondoors");
+        if (twistlocks === "Yes") return navigate("/wagontwist");
+        if (stanchions === "Yes") return navigate("/wagonstan");
     };
 
     const handleBackClick = () => {

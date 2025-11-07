@@ -66,7 +66,17 @@ export default function MasterForm() {
               onClick={handleLinkClick}
             >
               <FaTachometerAlt className="menu-icon" />
-              <span>Dashboard</span>
+              <span>Loco Dashboard</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/master/wagondashboard"
+              className="menu-btn admin-btn ins"
+              onClick={handleLinkClick}
+            >
+              <FaTachometerAlt className="menu-icon" />
+              <span>Wagon Dashboard</span>
             </Link>
           </li>
           <li>

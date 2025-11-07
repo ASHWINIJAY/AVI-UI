@@ -2,6 +2,7 @@ import api from "../api/axios";
 
 const OFFLINE_KEYS = [
   { key: "offlineForms", url: "InfoLocosFinal/submit", isFormData: true },
+  { key: "offlineLocoCaptureForms", url: "LocoInfoCapture/submit", isFormData: true },
   { key: "offlineWalkForms", url: "WalkInspect/submit", isFormData: false },
    { key: "offlineFrontLoco", url: "FrontLocoInspect/submit", isFormData: false },
    { key: "offlineShortNose", url: "ShortNoseInspect/submit", isFormData: false },

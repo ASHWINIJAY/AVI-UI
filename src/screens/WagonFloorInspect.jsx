@@ -4,6 +4,7 @@ import { Container, Button, Modal, Spinner } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import axios from "../api/axios";
+import QuotePdf from "../pdf/PdfQuote";
 
 const WagonFloorInspect = () => {
     const navigate = useNavigate();
@@ -11,6 +12,7 @@ const WagonFloorInspect = () => {
     const storedWagonNumber = localStorage.getItem("wagonNumber") ?? "";
     const storedWagonGroup = localStorage.getItem("wagonGroup") ?? "";
     const storedWagonType = localStorage.getItem("wagonType") ?? "";
+    const storedUserId = localStorage.getItem("userId");
     const [formID] = useState("FR002");
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -27,6 +29,7 @@ const WagonFloorInspect = () => {
     const [showValidationModal, setShowValidationModal] = useState(false);
 
     const [showConfirmBackModal, setShowConfirmBackModal] = useState(false);
+    const [pdfTrigger, setPdfTrigger] = useState(false);
 
     useEffect(() => {
         const fetchParts = async () => {
@@ -321,12 +324,18 @@ const WagonFloorInspect = () => {
                 { headers: { "Content-Type": "application/json" } }
             );
 
+            setPdfTrigger(true);
+
+            await axios.post(
+                `Dashboard/insertWagon?wagonNumber=${encodeURIComponent(parseInt(storedWagonNumber))}&userId=${encodeURIComponent(storedUserId)}`
+            );
+
             // (Luca) Add
             setInfo("Inspection submitted successfully.");
             localStorage.removeItem("wagonNumber");
             localStorage.removeItem("wagonGroup");
             localStorage.removeItem("wagonType");
-            navigate("/choose");
+            navigate("/wagonland");
             return;
 
         } catch (ex) {
@@ -531,6 +540,7 @@ const WagonFloorInspect = () => {
                     <Button variant="secondary" onClick={handleBackClick}>Back</Button>
                     <Button variant="success" onClick={handleSubmit} disabled={submitting}>{submitting ? "Submitting..." : "Complete Inspection"}</Button>
                 </div>
+                {pdfTrigger && <QuotePdf formComplete={pdfTrigger} />}
             </Container>
 
             {/* Photo modal */}
