@@ -485,7 +485,7 @@ const handleCheckboxChange = async (id, field) => {
             <Form.Label>Capture or Upload Photo</Form.Label>
             <Form.Control
               type="file"
-              accept="image/*"
+              accept="image/*;capture=camera"
               capture="environment" // Opens camera on mobile
               onChange={handleFileChange}
             />

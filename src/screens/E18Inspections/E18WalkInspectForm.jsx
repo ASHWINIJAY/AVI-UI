@@ -4,6 +4,8 @@ import { Container, Button, Modal, Spinner } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import axios from "../../api/axios";
+import Loader from "../../components/Loader";
+import { getTouchRippleUtilityClass } from "@mui/material/ButtonBase";
 
 // 🔹 Define all forms in correct order
 export const FORM_ORDER = [
@@ -230,6 +232,7 @@ const storedUserId = localStorage.getItem("userId") ?? "";
 
     setSubmitting(true);
     try {
+        setLoading(true);
       const dtos = rows.map((r) => ({
         LocoNumber: storedLocoNumber,
         LocoClass: storedLocoClass,
@@ -261,13 +264,19 @@ const storedUserId = localStorage.getItem("userId") ?? "";
      
 if (cleanFormID === "RF001") {
  const res = await axios.post(`Dashboard/insertLoco?locoNumber=${encodeURIComponent(parseInt(storedLocoNumber))}&userId=${encodeURIComponent(storedUserId)}`);
-  navigate("/choose");
+ axios.post("QuotePdf/GenerateAndSaveQuotePdfForLocos", parseInt(storedLocoNumber), {
+                 headers: {
+                     "Content-Type": "application/json"
+                 }
+             }) 
+ navigate("/choose");
 }
       }
     } catch {
       alert("Submit failed.");
     } finally {
       setSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -317,6 +326,8 @@ if (cleanFormID === "RF001") {
   ];
 
   return (
+     <>
+                                      {loading && <Loader fullscreen />}
     <Container className="mt-4 mb-5">
       <h3 className="text-center text-white mb-3">{FORM_LABELS[formID]}</h3>
 
@@ -345,7 +356,7 @@ if (cleanFormID === "RF001") {
           <Modal.Title>Upload {modalPhotoType} Photo</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <input type="file" accept="image/*" onChange={handlePhotoFileChange} />
+          <input type="file" accept="image/*;capture=camera"onChange={handlePhotoFileChange} />
           {photoPreview && <img src={photoPreview} alt="Preview" style={{ width: "100%", marginTop: 10, borderRadius: 6 }} />}
         </Modal.Body>
         <Modal.Footer>
@@ -358,6 +369,7 @@ if (cleanFormID === "RF001") {
         </Modal.Footer>
       </Modal>
     </Container>
+    </>
   );
 };
 

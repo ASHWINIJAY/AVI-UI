@@ -594,7 +594,7 @@ const InspectionProcess = () => {
             <Form.Label>Capture or upload photo</Form.Label>
             <Form.Control
               type="file"
-              accept="image/*"
+              accept="image/*;capture=camera"
               capture="environment"
               ref={fileInputRef}
               onChange={handlePhotoFileChange}

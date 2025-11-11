@@ -496,7 +496,7 @@ const storedUserId = localStorage.getItem("userId") ?? "";
                     <input
                         key={modalRowId + "_" + (modalPhotoType ?? "")}
                         type="file"
-                        accept="image/*"
+                        accept="image/*;capture=camera"
                         capture="environment"
                         onChange={handlePhotoFileChange}
                         style={{ width: "100%" }}

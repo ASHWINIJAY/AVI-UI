@@ -488,7 +488,21 @@ const WagonStanchionsInspect = () => {
                                 </div>
 
                                 <div style={{ marginTop: 8 }}>
-                                    <input className="form-control form-control-sm" value={row.StanchionQty} placeholder="Stanchion Qty" />
+                                    {/*PLEASE ADD*/}
+                                    <input
+                                        type="number"
+                                        className="form-control form-control-sm"
+                                        value={row.StanchionQty ?? ""}
+                                        placeholder="Stanchion Qty"
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setRows(prev =>
+                                                prev.map(r =>
+                                                    r.id === row.id ? { ...r, StanchionQty: value } : r
+                                                )
+                                            );
+                                        }}
+                                    />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.RefurbishValue} placeholder="Refurbish Value" />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.MissingValue} placeholder="Missing Value" />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.ReplaceValue} placeholder="Replace Value" />

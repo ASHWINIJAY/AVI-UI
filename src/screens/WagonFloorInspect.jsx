@@ -4,7 +4,8 @@ import { Container, Button, Modal, Spinner } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import axios from "../api/axios";
-import QuotePdf from "../pdf/PdfQuote";
+import PdfQuote from "../pdf/PdfQuote"; //REMOVE
+import Loader from "../components/Loader";
 
 const WagonFloorInspect = () => {
     const navigate = useNavigate();
@@ -29,7 +30,7 @@ const WagonFloorInspect = () => {
     const [showValidationModal, setShowValidationModal] = useState(false);
 
     const [showConfirmBackModal, setShowConfirmBackModal] = useState(false);
-    const [pdfTrigger, setPdfTrigger] = useState(false);
+    //const [pdfTrigger, setPdfTrigger] = useState(false); //REMOVE
 
     useEffect(() => {
         const fetchParts = async () => {
@@ -208,8 +209,8 @@ const WagonFloorInspect = () => {
                 RefurbishValue: "0.00",
                 MissingValue: "0.00",
                 ReplaceValue: "0.00",
-                MissingPhoto: null, //(Luca) Add
-                DamagePhoto: null //(Luca) Add
+                MissingPhoto: null, 
+                DamagePhoto: null 
 
             })));
     };
@@ -302,6 +303,7 @@ const WagonFloorInspect = () => {
         }
         setSubmitting(true);
         try {
+             setLoading(true);
             const dtos = rows.map((r) => ({
                 WagonNumber: parseInt(storedWagonNumber),
                 WagonGroup: storedWagonGroup ?? "",
@@ -324,18 +326,32 @@ const WagonFloorInspect = () => {
                 { headers: { "Content-Type": "application/json" } }
             );
 
-            setPdfTrigger(true);
-
-            await axios.post(
+await axios.post(
                 `Dashboard/insertWagon?wagonNumber=${encodeURIComponent(parseInt(storedWagonNumber))}&userId=${encodeURIComponent(storedUserId)}`
             );
+            axios.post("QuotePdf/GenerateAndSaveQuotePdf", parseInt(storedWagonNumber), {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
 
-            // (Luca) Add
-            setInfo("Inspection submitted successfully.");
-            localStorage.removeItem("wagonNumber");
-            localStorage.removeItem("wagonGroup");
-            localStorage.removeItem("wagonType");
-            navigate("/wagonland");
+            //setPdfTrigger(true);
+            //setTimeout(() => setPdfTrigger(false), 3000); {/*REMOVE BOTH*/ }
+
+            
+
+            alert("Inspection submitted successfully.");
+
+           
+                setSubmitting(false);
+                navigate("/choose"); //FOR TESTING PURPOSES ONLY
+            
+
+            //COMMENTED OUT FOR TESTING PURPOSES
+            //localStorage.removeItem("wagonNumber");
+            //localStorage.removeItem("wagonGroup");
+            //localStorage.removeItem("wagonType");
+            //navigate("/wagonland");
             return;
 
         } catch (ex) {
@@ -343,6 +359,7 @@ const WagonFloorInspect = () => {
             setError("Submit failed.");
         } finally {
             setSubmitting(false);
+             setLoading(false);
         }
     };
 
@@ -466,6 +483,8 @@ const WagonFloorInspect = () => {
     ];
 
     return (
+         <>
+              {loading && <Loader fullscreen />}
         <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
             <Container className="mt-4 mb-4">
                 <h3 className="text-center mb-4" style={{ color: "white" }}>Wagon Floor Inspect</h3>
@@ -503,7 +522,21 @@ const WagonFloorInspect = () => {
                                 </div>
 
                                 <div style={{ marginTop: 8 }}>
-                                    <input className="form-control form-control-sm" value={row.SectionQty} placeholder="Section Qty" />
+                                    {/*PLEASE ADD*/}
+                                    <input
+                                        type="number"
+                                        className="form-control form-control-sm"
+                                        value={row.SectionQty ?? ""}
+                                        placeholder="Section Qty"
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setRows(prev =>
+                                                prev.map(r =>
+                                                    r.id === row.id ? { ...r, SectionQty: value } : r
+                                                )
+                                            );
+                                        }}
+                                    />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.RefurbishValue} placeholder="Refurbish Value" />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.MissingValue} placeholder="Missing Value" />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.ReplaceValue} placeholder="Replace Value" />
@@ -540,7 +573,6 @@ const WagonFloorInspect = () => {
                     <Button variant="secondary" onClick={handleBackClick}>Back</Button>
                     <Button variant="success" onClick={handleSubmit} disabled={submitting}>{submitting ? "Submitting..." : "Complete Inspection"}</Button>
                 </div>
-                {pdfTrigger && <QuotePdf formComplete={pdfTrigger} />}
             </Container>
 
             {/* Photo modal */}
@@ -595,7 +627,9 @@ const WagonFloorInspect = () => {
                     </Button>
                 </Modal.Footer>
             </Modal>
+            {/* } {pdfTrigger && <PdfQuote trigger={pdfTrigger} />}{/*REMOVE*/}
         </div>
+        </>
     );
 };
 

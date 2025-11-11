@@ -312,7 +312,7 @@ export default function AppRoutes() {
   element={<PrivateRoute><E18RF001Inspect/></PrivateRoute>}
 />
 <Route
-  path="/inspectE18"
+  path="/inspectE18/:formID"
   element={<PrivateRoute><E18WalkInspectForm/></PrivateRoute>}
 />
      <Route

@@ -220,7 +220,7 @@ const [locoMasterList, setLocoMasterList] = useState([]);
     setShowSuccess(false);
 
     if(formData.LocoModelTxt === "E18") {
-        navigate("/E18BD001");
+        navigate("/inspectE18/BD001");
         return;
     }
     else if(formData.LocoModelTxt === "GE34") {
@@ -286,7 +286,7 @@ const [locoMasterList, setLocoMasterList] = useState([]);
 
         <Form.Group className="mb-3">
           <Form.Label>Loco Photo</Form.Label>
-          <Form.Control type="file" name="LocoPhoto" accept="image/*" capture="environment" onChange={handleFileChange} />
+          <Form.Control type="file" name="LocoPhoto" accept="image/*;capture=camera" onChange={handleFileChange} />
           {formData.LocoPhotoPreview && <img src={formData.LocoPhotoPreview} alt="Loco Preview" style={{ marginTop: "10px", maxWidth: "100%", height: "auto" }} />}
         </Form.Group>
 
@@ -303,7 +303,7 @@ const [locoMasterList, setLocoMasterList] = useState([]);
             {[1, 2, 3].map((num) => (
               <Form.Group key={num} className="mb-3">
                 <Form.Label>{`Body Photo ${num}`}</Form.Label>
-                <Form.Control type="file" name={`BodyPhoto${num}`} accept="image/*" capture="environment" onChange={handleFileChange} />
+                <Form.Control type="file" name={`BodyPhoto${num}`} accept="image/*;capture=camera" onChange={handleFileChange} />
                 {formData[`BodyPhoto${num}Preview`] && (
                   <img src={formData[`BodyPhoto${num}Preview`]} alt={`Body Photo ${num}`} style={{ marginTop: "10px", maxWidth: "100%", height: "auto" }} />
                 )}
@@ -324,7 +324,7 @@ const [locoMasterList, setLocoMasterList] = useState([]);
 
         <Form.Group className="mb-3">
             <Form.Label>Lift Photo</Form.Label>
-            <Form.Control type="file" name="LiftingPhoto" accept="image/*" capture="environment" onChange={handleFileChange} />
+            <Form.Control type="file" name="LiftingPhoto" accept="image/*;capture=camera" onChange={handleFileChange} />
             {formData.LiftingPhotoPreview && <img src={formData.LiftingPhotoPreview} alt="Lift Photo" style={{ marginTop: "10px", maxWidth: "100%", height: "auto" }} />}
         </Form.Group>
 

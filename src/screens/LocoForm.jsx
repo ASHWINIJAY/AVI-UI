@@ -184,8 +184,7 @@ const [loading, setLoading] = useState(false);
           <Form.Label>Loco Photo</Form.Label>
           <Form.Control
             type="file"
-            accept="image/*"
-            capture="environment"
+            accept="image/*;capture=camera"
             onChange={(e) => handleFileChange(e, "LocoPhoto")}
             required
           />
@@ -225,7 +224,7 @@ const [loading, setLoading] = useState(false);
               <Form.Label>Body Photos (Max 3)</Form.Label>
               <Form.Control
                 type="file"
-                accept="image/*"
+                accept="image/*;capture=camera"
                 multiple
                 capture="environment"
                 onChange={(e) => handleFileChange(e, "BodyPhotos")}
@@ -259,7 +258,7 @@ const [loading, setLoading] = useState(false);
               <Form.Label>Lifting Photos (Max 3)</Form.Label>
               <Form.Control
                 type="file"
-                accept="image/*"
+                accept="image/*;capture=camera"
                 multiple
                 capture="environment"
                 onChange={(e) => handleFileChange(e, "LiftingPhotos")}

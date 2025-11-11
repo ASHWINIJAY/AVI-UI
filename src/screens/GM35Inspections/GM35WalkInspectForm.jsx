@@ -330,7 +330,7 @@ if (cleanFormID === "RF001") {
       <Modal show={showPhotoModal} onHide={() => setShowPhotoModal(false)} centered>
         <Modal.Header closeButton><Modal.Title>Upload {modalPhotoType} Photo</Modal.Title></Modal.Header>
         <Modal.Body>
-          <input type="file" accept="image/*" onChange={handlePhotoFileChange} />
+          <input type="file" accept="image/*;capture=camera"onChange={handlePhotoFileChange} />
           {photoPreview && <img src={photoPreview} alt="Preview" style={{ width: "100%", marginTop: 10, borderRadius: 6 }} />}
         </Modal.Body>
         <Modal.Footer>

@@ -492,7 +492,7 @@ const GE34AC001Inspect = () => {
                     <input
                         key={modalRowId + "_" + (modalPhotoType ?? "")}
                         type="file"
-                        accept="image/*"
+                        accept="image/*;capture=camera"
                         capture="environment"
                         onChange={handlePhotoFileChange}
                         style={{ width: "100%" }}

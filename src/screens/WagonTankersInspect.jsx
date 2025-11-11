@@ -471,7 +471,7 @@ const WagonTankersInspect = () => {
     return (
         <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
             <Container className="mt-4 mb-4">
-                <h3 className="text-center mb-4" style={{ color: "white" }}>Wagon Floor Inspect</h3>
+                <h3 className="text-center mb-4" style={{ color: "white" }}>Tanker Inspect</h3> {/*PLEASE ADJUST*/}
                 {info && <div style={{ color: "green", backgroundColor: "white", marginBottom: 8 }}>{info}</div>}
 
                 {loading ? (
@@ -506,7 +506,21 @@ const WagonTankersInspect = () => {
                                 </div>
 
                                 <div style={{ marginTop: 8 }}>
-                                    <input className="form-control form-control-sm" value={row.ValveQty} placeholder="Valve Qty" />
+                                    {/*PLEASE ADD*/}
+                                    <input
+                                        type="number"
+                                        className="form-control form-control-sm"
+                                        value={row.ValveQty ?? ""}
+                                        placeholder="Valve Qty"
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setRows(prev =>
+                                                prev.map(r =>
+                                                    r.id === row.id ? { ...r, ValveQty: value } : r
+                                                )
+                                            );
+                                        }}
+                                    />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.RefurbishValue} placeholder="Refurbish Value" />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.MissingValue} placeholder="Missing Value" />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.ReplaceValue} placeholder="Replace Value" />

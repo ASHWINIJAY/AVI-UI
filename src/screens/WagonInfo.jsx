@@ -307,7 +307,7 @@ const WagonInfo = () => {
         {/* Wagon Photo */}
         <Form.Group className="mb-3">
           <Form.Label>Wagon Photo</Form.Label>
-          <Form.Control type="file" name="WagonPhoto" accept="image/*" capture="environment" onChange={handleFileChange} />
+          <Form.Control type="file" name="WagonPhoto" accept="image/*;capture=camera" onChange={handleFileChange} />
           {formData.WagonPhotoPreview && <img src={formData.WagonPhotoPreview} alt="Wagon Preview" style={{ marginTop: "10px", maxWidth: "100%", height: "auto" }} />}
         </Form.Group>
 
@@ -325,7 +325,7 @@ const WagonInfo = () => {
             {[1, 2, 3].map((num) => (
               <Form.Group key={num} className="mb-3">
                 <Form.Label>{`Body Photo ${num}`}</Form.Label>
-                <Form.Control type="file" name={`BodyPhoto${num}`} accept="image/*" capture="environment" onChange={handleFileChange} />
+                <Form.Control type="file" name={`BodyPhoto${num}`} accept="image/*;capture=camera" onChange={handleFileChange} />
                 {formData[`BodyPhoto${num}Preview`] && (
                   <img src={formData[`BodyPhoto${num}Preview`]} alt={`Body Photo ${num}`} style={{ marginTop: "10px", maxWidth: "100%", height: "auto" }} />
                 )}
@@ -355,7 +355,7 @@ const WagonInfo = () => {
 
               <Form.Group className="mb-3">
                   <Form.Label>Lift Photo</Form.Label>
-                  <Form.Control type="file" name="LiftingPhoto" accept="image/*" capture="environment" onChange={handleFileChange} />
+                  <Form.Control type="file" name="LiftingPhoto" accept="image/*;capture=camera" onChange={handleFileChange} />
                   {formData.LiftingPhotoPreview && <img src={formData.LiftingPhotoPreview} alt="Lift Photo" style={{ marginTop: "10px", maxWidth: "100%", height: "auto" }} />}
               </Form.Group>
 
@@ -368,7 +368,7 @@ const WagonInfo = () => {
 
               <Form.Group className="mb-3">
                   <Form.Label>Brake Photo</Form.Label>
-                  <Form.Control type="file" name="BrakePhoto" accept="image/*" capture="environment" onChange={handleFileChange} />
+                  <Form.Control type="file" name="BrakePhoto" accept="image/*;capture=camera" onChange={handleFileChange} />
                   {formData.BrakePhotoPreview && <img src={formData.BrakePhotoPreview} alt="Brake Photo" style={{ marginTop: "10px", maxWidth: "100%", height: "auto" }} />}
               </Form.Group>
 
@@ -383,7 +383,7 @@ const WagonInfo = () => {
           <>
             <Form.Group className="mb-3">
               <Form.Label>Barrel Photo</Form.Label>
-              <Form.Control type="file" name="BarrelPhoto" accept="image/*" capture="environment" onChange={handleFileChange} />
+              <Form.Control type="file" name="BarrelPhoto" accept="image/*;capture=camera" onChange={handleFileChange} />
               {formData.BarrelPhotoPreview && <img src={formData.BarrelPhotoPreview} alt="Barrel Photo" style={{ marginTop: "10px", maxWidth: "100%", height: "auto" }} />}
             </Form.Group>
 
