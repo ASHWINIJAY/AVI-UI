@@ -77,7 +77,9 @@ import GE34ED001Inspect from './screens/GE34Inspections/GE34ED001Inspect.jsx';
 import GE34CF001Inspect from './screens/GE34Inspections/GE34CF001Inspect.jsx';
 import GE34DE001Inspect from './screens/GE34Inspections/GE34DE001Inspect.jsx';
 import GE34RF001Inspect from './screens/GE34Inspections/GE34RF001Inspect.jsx';
+import GE34InspectForm  from './screens/GE34Inspections/GE34InspectForm.jsx';
 
+import GE35InspectForm  from './screens/GE35Inspections/GE35InspectForm.jsx';
 import GE35BD001Inspect from './screens/GE35Inspections/GE35BD001Inspect.jsx';
 import GE35FL001Inspect from './screens/GE35Inspections/GE35FL001Inspect.jsx';
 import GE35SN001Inspect from './screens/GE35Inspections/GE35SN001Inspect.jsx';
@@ -472,6 +474,8 @@ export default function AppRoutes() {
       <Route path="/inspect/:formID" element={<GM34WalkInspectForm />} />
 <Route path="/inspectGm35/:formID" element={<GM35WalkInspectForm />} />
 <Route path="/inspectGm36/:formID" element={<GM36WalkInspectForm />} />
+<Route path="/inspectGe34/:formID" element={<GE34InspectForm />} />
+<Route path="/inspectGe35/:formID" element={<GE35InspectForm />} />
       <Route
         path="/GM35WA001"
         element={<PrivateRoute><GM35WA001Inspect/></PrivateRoute>}
