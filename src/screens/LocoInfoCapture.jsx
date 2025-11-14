@@ -229,11 +229,13 @@ const [locoMasterList, setLocoMasterList] = useState([]);
         return;
     }
     else if (formData.LocoModelTxt === "GE35") {
-      navigate("/GE35BD001");
+      //navigate("/GE35BD001");
+      navigate("/inspectGe35/BD001");
       return;
     }
     else if (formData.LocoModelTxt === "GE36") {
-      navigate("/GE36BD001");
+      //navigate("/GE36BD001");
+      navigate("/inspectGe36/BD001");
       return;
     }
     else if (formData.LocoModelTxt === "GM34") {

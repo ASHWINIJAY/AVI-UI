@@ -1,16 +1,16 @@
 ﻿import React, { useEffect, useState } from "react";
 import { Container, Card, Modal, Button, Spinner } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
-import ExcelJS from "exceljs"; //npm install exceljs file-saver //PLEASE ADD
-import { saveAs } from "file-saver"; //PLEASE ADD
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 export default function WagonDashboard() {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modalPhotos, setModalPhotos] = useState([]);
     const [showModal, setShowModal] = useState(false);
-    const [pdfUrl, setPdfUrl] = useState(null); //PLEASE ADD
-    const [showPdfModal, setShowPdfModal] = useState(false); //PLEASE ADD
+    const [pdfUrl, setPdfUrl] = useState(null);
+    const [showPdfModal, setShowPdfModal] = useState(false);
 
     const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // <-- Adjust if different
 
@@ -49,7 +49,6 @@ export default function WagonDashboard() {
         setShowModal(true);
     };
 
-    //PLEASE ADD
     const handleOpenPdf = (pdfPath) => {
         if (!pdfPath || pdfPath === "N/A" || pdfPath === "No File") {
             alert("No PDF available for this wagon.");
@@ -84,8 +83,11 @@ export default function WagonDashboard() {
             "Wagon Group",
             "Wagon Type",
             "Inspector",
-            "Date",
-            "Time",
+            "Date Completed",
+            "Time Completed",
+            "Time Started", //PLEASE ADD
+            "Gps Latitude", //PLEASE ADD
+            "Gps Longitude", //PLEASE ADD
             "Lift Date",
             "Lift Lapsed",
             "Barrel Test Date",
@@ -95,6 +97,9 @@ export default function WagonDashboard() {
             "Refurbish Value",
             "Missing Value",
             "Replace Value",
+            "Labor Value", //PLEASE ADD
+            "Replacement Value", //PLEASE ADD
+            "Asset Value", //PLEASE ADD
             "Upload Status",
             "Upload Date"
         ];
@@ -106,10 +111,10 @@ export default function WagonDashboard() {
         headerRow.font = { bold: true };
         headerRow.eachCell((cell) => {
             cell.border = {
-                top: { style: "thin" },
-                left: { style: "thin" },
-                bottom: { style: "thin" },
-                right: { style: "thin" }
+                top: { style: "thick" },
+                left: { style: "thick" },
+                bottom: { style: "thick" },
+                right: { style: "thick" }
             };
             cell.alignment = { vertical: "middle", horizontal: "center" };
         });
@@ -123,6 +128,9 @@ export default function WagonDashboard() {
                 row.inspectorName,
                 row.dateAssessed,
                 row.timeAssessed,
+                row.startTimeInspect, //PLEASE ADD
+                row.gpsLatitude, //PLEASE ADD
+                row.gpsLongitude, //PLEASE ADD
                 row.liftDate,
                 row.liftLapsed,
                 row.barrelDate,
@@ -132,6 +140,9 @@ export default function WagonDashboard() {
                 row.refurbishValue,
                 row.missingValue,
                 row.replaceValue,
+                row.totalLaborValue, //PLEASE ADD
+                row.replacementValue, //PLEASE ADD
+                row.assetValue, //PLEASE ADD
                 row.uploadStatus,
                 row.uploadDate
             ]);
@@ -170,8 +181,11 @@ export default function WagonDashboard() {
         { field: "wagonGroup", headerName: "Wagon Group", width: 130 },
         { field: "wagonType", headerName: "Wagon Type", width: 150 },
         { field: "inspectorName", headerName: "Inspector", width: 150 },
-        { field: "dateAssessed", headerName: "Date", width: 110 },
-        { field: "timeAssessed", headerName: "Time", width: 110 },
+        { field: "dateAssessed", headerName: "Date Completed", width: 110 }, //PLEASE ADJUST
+        { field: "timeAssessed", headerName: "Time Completed", width: 110 }, //PLEASE ADJUST
+        { field: "startTimeInspect", headerName: "Time Started", width: 110 }, //PLEASE ADD
+        { field: "gpsLatitude", headerName: "Gps Latitude", width: 130 }, //PLEASE ADD
+        { field: "gpsLongitude", headerName: "Gps Longitude", width: 130 }, //PLEASE ADD
         {
             field: "bodyPhotos",
             headerName: "Body Photos",
@@ -192,7 +206,9 @@ export default function WagonDashboard() {
         { field: "refurbishValue", headerName: "Refurbish Value", width: 130 },
         { field: "missingValue", headerName: "Missing Value", width: 130 },
         { field: "replaceValue", headerName: "Replace Value", width: 130 },
-        //PLEASE ADD
+        { field: "totalLaborValue", headerName: "Labor Value", width: 130 }, //PLEASE ADD
+        { field: "replacementValue", headerName: "Replacement Value", width: 130 }, //PLEASE ADD
+        { field: "assetValue", headerName: "Asset Value", width: 120 }, //PLEASE ADD
         {
             field: "assessmentQuote",
             headerName: "Assessment Quote",
@@ -249,7 +265,7 @@ export default function WagonDashboard() {
                         </Button>
                     </div>
                     <DataGrid
-                        style={{height: 530}} //PLEASE ADD
+                        style={{height: 530}}
                         rows={rows}
                         columns={columns}
                         pageSize={10}

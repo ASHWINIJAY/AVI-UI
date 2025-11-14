@@ -46,6 +46,7 @@ const WagonTwistlocksInspect = () => {
                         RefurbishValue: "0.00",
                         MissingValue: "0.00",
                         ReplaceValue: "0.00",
+                        LaborValue: "0.00", //PLEASE ADD
                         DamagePhoto: null,
                         MissingPhoto: null,
                         TwistlockQty: 0
@@ -80,18 +81,25 @@ const WagonTwistlocksInspect = () => {
         };
     }, [photoPreview]);
 
+    //PLEASE ADD AND ADJUST
     const getPartCost = async (partType, field) => {
         try {
             const res = await axios.get(
                 `WagonTwistlocksInspect/getPartCost?partType=${encodeURIComponent(partType)}&field=${encodeURIComponent(field)}`
             );
-            if (!res || res.status !== 200) return "0.00";
-            // Ensure we return a string
-            if (res.data == null) return "0.00";
-            if (typeof res.data === "string") return res.data;
-            if (typeof res.data === "number") return res.data.toFixed(2);
-            if (res.data.value) return res.data.value.toString();
-            return "0.00";
+
+            if (!res || res.status !== 200 || !res.data) {
+                return { cost: "0.00", laborValue: "0.00" };
+            }
+
+            // Destructure the returned object
+            const { cost, laborValue } = res.data;
+
+            return {
+                cost: cost ?? "0.00",
+                laborValue: laborValue ?? "0.00"
+            };
+
         } catch (ex) {
             console.error("GetPartCost failed", ex);
             return "0.00";
@@ -148,6 +156,7 @@ const WagonTwistlocksInspect = () => {
             RefurbishValue: "0.00",
             MissingValue: "0.00",
             ReplaceValue: "0.00",
+            LaborValue: "0.00", //PLEASE ADD
             MissingPhoto: null,
             DamagePhoto: null
         };
@@ -167,14 +176,26 @@ const WagonTwistlocksInspect = () => {
             updatedRow.Good = true;
         } else if (field === "Refurbish") {
             updatedRow.Refurbish = true;
-            updatedRow.RefurbishValue = await getPartCost(current.PartType, "Refurbish");
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartType, "Refurbish");
+            updatedRow.RefurbishValue = cost;
+            updatedRow.LaborValue = laborValue;
         } else if (field === "Missing") {
             updatedRow.Missing = true;
-            updatedRow.MissingValue = await getPartCost(current.PartType, "Missing");
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartType, "Missing"); 
+            updatedRow.MissingValue = cost;
+            updatedRow.LaborValue = laborValue;
             openPhotoModal(rowId, "Missing");
         } else if (field === "Damage") {
             updatedRow.Damage = true;
-            updatedRow.ReplaceValue = await getPartCost(current.PartType, "Replace");
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartType, "Replace"); 
+            updatedRow.ReplaceValue = cost;
+            updatedRow.LaborValue = laborValue
             openPhotoModal(rowId, "Damage");
         }
 
@@ -215,7 +236,9 @@ const WagonTwistlocksInspect = () => {
                 if (r.id !== modalRowId) return r;
                 const base = { ...r, [modalPhotoType]: false };
                 if (modalPhotoType === "Missing") base.MissingValue = "0.00";
+                if (modalPhotoType === "Missing") base.LaborValue = "0.00"; //PLEASE ADD
                 if (modalPhotoType === "Damage") base.ReplaceValue = "0.00";
+                if (modalPhotoType === "Damage") base.LaborValue = "0.00"; //PLEASE ADD
                 if (modalPhotoType === "Missing") base.MissingPhoto = null;
                 if (modalPhotoType === "Damage") base.DamagePhoto = null;
                 return base;
@@ -292,13 +315,13 @@ const WagonTwistlocksInspect = () => {
                 ReplaceValue: r.ReplaceValue ?? "0.00",
                 MissingPhoto: r.MissingPhoto ?? "No Photo",
                 DamagePhoto: r.DamagePhoto ?? "No Photo",
+                LaborValue: r.LaborValue ?? "0.00" //PLEASE ADD
             }));
             await axios.post("WagonTwistlocksInspect/SubmitInspection", dtos,
                 { headers: { "Content-Type": "application/json" } }
             );
             setInfo("Inspection submitted successfully.");
 
-            // (Luca) Add
             navigate("/wagonfloor");
         } catch (ex) {
             console.error(ex);
@@ -330,6 +353,7 @@ const WagonTwistlocksInspect = () => {
                 RefurbishValue: "0.00",
                 MissingValue: "0.00",
                 ReplaceValue: "0.00",
+                LaborValue: "0.00", //PLEASE ADD
                 MissingPhoto: null,
                 DamagePhoto: null,
             }))
@@ -424,13 +448,22 @@ const WagonTwistlocksInspect = () => {
             renderCell: (params) => (
                 <input className="form-control form-control-sm" readOnly value={params.row.ReplaceValue} />
             )
+        },
+        //PLEASE ADD
+        {
+            field: "LaborValue",
+            headerName: "Labor Value",
+            width: 140,
+            renderCell: (params) => (
+                <input className="form-control form-control-sm" readOnly value={params.row.LaborValue} />
+            )
         }
     ];
 
     return (
         <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
             <Container className="mt-4 mb-4">
-                <h3 className="text-center mb-4" style={{ color: "white" }}>Wagon Floor Inspect</h3>
+                <h3 className="text-center mb-4" style={{ color: "white" }}>Twistlocks Inspect</h3> {/*PLEASE CHANGE*/}
                 {info && <div style={{ color: "green", backgroundColor: "white", marginBottom: 8 }}>{info}</div>}
 
                 {loading ? (
@@ -483,6 +516,7 @@ const WagonTwistlocksInspect = () => {
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.RefurbishValue} placeholder="Refurbish Value" />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.MissingValue} placeholder="Missing Value" />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.ReplaceValue} placeholder="Replace Value" />
+                                    <input className="form-control form-control-sm mt-1" readOnly value={row.LaborValue} placeholder="Labor Value" /> {/*PLEASE ADD*/}
                                 </div>
 
                                 <div style={{ marginTop: 8 }}>
@@ -500,13 +534,15 @@ const WagonTwistlocksInspect = () => {
                             initialState={{
                                 columns: {
                                     columnVisibilityModel: {
-                                        RefurbishValue: true,
-                                        MissingValue: true,
-                                        ReplaceValue: true// hide it on load
+                                        RefurbishValue: false,
+                                        MissingValue: false,
+                                        ReplaceValue: false,
+                                        LaborValue: false //PLEASE ADD
                                     },
                                 },
                             }}
-                            disableRowSelectionOnClick
+                                    disableRowSelectionOnClick
+                                    disableColumnSorting //PLEASE ADD
                         />
                     </div>
                 )}

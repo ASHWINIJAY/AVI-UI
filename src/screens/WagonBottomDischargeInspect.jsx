@@ -28,7 +28,7 @@ const WagonBottomDischargeInspect = () => {
 
     const [showConfirmBackModal, setShowConfirmBackModal] = useState(false);
 
-    const [responseMeta, setResponseMeta] = useState(null); //(Luca) Add
+    const [responseMeta, setResponseMeta] = useState(null); 
 
     useEffect(() => {
         const fetchParts = async () => {
@@ -48,6 +48,7 @@ const WagonBottomDischargeInspect = () => {
                         RefurbishValue: "0.00",
                         MissingValue: "0.00",
                         ReplaceValue: "0.00",
+                        LaborValue: "0.00", //PLEASE ADD
                         DamagePhoto: null,
                         MissingPhoto: null,
                         MechanismQty: 0
@@ -82,18 +83,25 @@ const WagonBottomDischargeInspect = () => {
         };
     }, [photoPreview]);
 
+    //PLEASE ADD AND ADJUST
     const getPartCost = async (partType, field) => {
         try {
             const res = await axios.get(
                 `WagonBottomDischargeInspect/getPartCost?partType=${encodeURIComponent(partType)}&field=${encodeURIComponent(field)}`
             );
-            if (!res || res.status !== 200) return "0.00";
-            // Ensure we return a string
-            if (res.data == null) return "0.00";
-            if (typeof res.data === "string") return res.data;
-            if (typeof res.data === "number") return res.data.toFixed(2);
-            if (res.data.value) return res.data.value.toString();
-            return "0.00";
+
+            if (!res || res.status !== 200 || !res.data) {
+                return { cost: "0.00", laborValue: "0.00" };
+            }
+
+            // Destructure the returned object
+            const { cost, laborValue } = res.data;
+
+            return {
+                cost: cost ?? "0.00",
+                laborValue: laborValue ?? "0.00"
+            };
+
         } catch (ex) {
             console.error("GetPartCost failed", ex);
             return "0.00";
@@ -150,6 +158,7 @@ const WagonBottomDischargeInspect = () => {
             RefurbishValue: "0.00",
             MissingValue: "0.00",
             ReplaceValue: "0.00",
+            LaborValue: "0.00", //PLEASE ADD
             MissingPhoto: null,
             DamagePhoto: null
         };
@@ -169,26 +178,35 @@ const WagonBottomDischargeInspect = () => {
             updatedRow.Good = true;
         } else if (field === "Refurbish") {
             updatedRow.Refurbish = true;
-            updatedRow.RefurbishValue = await getPartCost(current.PartType, "Refurbish");
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartType, "Refurbish");
+            updatedRow.RefurbishValue = cost;
+            updatedRow.LaborValue = laborValue;
         } else if (field === "Missing") {
             updatedRow.Missing = true;
-            updatedRow.MissingValue = await getPartCost(current.PartType, "Missing");
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartType, "Missing"); 
+            updatedRow.MissingValue = cost;
+            updatedRow.LaborValue = laborValue;
             openPhotoModal(rowId, "Missing");
         } else if (field === "Damage") {
             updatedRow.Damage = true;
-            updatedRow.ReplaceValue = await getPartCost(current.PartType, "Replace");
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartType, "Replace"); 
+            updatedRow.ReplaceValue = cost;
+            updatedRow.LaborValue = laborValue
             openPhotoModal(rowId, "Damage");
         }
 
         setRows(prev => prev.map(r => r.id === rowId ? updatedRow : r));
     };
 
-
-
-    const handleSelectAllGood = async (checked) => { //(Luca) Change
+    const handleSelectAllGood = async (checked) => { 
         setSelectAllGood(checked);
 
-        //(Luca) Add
         if (checked) {
             for (const r of rows) {
                 if (r.MissingPhoto) await deletePhoto(r.MissingPhoto);
@@ -207,8 +225,9 @@ const WagonBottomDischargeInspect = () => {
                 RefurbishValue: "0.00",
                 MissingValue: "0.00",
                 ReplaceValue: "0.00",
-                MissingPhoto: null, //(Luca) Add
-                DamagePhoto: null //(Luca) Add
+                LaborValue: "0.00", //PLEASE ADD
+                MissingPhoto: null, 
+                DamagePhoto: null 
 
             })));
     };
@@ -240,7 +259,9 @@ const WagonBottomDischargeInspect = () => {
                 if (r.id !== modalRowId) return r;
                 const base = { ...r, [modalPhotoType]: false };
                 if (modalPhotoType === "Missing") base.MissingValue = "0.00";
+                if (modalPhotoType === "Missing") base.LaborValue = "0.00"; //PLEASE ADD
                 if (modalPhotoType === "Damage") base.ReplaceValue = "0.00";
+                if (modalPhotoType === "Damage") base.LaborValue = "0.00"; //PLEASE ADD
                 if (modalPhotoType === "Missing") base.MissingPhoto = null;
                 if (modalPhotoType === "Damage") base.DamagePhoto = null;
                 return base;
@@ -317,15 +338,16 @@ const WagonBottomDischargeInspect = () => {
                 ReplaceValue: r.ReplaceValue ?? "0.00",
                 MissingPhoto: r.MissingPhoto ?? "No Photo",
                 DamagePhoto: r.DamagePhoto ?? "No Photo",
+                LaborValue: r.LaborValue ?? "0.00" //PLEASE ADD
             }));
             const res = await axios.post("WagonBottomDischargeInspect/SubmitInspection", dtos,
                 { headers: { "Content-Type": "application/json" } }
             );
 
             const meta = res.data || {};
-            setResponseMeta(meta); // (Luca) Add
+            setResponseMeta(meta); 
 
-            handleNavigation(meta); // (Luca) Add
+            handleNavigation(meta); 
 
         } catch (ex) {
             console.error(ex);
@@ -335,7 +357,6 @@ const WagonBottomDischargeInspect = () => {
         }
     };
 
-    //(Luca) Add
     const handleNavigation = (meta) => {
         const doors = meta.wagonDoors || "N/A";
         const stanchions = meta.wagonStan || "N/A";
@@ -371,6 +392,7 @@ const WagonBottomDischargeInspect = () => {
                 RefurbishValue: "0.00",
                 MissingValue: "0.00",
                 ReplaceValue: "0.00",
+                LaborValue: "0.00", //PLEASE ADD
                 MissingPhoto: null,
                 DamagePhoto: null,
             }))
@@ -465,6 +487,15 @@ const WagonBottomDischargeInspect = () => {
             renderCell: (params) => (
                 <input className="form-control form-control-sm" readOnly value={params.row.ReplaceValue} />
             )
+        },
+        //PLEASE ADD
+        {
+            field: "LaborValue",
+            headerName: "Labor Value",
+            width: 140,
+            renderCell: (params) => (
+                <input className="form-control form-control-sm" readOnly value={params.row.LaborValue} />
+            )
         }
     ];
 
@@ -524,6 +555,7 @@ const WagonBottomDischargeInspect = () => {
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.RefurbishValue} placeholder="Refurbish Value" />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.MissingValue} placeholder="Missing Value" />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.ReplaceValue} placeholder="Replace Value" />
+                                    <input className="form-control form-control-sm mt-1" readOnly value={row.LaborValue} placeholder="Labor Value" /> {/*PLEASE ADD*/}
                                 </div>
 
                                 <div style={{ marginTop: 8 }}>
@@ -541,14 +573,15 @@ const WagonBottomDischargeInspect = () => {
                             initialState={{
                                 columns: {
                                     columnVisibilityModel: {
-                                        RefurbishValue: false, //(Luca) Change
-                                        MissingValue: false, //(Luca) Change
-                                        ReplaceValue: false //(Luca) Change
+                                        RefurbishValue: false, 
+                                        MissingValue: false, 
+                                        ReplaceValue: false,
+                                        LaborValue: false //PLEASE ADD
                                     },
                                 },
                             }}
                             disableRowSelectionOnClick
-                            disableColumnSorting //(Luca) Add
+                            disableColumnSorting 
                         />
                     </div>
                 )}

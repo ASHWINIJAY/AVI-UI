@@ -21,7 +21,7 @@ const PdfQuote = ({ trigger }) => {
 
         try {
             const res = await axios.post(
-                "https://localhost:7066/api/QuotePdf/GenerateQuotePdf",
+                "QuotePdf/GenerateQuotePdf",
                 parseInt(wagonNumber),
                 { headers: { "Content-Type": "application/json" } }
             );
@@ -127,7 +127,7 @@ const PdfQuote = ({ trigger }) => {
             formData.append("wagonNumber", wagonNumber);
             formData.append("wagonGroup", wagonGroup);
 
-            await axios.post("https://localhost:7066/api/QuotePdf/upload", formData, {
+            await axios.post("QuotePdf/upload", formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 

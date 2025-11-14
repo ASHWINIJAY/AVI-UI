@@ -28,7 +28,7 @@ const AirBrakePartsInspect = () => {
 
     const [showConfirmBackModal, setShowConfirmBackModal] = useState(false);
 
-    const [responseMeta, setResponseMeta] = useState(null); //(Luca) Add
+    const [responseMeta, setResponseMeta] = useState(null); 
 
     useEffect(() => {
         const fetchParts = async () => {
@@ -48,6 +48,7 @@ const AirBrakePartsInspect = () => {
                         RefurbishValue: "0.00",
                         MissingValue: "0.00",
                         ReplaceValue: "0.00",
+                        LaborValue: "0.00", //PLEASE ADD
                         DamagePhoto: null,
                         MissingPhoto: null,
                     }))
@@ -81,18 +82,25 @@ const AirBrakePartsInspect = () => {
         };
     }, [photoPreview]);
 
+    //PLEASE ADD AND ADJUST
     const getPartCost = async (partId, field) => {
         try {
             const res = await axios.get(
                 `AirBrakeInspect/getPartCost?partId=${encodeURIComponent(partId)}&field=${encodeURIComponent(field)}`
             );
-            if (!res || res.status !== 200) return "0.00";
-            // Ensure we return a string
-            if (res.data == null) return "0.00";
-            if (typeof res.data === "string") return res.data;
-            if (typeof res.data === "number") return res.data.toFixed(2);
-            if (res.data.value) return res.data.value.toString();
-            return "0.00";
+
+            if (!res || res.status !== 200 || !res.data) {
+                return { cost: "0.00", laborValue: "0.00" };
+            }
+
+            // Destructure the returned object
+            const { cost, laborValue } = res.data;
+
+            return {
+                cost: cost ?? "0.00",
+                laborValue: laborValue ?? "0.00"
+            };
+
         } catch (ex) {
             console.error("GetPartCost failed", ex);
             return "0.00";
@@ -149,6 +157,7 @@ const AirBrakePartsInspect = () => {
             RefurbishValue: "0.00",
             MissingValue: "0.00",
             ReplaceValue: "0.00",
+            LaborValue: "0.00", //PLEASE ADD
             MissingPhoto: null,
             DamagePhoto: null
         };
@@ -168,14 +177,26 @@ const AirBrakePartsInspect = () => {
             updatedRow.Good = true;
         } else if (field === "Refurbish") {
             updatedRow.Refurbish = true;
-            updatedRow.RefurbishValue = await getPartCost(current.PartId, "Refurbish");
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartId, "Refurbish");
+            updatedRow.RefurbishValue = cost;
+            updatedRow.LaborValue = laborValue;
         } else if (field === "Missing") {
             updatedRow.Missing = true;
-            updatedRow.MissingValue = await getPartCost(current.PartId, "Missing");
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartId, "Missing"); 
+            updatedRow.MissingValue = cost;
+            updatedRow.LaborValue = laborValue;
             openPhotoModal(rowId, "Missing");
         } else if (field === "Damage") {
             updatedRow.Damage = true;
-            updatedRow.ReplaceValue = await getPartCost(current.PartId, "Replace");
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartId, "Replace"); 
+            updatedRow.ReplaceValue = cost;
+            updatedRow.LaborValue = laborValue
             openPhotoModal(rowId, "Damage");
         }
 
@@ -184,10 +205,9 @@ const AirBrakePartsInspect = () => {
 
 
 
-    const handleSelectAllGood = async (checked) => { //(Luca) Change
+    const handleSelectAllGood = async (checked) => { 
         setSelectAllGood(checked);
 
-        //(Luca) Add
         if (checked) {
             for (const r of rows) {
                 if (r.MissingPhoto) await deletePhoto(r.MissingPhoto);
@@ -206,8 +226,9 @@ const AirBrakePartsInspect = () => {
                 RefurbishValue: "0.00",
                 MissingValue: "0.00",
                 ReplaceValue: "0.00",
-                MissingPhoto: null, //(Luca) Add
-                DamagePhoto: null //(Luca) Add
+                LaborValue: "0.00", //PLEASE ADD
+                MissingPhoto: null, 
+                DamagePhoto: null 
 
             })));
     };
@@ -239,7 +260,9 @@ const AirBrakePartsInspect = () => {
                 if (r.id !== modalRowId) return r;
                 const base = { ...r, [modalPhotoType]: false };
                 if (modalPhotoType === "Missing") base.MissingValue = "0.00";
+                if (modalPhotoType === "Missing") base.LaborValue = "0.00"; //PLEASE ADD
                 if (modalPhotoType === "Damage") base.ReplaceValue = "0.00";
+                if (modalPhotoType === "Damage") base.LaborValue = "0.00"; //PLEASE ADD
                 if (modalPhotoType === "Missing") base.MissingPhoto = null;
                 if (modalPhotoType === "Damage") base.DamagePhoto = null;
                 return base;
@@ -316,12 +339,12 @@ const AirBrakePartsInspect = () => {
                 ReplaceValue: r.ReplaceValue ?? "0.00",
                 MissingPhoto: r.MissingPhoto ?? "No Photo",
                 DamagePhoto: r.DamagePhoto ?? "No Photo",
+                LaborValue: r.LaborValue ?? "0.00" //PLEASE ADD
             }));
             const res = await axios.post("AirBrakeInspect/SubmitInspection", dtos,
                 { headers: { "Content-Type": "application/json" } }
             );
 
-            //(Luca) Add
             const meta = res.data || {};
             setResponseMeta(meta);
 
@@ -343,7 +366,7 @@ const AirBrakePartsInspect = () => {
                     return;
                 }
                 else {
-                    handleNavigation(meta); //(Luca) Add
+                    handleNavigation(meta); 
                 }
             }
         } catch (ex) {
@@ -354,7 +377,6 @@ const AirBrakePartsInspect = () => {
         }
     };
 
-    //(Luca) Add
     const handleNavigation = (meta) => {
         const doors = meta.wagonDoors || "N/A";
         const stanchions = meta.wagonStan || "N/A";
@@ -390,6 +412,7 @@ const AirBrakePartsInspect = () => {
                 RefurbishValue: "0.00",
                 MissingValue: "0.00",
                 ReplaceValue: "0.00",
+                LaborValue: "0.00", //PLEASE ADD
                 MissingPhoto: null,
                 DamagePhoto: null,
             }))
@@ -443,46 +466,40 @@ const AirBrakePartsInspect = () => {
                 <input type="checkbox" checked={!!params.row.Damage} onChange={() => handleCheckboxChange(params.row.id, "Damage")} />
             ),
         },
-       {
-    field: "RefurbishValue",
-    headerName: "Refurbish Value",
-    width: 140,
-    renderCell: (params) => (
-        <input
-            className="form-control form-control-sm"
-            readOnly
-            value={params.row.RefurbishValue}
-            style={{ display: "none" }} // 👈 completely hidden input
-        />
-    ),
-},
-{
-    field: "MissingValue",
-    headerName: "Missing Value",
-    width: 140,
-    renderCell: (params) => (
-        <input
-            className="form-control form-control-sm"
-            readOnly
-            value={params.row.MissingValue}
-            style={{ display: "none" }} // 👈 completely hidden input
-        />
-    ),
-},
-{
-    field: "ReplaceValue",
-    headerName: "Replace Value",
-    width: 140,
-    renderCell: (params) => (
-        <input
-            className="form-control form-control-sm"
-            readOnly
-            value={params.row.ReplaceValue}
-            style={{ display: "none" }} // 👈 completely hidden input
-        />
-    ),
-},
-
+        {
+            field: "RefurbishValue",
+            headerName: "Refurbish Value",
+            width: 140,
+            hidden: true,
+            renderCell: (params) => (
+                <input className="form-control form-control-sm" readOnly value={params.row.RefurbishValue} />
+            )
+        },
+        {
+            field: "MissingValue",
+            headerName: "Missing Value",
+            width: 140,
+            renderCell: (params) => (
+                <input className="form-control form-control-sm" readOnly value={params.row.MissingValue} />
+            )
+        },
+        {
+            field: "ReplaceValue",
+            headerName: "Replace Value",
+            width: 140,
+            renderCell: (params) => (
+                <input className="form-control form-control-sm" readOnly value={params.row.ReplaceValue} />
+            )
+        },
+        //PLEASE ADD
+        {
+            field: "LaborValue",
+            headerName: "Labor Value",
+            width: 140,
+            renderCell: (params) => (
+                <input className="form-control form-control-sm" readOnly value={params.row.LaborValue} />
+            )
+        }
     ];
 
     return (
@@ -526,6 +543,7 @@ const AirBrakePartsInspect = () => {
                                     <input className="form-control form-control-sm" readOnly value={row.RefurbishValue} placeholder="Refurbish Value" />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.MissingValue} placeholder="Missing Value" />
                                     <input className="form-control form-control-sm mt-1" readOnly value={row.ReplaceValue} placeholder="Replace Value" />
+                                    <input className="form-control form-control-sm mt-1" readOnly value={row.LaborValue} placeholder="Labor Value" /> {/*PLEASE ADD*/}
                                 </div>
 
                                 <div style={{ marginTop: 8 }}>
@@ -543,14 +561,15 @@ const AirBrakePartsInspect = () => {
                             initialState={{
                                 columns: {
                                     columnVisibilityModel: {
-                                        RefurbishValue: false, //(Luca) Change
-                                        MissingValue: false, //(Luca) Change
-                                        ReplaceValue: false //(Luca) Change
+                                        RefurbishValue: false, 
+                                        MissingValue: false, 
+                                        ReplaceValue: false,
+                                        LaborValue: false //PLEASE ADD
                                     },
                                 },
                             }}
                             disableRowSelectionOnClick
-                            disableColumnSorting //(Luca) Add
+                            disableColumnSorting 
                         />
                     </div>
                 )}
@@ -571,7 +590,7 @@ const AirBrakePartsInspect = () => {
                     <input
                         key={modalRowId + "_" + (modalPhotoType ?? "")}
                         type="file"
-                        accept="image/*;capture=camera"
+                        accept="image/*"
                         capture="environment"
                         onChange={handlePhotoFileChange}
                         style={{ width: "100%" }}
