@@ -1,32 +1,84 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useRef, useState, useCallback, useMemo } from "react"; //PLEASE ADJUST
 import { Container, Card, Modal, Button, Spinner } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 
 export default function WagonDashboard() {
-    const [rows, setRows] = useState([]);
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // <-- Adjust if different
+
+    const [page, setPage] = useState(0); //PLEASE ADD
+    const [pageSize, setPageSize] = useState(100); //PLEASE ADD 
+
+    const [allRows, setAllRows] = useState([]); //PLEASE ADD
     const [loading, setLoading] = useState(true);
     const [modalPhotos, setModalPhotos] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [pdfUrl, setPdfUrl] = useState(null);
     const [showPdfModal, setShowPdfModal] = useState(false);
 
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // <-- Adjust if different
+    //PLEASE ADD
+    const [showNoPdf, setShowNoPdf] = useState(false);
 
-    useEffect(() => {
-        fetch(`${BACKEND_URL}/api/dashboard/getAllWagonDashboard`)
-            .then((res) => res.json())
-            .then((data) => {
-                setRows(data);
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error("Error fetching dashboard data:", err);
-                setLoading(false);
-            });
+    //PLEASE ADD
+    const [selectedIds, setSelectedIds] = useState(new Set());
+    const [showNoSelectModal, setShowNoSelectModal] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [uploading, setUploading] = useState(false);
+
+    // Preserve scroll position
+    const scrollPosRef = useRef(0); //PLEASE ADD
+
+    const gridContainerRef = useRef(null); //PLEASE ADD
+
+    //PLEASE ADD
+    const getRowUniqueId = (row) => `${row.wagonNumber ?? "NA"}-${row.inspectorId ?? "NA"}-${row.dateAssessed ?? "NA"}-${row.timeAssessed ?? "NA"}`;
+
+    //PLEASE ADD AND ADJUST
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllWagonDashboard`);
+            const data = await res.json();
+            setAllRows(data);
+        }
+        catch (err) {
+            console.error("Error fetching dashboard data:", err);
+        }
+        finally {
+            setLoading(false);
+            handleRestoreScroll();
+        }
     }, []);
 
+    //PLEASE ADJUST
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    //PLEASE ADD
+    // Visible rows: filter only at render time
+    const visibleRows = useMemo(() => {
+        return allRows.filter(r => r.uploadStatus !== "Uploaded");
+    }, [allRows]);
+
+    const handleSaveScroll = () => {
+        if (gridContainerRef.current) {
+            const viewport = gridContainerRef.current.querySelector(".MuiDataGrid-virtualScroller");
+            if (viewport) scrollPosRef.current = viewport.scrollTop;
+        }
+    };
+
+    const handleRestoreScroll = () => {
+        setTimeout(() => {
+            if (gridContainerRef.current) {
+                const viewport = gridContainerRef.current.querySelector(".MuiDataGrid-virtualScroller");
+                if (viewport) viewport.scrollTop = scrollPosRef.current;
+            }
+        }, 50);
+    };
+
+    //PLEASE ADD
     const handleOpenModal = (photosValue) => {
         let photos = [];
 
@@ -34,13 +86,24 @@ export default function WagonDashboard() {
             photos = [];
         } else {
             try {
-                let parsed = typeof photosValue === "string" ? JSON.parse(photosValue) : photosValue;
-                if (!Array.isArray(parsed)) parsed = [parsed];
+                if (typeof photosValue === "string") {
+                    // Attempt JSON parse
+                    if (photosValue.trim().startsWith("[")) {
+                        photos = JSON.parse(photosValue);
+                    } else {
+                        // Handle comma-separated string
+                        photos = photosValue.split(",").map(p => p.trim());
+                    }
+                } else if (Array.isArray(photosValue)) {
+                    photos = photosValue;
+                } else {
+                    photos = [photosValue];
+                }
 
-                // Filter out "No Photos" and empty strings
-                photos = parsed.filter(p => p && p !== "No Photos" && p !== "N/A");
+                // Filter out invalid entries
+                photos = photos.filter(p => p && p !== "No Photos" && p !== "N/A");
             } catch {
-                // fallback if parsing fails
+                // Fallback: wrap original value
                 photos = [photosValue];
             }
         }
@@ -50,8 +113,10 @@ export default function WagonDashboard() {
     };
 
     const handleOpenPdf = (pdfPath) => {
-        if (!pdfPath || pdfPath === "N/A" || pdfPath === "No File") {
-            alert("No PDF available for this wagon.");
+        if (!pdfPath || pdfPath === "N/A" || pdfPath === "No File" || pdfPath === "Not Ready") { //PLEASE ADJUST
+            setPdfUrl(null); //PLEASE ADD
+            setShowPdfModal(false); //PLEASE ADD
+            setShowNoPdf(true); //PLEASE ADD
             return;
         }
 
@@ -67,10 +132,12 @@ export default function WagonDashboard() {
         return <img src={url} alt={alt} style={{ maxWidth: 100, maxHeight: 100, objectFit: "cover" }} />;
     };
 
-    //PLEASE ADD
     const handleExportToExcel = async () => {
-        if (!rows || rows.length === 0) {
-            alert("No data to export.");
+        const rowsToExport = visibleRows; //PLEASE ADD
+
+        //PLEASE ADD
+        if (!rowsToExport.length) {
+            alert("No rows to export.");
             return;
         }
 
@@ -85,9 +152,9 @@ export default function WagonDashboard() {
             "Inspector",
             "Date Completed",
             "Time Completed",
-            "Time Started", //PLEASE ADD
-            "Gps Latitude", //PLEASE ADD
-            "Gps Longitude", //PLEASE ADD
+            "Time Started", 
+            "Gps Latitude", 
+            "Gps Longitude",
             "Lift Date",
             "Lift Lapsed",
             "Barrel Test Date",
@@ -97,9 +164,9 @@ export default function WagonDashboard() {
             "Refurbish Value",
             "Missing Value",
             "Replace Value",
-            "Labor Value", //PLEASE ADD
-            "Replacement Value", //PLEASE ADD
-            "Asset Value", //PLEASE ADD
+            "Labor Value", 
+            "Replacement Value", 
+            "Asset Value", 
             "Upload Status",
             "Upload Date"
         ];
@@ -119,8 +186,9 @@ export default function WagonDashboard() {
             cell.alignment = { vertical: "middle", horizontal: "center" };
         });
 
+        //PLEASE ADJUST
         // Add data rows
-        rows.forEach((row) => {
+        rowsToExport.forEach((row) => {
             worksheet.addRow([
                 row.wagonNumber,
                 row.wagonGroup,
@@ -128,9 +196,9 @@ export default function WagonDashboard() {
                 row.inspectorName,
                 row.dateAssessed,
                 row.timeAssessed,
-                row.startTimeInspect, //PLEASE ADD
-                row.gpsLatitude, //PLEASE ADD
-                row.gpsLongitude, //PLEASE ADD
+                row.startTimeInspect, 
+                row.gpsLatitude, 
+                row.gpsLongitude, 
                 row.liftDate,
                 row.liftLapsed,
                 row.barrelDate,
@@ -140,16 +208,16 @@ export default function WagonDashboard() {
                 row.refurbishValue,
                 row.missingValue,
                 row.replaceValue,
-                row.totalLaborValue, //PLEASE ADD
-                row.replacementValue, //PLEASE ADD
-                row.assetValue, //PLEASE ADD
+                row.totalLaborValue, 
+                row.replacementValue, 
+                row.assetValue, 
                 row.uploadStatus,
                 row.uploadDate
             ]);
         });
 
         // Add borders to all cells
-        worksheet.eachRow((row, rowNumber) => {
+        worksheet.eachRow((row, rowNumber) => { //DO NOT REMOVE rowNumber
             row.eachCell((cell) => {
                 cell.border = {
                     top: { style: "thin" },
@@ -176,16 +244,122 @@ export default function WagonDashboard() {
         saveAs(blob, `WagonDashboard_${new Date().toISOString().split("T")[0]}.xlsx`);
     };
 
-    const columns = [
+    
+
+    //PLEASE ADD
+    const toggleSelect = (id) => {
+        setSelectedIds(prev => {
+            const c = new Set(prev);
+            if (c.has(id)) c.delete(id);
+            else c.add(id);
+            return c;
+        });
+    };
+
+    //PLEASE ADD
+    const clearSelection = () => setSelectedIds(new Set());
+
+    //PLEASE ADD
+    const buildUploadPayload = () => {
+        const selectedRows = allRows.filter(r => selectedIds.has(getRowUniqueId(r)));
+        return selectedRows.map(r => ({
+            wagonNumber: r.wagonNumber,
+            bodyPhotos: r.bodyPhotos,
+            liftPhoto: r.liftPhoto,
+            barrelPhoto: r.barrelPhoto,
+            brakePhoto: r.brakePhoto,
+            assessmentQuote: r.assessmentQuote,
+            wagonPhoto: r.wagonPhoto,
+            missingPhotos: r.missingPhotos,
+            replacePhotos: r.replacePhotos
+        }));
+    };
+
+    //PLEASE ADD
+    const handleUploadConfirmed = async () => {
+        const payload = buildUploadPayload();
+        if (!payload || payload.length === 0) {
+            setShowNoSelectModal(true);
+            return;
+        }
+
+        handleSaveScroll();
+
+        setShowConfirmModal(false);
+        setUploading(true);
+
+        try {
+            const resp = await fetch(`${BACKEND_URL}/api/Dashboard/uploadWagons`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!resp.ok) {
+                const text = await resp.text();
+                throw new Error(`Server error: ${resp.status} - ${text}`);
+            }
+
+            const blob = await resp.blob();
+            let filename = `WagonDashboardUpload_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
+            const cd = resp.headers.get("content-disposition");
+            if (cd) {
+                const match = /filename\*=UTF-8''(.+)$/.exec(cd) || /filename="(.+)"/.exec(cd);
+                if (match) filename = decodeURIComponent(match[1]);
+            }
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+
+            await fetchData();
+            clearSelection();
+
+        } catch (err) {
+            console.error("Upload error:", err);
+            alert("Upload failed: " + (err.message || "Unknown error"));
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    //PLEASE ADD AND ADJUST
+    const columns = useMemo(() => ([
+        //PLEASE ADD
+        {
+            field: "select",
+            headerName: "",
+            width: 60,
+            sortable: false,
+            filterable: false,
+            disableColumnMenu: true,
+            renderCell: (params) => {
+                const id = getRowUniqueId(params.row);
+                const checked = selectedIds.has(id);
+                return (
+                    <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleSelect(id)}
+                        aria-label={`Select wagon ${params.row.wagonNumber}`}
+                    />
+                );
+            }
+        },
         { field: "wagonNumber", headerName: "Wagon Number", width: 130 },
         { field: "wagonGroup", headerName: "Wagon Group", width: 130 },
         { field: "wagonType", headerName: "Wagon Type", width: 150 },
         { field: "inspectorName", headerName: "Inspector", width: 150 },
-        { field: "dateAssessed", headerName: "Date Completed", width: 110 }, //PLEASE ADJUST
-        { field: "timeAssessed", headerName: "Time Completed", width: 110 }, //PLEASE ADJUST
-        { field: "startTimeInspect", headerName: "Time Started", width: 110 }, //PLEASE ADD
-        { field: "gpsLatitude", headerName: "Gps Latitude", width: 130 }, //PLEASE ADD
-        { field: "gpsLongitude", headerName: "Gps Longitude", width: 130 }, //PLEASE ADD
+        { field: "dateAssessed", headerName: "Date Completed", width: 110 },
+        { field: "timeAssessed", headerName: "Time Completed", width: 110 },
+        { field: "startTimeInspect", headerName: "Time Started", width: 110 },
+        { field: "gpsLatitude", headerName: "Gps Latitude", width: 130 },
+        { field: "gpsLongitude", headerName: "Gps Longitude", width: 130 },
         {
             field: "bodyPhotos",
             headerName: "Body Photos",
@@ -206,9 +380,9 @@ export default function WagonDashboard() {
         { field: "refurbishValue", headerName: "Refurbish Value", width: 130 },
         { field: "missingValue", headerName: "Missing Value", width: 130 },
         { field: "replaceValue", headerName: "Replace Value", width: 130 },
-        { field: "totalLaborValue", headerName: "Labor Value", width: 130 }, //PLEASE ADD
-        { field: "replacementValue", headerName: "Replacement Value", width: 130 }, //PLEASE ADD
-        { field: "assetValue", headerName: "Asset Value", width: 120 }, //PLEASE ADD
+        { field: "totalLaborValue", headerName: "Labor Value", width: 130 },
+        { field: "replacementValue", headerName: "Replacement Value", width: 130 },
+        { field: "assetValue", headerName: "Asset Value", width: 120 },
         {
             field: "assessmentQuote",
             headerName: "Assessment Quote",
@@ -243,7 +417,7 @@ export default function WagonDashboard() {
                 <Button size="sm" onClick={() => handleOpenModal(params.value)}>View</Button>
             ),
         },
-    ];
+    ]), [selectedIds]); //PLEASE ADD
 
     if (loading) {
         return (
@@ -258,23 +432,64 @@ export default function WagonDashboard() {
             <Card className="mt-3" style={{marginBottom: "30px"}}>
                 <Card.Header>Wagon Dashboard</Card.Header>
                 <Card.Body style={{ height: 600, width: "100%" }}>
-                    {/*PLEASE ADD*/}
-                    <div className="d-flex justify-content-end mb-3">
-                        <Button variant="success" size="sm" onClick={handleExportToExcel}>
+                    <div className="d-flex justify-content-start mb-3">
+
+                        {/*PLEASE ADJUST*/}
+                        <Button variant="success" size="sm" onClick={handleExportToExcel} style={{marginRight: "10px"}}>
                             Export to Excel
                         </Button>
+
+                        {/*PLEASE ADD*/}
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => {
+                                if (!selectedIds || selectedIds.size === 0) setShowNoSelectModal(true);
+                                else setShowConfirmModal(true);
+                            }}
+                        >
+                            Upload
+                        </Button>
+
+                        {/*PLEASE ADD*/}
+                        <div style={{ marginLeft: 12, alignSelf: "center" }}>
+                            {selectedIds.size > 0 ? `${selectedIds.size} selected` : ""}
+                        </div>
+
                     </div>
-                    <DataGrid
-                        style={{height: 530}}
-                        rows={rows}
-                        columns={columns}
-                        pageSize={10}
-                        rowsPerPageOptions={[10, 25, 50]}
-                        disableSelectionOnClick
-                        getRowId={(row) =>
-                            `${row.wagonNumber ?? "NA"}-${row.inspectorId ?? "NA"}-${row.dateAssessed ?? "NA"}-${row.timeAssessed ?? "NA"}`
-                        }
-                    />
+
+                    {/*PLEASE ADD AND ADJUST*/}
+                    <div style={{ position: "relative" }} ref={gridContainerRef}>
+                        {uploading && (
+                            <div style={{
+                                position: "absolute",
+                                zIndex: 10,
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundColor: "rgba(255,255,255,0.6)",
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center"
+                            }}>
+                                <Spinner animation="border" />
+                            </div>
+                        )}
+                        <DataGrid
+                            style={{ height: 530 }}
+                            rows={visibleRows} //PLEASE ADJUST
+                            columns={columns}
+                            paginationModel={{ pageSize, page }} //PLEASE ADD
+                            onPaginationModelChange={(model) => { //PLEASE ADD
+                                setPage(model.page);
+                                setPageSize(model.pageSize);
+                            }}
+                            rowsPerPageOptions={[10, 25, 50]}
+                            disableSelectionOnClick
+                            getRowId={(row) => getRowUniqueId(row)} //PLEASE ADJUST
+                        />
+                    </div>
                 </Card.Body>
             </Card>
 
@@ -305,7 +520,6 @@ export default function WagonDashboard() {
                 </Modal.Footer>
             </Modal>
 
-            {/*PLEASE ADD*/}
             <Modal show={showPdfModal} onHide={() => setShowPdfModal(false)} size="xl">
                 <Modal.Header closeButton>
                     <Modal.Title>Assessment Quote PDF</Modal.Title>
@@ -318,11 +532,45 @@ export default function WagonDashboard() {
                             style={{ width: "100%", height: "100%", border: "none" }}
                         />
                     ) : (
-                        <p>No PDF available</p>
-                    )}
+                            <p>No PDF available</p>
+                        )}
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowPdfModal(false)}>Close</Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/*PLEASE ADD*/}
+            <Modal show={showNoPdf} onHide={() => setShowNoPdf(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>No PDF available</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>There is no PDF available for this wagon.</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowNoPdf(false)}>Close</Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/*PLEASE ADD*/}
+            <Modal show={showNoSelectModal} onHide={() => setShowNoSelectModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>No items selected</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>Please select one or more items in the grid to upload.</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowNoSelectModal(false)}>Close</Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/*PLEASE ADD*/}
+            <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Upload</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>Are you sure you want to upload the selected item(s)?</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>No</Button>
+                    <Button variant="primary" onClick={handleUploadConfirmed}>Yes</Button>
                 </Modal.Footer>
             </Modal>
         </Container>

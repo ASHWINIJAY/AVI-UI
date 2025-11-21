@@ -138,7 +138,9 @@ const WagonInfo = () => {
       if (!formData.BrakeDateTxt) {
           errors.push("Brake Date is required.");
       }
-
+if (!formData.GpsLat && !formData.GpsLong) {
+    errors.push("GPS location was not captured. Please refresh the page and try again.")
+}
     // Body photos required if BodyDamage = Yes
     if (formData.BodyDamageTxt === "Yes") {
       if (!formData.BodyPhoto1) errors.push("Body Photo 1 is required.");

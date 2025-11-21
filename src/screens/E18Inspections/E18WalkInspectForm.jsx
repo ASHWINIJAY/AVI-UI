@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Container, Button, Modal, Spinner } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
+import useMediaQuery from "@mui/material/useMediaQuery"; 
 import axios from "../../api/axios";
 import Loader from "../../components/Loader";
 
@@ -35,6 +36,7 @@ export const FORM_LABELS = {
 const E18WalkInspectForm = () => {
   const { formID } = useParams();
   const navigate = useNavigate();
+  const isMobile = useMediaQuery("(max-width:768px)");
 
   const storedLocoNumber = localStorage.getItem("locoNumber") ?? "";
   const storedLocoClass = localStorage.getItem("locoClass") ?? "";
@@ -88,17 +90,15 @@ const E18WalkInspectForm = () => {
 
   // 🔹 Handle “Select All” Header
   const handleSelectAllHeader = (field, checked) => {
-    // Uncheck all other headers
-    const newSelectState = {
+    const newState = {
       Good: false,
       Refurbish: false,
       Missing: false,
       Damage: false,
       [field]: checked,
     };
-    setSelectAll(newSelectState);
+    setSelectAll(newState);
 
-    // Update all rows accordingly
     setRows((prev) =>
       prev.map((r) => ({
         ...r,
@@ -109,20 +109,14 @@ const E18WalkInspectForm = () => {
       }))
     );
 
-    // Open photo modal for Missing/Damage
     if (checked && (field === "Missing" || field === "Damage")) {
-      openPhotoModal(null, field); // header-level = no rowId
+      openPhotoModal(null, field);
     }
   };
 
   // 🔹 Handle Row Checkbox
   const handleCheckboxChange = (rowId, field) => {
-    setSelectAll({
-      Good: false,
-      Refurbish: false,
-      Missing: false,
-      Damage: false,
-    });
+    setSelectAll({ Good: false, Refurbish: false, Missing: false, Damage: false });
 
     setRows((prev) =>
       prev.map((r) =>
@@ -156,7 +150,7 @@ const E18WalkInspectForm = () => {
     setShowPhotoModal(true);
   };
 
-  // 🔹 Photo Input Change
+  // 🔹 Photo File Change
   const handlePhotoFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -164,21 +158,20 @@ const E18WalkInspectForm = () => {
     setPhotoPreview(URL.createObjectURL(file));
   };
 
-  // 🔹 Save Photo Modal
+  // 🔹 Save Photo
   const handleSavePhotoModal = async () => {
     if (!photoFile || !modalPhotoType) return;
 
-    // ✅ Determine correct partId
     let partId = "";
     if (modalRowId != null) {
       const selectedRow = rows.find((r) => r.id === modalRowId);
       partId = selectedRow?.PartId || "";
     } else {
-      partId = rows?.length > 0 ? rows[0].PartId : "";
+      partId = rows?.[0]?.PartId || "";
     }
 
     if (!partId) {
-      alert("Unable to determine Part ID. Please try again.");
+      alert("Unable to determine Part ID.");
       return;
     }
 
@@ -194,45 +187,40 @@ const E18WalkInspectForm = () => {
       const res = await axios.post("E18Inspect/UploadPhoto", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
       const uploadedPath = res.data?.path ?? null;
 
-      if (modalRowId != null) {
-        // Photo uploaded for one row
-        setRows((prev) =>
-          prev.map((r) =>
-            r.id === modalRowId
-              ? modalPhotoType === "Missing"
-                ? { ...r, MissingPhoto: uploadedPath }
-                : { ...r, DamagePhoto: uploadedPath }
-              : r
-          )
-        );
-      } else {
-        // Photo uploaded from header-level select all
-        setRows((prev) =>
-          prev.map((r) =>
-            modalPhotoType === "Missing"
+      setRows((prev) =>
+        prev.map((r) => {
+          if (modalRowId == null) {
+            return modalPhotoType === "Missing"
               ? { ...r, MissingPhoto: uploadedPath }
-              : { ...r, DamagePhoto: uploadedPath }
-          )
-        );
-      }
+              : { ...r, DamagePhoto: uploadedPath };
+          }
+
+          if (r.id === modalRowId) {
+            return modalPhotoType === "Missing"
+              ? { ...r, MissingPhoto: uploadedPath }
+              : { ...r, DamagePhoto: uploadedPath };
+          }
+
+          return r;
+        })
+      );
 
       setShowPhotoModal(false);
       setPhotoFile(null);
       setPhotoPreview(null);
-    } catch (err) {
-      console.error("Photo upload failed:", err);
-      alert("Photo upload failed. Please try again.");
+    } catch {
+      alert("Photo upload failed.");
     }
   };
 
   // 🔹 Validate Photos
   const validatePhotos = () => {
-    const hasMissingOrDamage = rows.some((r) => r.Missing || r.Damage);
+    const hasIssue = rows.some((r) => r.Missing || r.Damage);
     const hasPhoto = rows.some((r) => r.MissingPhoto || r.DamagePhoto);
-    if (hasMissingOrDamage && !hasPhoto) {
+
+    if (hasIssue && !hasPhoto) {
       alert("Please upload at least one photo for Missing or Damaged parts.");
       return false;
     }
@@ -264,7 +252,7 @@ const E18WalkInspectForm = () => {
         ReplacePhoto: r.DamagePhoto,
       }));
 
-      await axios.post("E18Inspect/SubmitInspection", dtos);
+await axios.post("E18Inspect/SubmitInspection", dtos);
       alert("Inspection submitted successfully!");
 
       const currentIdx = FORM_ORDER.indexOf(formID);
@@ -278,7 +266,7 @@ const E18WalkInspectForm = () => {
               parseInt(storedLocoNumber)
             )}&userId=${encodeURIComponent(storedUserId)}`
           );
-          await axios.post(
+           axios.post(
             "QuotePdf/GenerateAndSaveQuotePdfForLocos",
             parseInt(storedLocoNumber),
             {
@@ -294,7 +282,6 @@ const E18WalkInspectForm = () => {
       setSubmitting(false);
     }
   };
-
   // 🔹 DataGrid Columns
   const columns = [
     { field: "id", headerName: "No.", width: 70 },
@@ -327,6 +314,7 @@ const E18WalkInspectForm = () => {
   return (
     <>
       {loading && <Loader fullscreen />}
+
       <Container className="mt-4 mb-5">
         <h3 className="text-center text-white mb-3">{FORM_LABELS[formID]}</h3>
 
@@ -334,12 +322,85 @@ const E18WalkInspectForm = () => {
           <div style={{ textAlign: "center", padding: "2rem" }}>
             <Spinner animation="border" />
           </div>
+        ) : isMobile ? (
+          <>
+            {/* 🔹 MOBILE VIEW — HEADER SELECT ALL */}
+            <div style={{ marginBottom: 10, color: "white", display: "flex", gap: 10 }}>
+              <strong>Select All:</strong>
+            </div>
+
+            <div
+              style={{
+                background: "#fff",
+                padding: 10,
+                borderRadius: 8,
+                marginBottom: 15,
+              }}
+            >
+              {["Good", "Refurbish", "Missing", "Damage"].map((field) => (
+                <label key={field} style={{ marginRight: 15 }}>
+                  <input
+                    type="checkbox"
+                    checked={selectAll[field]}
+                    onChange={(e) => handleSelectAllHeader(field, e.target.checked)}
+                  />{" "}
+                  {field}
+                </label>
+              ))}
+            </div>
+
+            {/* 🔹 MOBILE — CARD LIST */}
+            {rows.map((row) => (
+              <div
+                key={row.id}
+                style={{
+                  border: "1px solid #ddd",
+                  padding: 12,
+                  borderRadius: 8,
+                  marginBottom: 12,
+                  background: "#fff",
+                }}
+              >
+                <div style={{ marginBottom: 6 }}>
+                  <strong>{row.PartId}</strong> — {row.PartDescr}
+                </div>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                  {["Good", "Refurbish", "Missing", "Damage"].map((field) => (
+                    <label key={field}>
+                      <input
+                        type="checkbox"
+                        checked={row[field]}
+                        onChange={() => handleCheckboxChange(row.id, field)}
+                      />{" "}
+                      {field}
+                    </label>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: 8 }}>
+                  {row.MissingPhoto && (
+                    <div style={{ fontSize: 12, color: "#007bff" }}>
+                      Missing photo uploaded
+                    </div>
+                  )}
+                  {row.DamagePhoto && (
+                    <div style={{ fontSize: 12, color: "#007bff" }}>
+                      Damage photo uploaded
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </>
         ) : (
+          /* 🔹 DESKTOP VIEW */
           <div style={{ height: 580, background: "#fff", borderRadius: 8, padding: 8 }}>
             <DataGrid rows={rows} columns={columns} disableRowSelectionOnClick />
           </div>
         )}
 
+        {/* Bottom Buttons */}
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20 }}>
           <Button variant="secondary" onClick={() => navigate(-1)}>
             ← Back
@@ -360,11 +421,10 @@ const E18WalkInspectForm = () => {
           <Modal.Header closeButton>
             <Modal.Title>
               Upload {modalPhotoType} Photo
-              {modalRowId != null && (
-                <> for {rows.find((r) => r.id === modalRowId)?.PartId}</>
-              )}
+              {modalRowId != null && <> for {rows.find((r) => r.id === modalRowId)?.PartId}</>}
             </Modal.Title>
           </Modal.Header>
+
           <Modal.Body>
             <input type="file" accept="image/*;capture=camera" onChange={handlePhotoFileChange} />
             {photoPreview && (
@@ -375,6 +435,7 @@ const E18WalkInspectForm = () => {
               />
             )}
           </Modal.Body>
+
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowPhotoModal(false)}>
               Cancel

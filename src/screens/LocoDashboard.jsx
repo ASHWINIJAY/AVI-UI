@@ -1,31 +1,80 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Container, Card, Modal, Button, Spinner } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
-import ExcelJS from "exceljs"; //npm install exceljs file-saver //PLEASE ADD
-import { saveAs } from "file-saver"; //PLEASE ADD
+import ExcelJS from "exceljs"; // npm i exceljs
+import { saveAs } from "file-saver"; // npm i file-saver
 
 export default function LocoDashboard() {
-    const [rows, setRows] = useState([]);
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
+
+    const [page, setPage] = useState(0);
+    const [pageSize, setPageSize] = useState(100);
+
+    const [allRows, setAllRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modalPhotos, setModalPhotos] = useState([]);
     const [showModal, setShowModal] = useState(false);
-const [pdfUrl, setPdfUrl] = useState(null); //PLEASE ADD
-    const [showPdfModal, setShowPdfModal] = useState(false); //PLEASE ADD
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // <-- Adjust if different
+    const [pdfUrl, setPdfUrl] = useState(null);
+    const [showPdfModal, setShowPdfModal] = useState(false);
+    const [showNoPdf, setShowNoPdf] = useState(false);
+
+    // selection (stores backend id values)
+    const [selectedIds, setSelectedIds] = useState(new Set());
+    const [showNoSelectModal, setShowNoSelectModal] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [uploading, setUploading] = useState(false);
+
+    // scroll preservation
+    const scrollPosRef = useRef(0);
+    const gridContainerRef = useRef(null);
+
+    // Fetch data from backend
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllLocoDashboard`);
+            if (!res.ok) {
+                const t = await res.text();
+                throw new Error(`Fetch failed ${res.status}: ${t}`);
+            }
+            const data = await res.json();
+            // Ensure array
+            setAllRows(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("Error fetching dashboard data:", err);
+            setAllRows([]);
+        } finally {
+            setLoading(false);
+            handleRestoreScroll();
+        }
+    }, [BACKEND_URL]);
 
     useEffect(() => {
-        fetch(`${BACKEND_URL}/api/Dashboard/getAllLocoDashboard`)
-            .then((res) => res.json())
-            .then((data) => {
-                setRows(data);
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error("Error fetching dashboard data:", err);
-                setLoading(false);
-            });
-    }, []);
+        fetchData();
+    }, [fetchData]);
 
+    // visibleRows shown in grid (exclude uploaded)
+    const visibleRows = useMemo(() => {
+        return allRows.filter(r => r.uploadStatus !== "Uploaded");
+    }, [allRows]);
+
+    // Helpers for scroll
+    const handleSaveScroll = () => {
+        if (gridContainerRef.current) {
+            const viewport = gridContainerRef.current.querySelector(".MuiDataGrid-virtualScroller");
+            if (viewport) scrollPosRef.current = viewport.scrollTop;
+        }
+    };
+    const handleRestoreScroll = () => {
+        setTimeout(() => {
+            if (gridContainerRef.current) {
+                const viewport = gridContainerRef.current.querySelector(".MuiDataGrid-virtualScroller");
+                if (viewport) viewport.scrollTop = scrollPosRef.current;
+            }
+        }, 50);
+    };
+
+    // Modal handlers
     const handleOpenModal = (photosValue) => {
         let photos = [];
 
@@ -35,11 +84,8 @@ const [pdfUrl, setPdfUrl] = useState(null); //PLEASE ADD
             try {
                 let parsed = typeof photosValue === "string" ? JSON.parse(photosValue) : photosValue;
                 if (!Array.isArray(parsed)) parsed = [parsed];
-
-                // Filter out "No Photos" and empty strings
                 photos = parsed.filter(p => p && p !== "No Photos" && p !== "N/A");
             } catch {
-                // fallback if parsing fails
                 photos = [photosValue];
             }
         }
@@ -47,86 +93,132 @@ const [pdfUrl, setPdfUrl] = useState(null); //PLEASE ADD
         setModalPhotos(photos);
         setShowModal(true);
     };
-const handleOpenPdf = (pdfPath) => {
+
+    const handleOpenPdf = (pdfPath) => {
         if (!pdfPath || pdfPath === "N/A" || pdfPath === "No File") {
-            alert("No PDF available for this wagon.");
+            setShowNoPdf(true);
             return;
         }
-
-        // Prepend BACKEND_URL if needed
         const fullUrl = pdfPath.startsWith("http") ? pdfPath : `${BACKEND_URL}/${pdfPath}`;
         setPdfUrl(fullUrl);
         setShowPdfModal(true);
     };
+
     const renderImageCell = (value, alt) => {
         if (!value || value === "N/A") return <span>N/A</span>;
-        const url = value.startsWith("http") ? value : `${BACKEND_URL}${value}`;
+        const url = value.startsWith("http") ? value : `${BACKEND_URL}/${value}`;
         return <img src={url} alt={alt} style={{ maxWidth: 100, maxHeight: 100, objectFit: "cover" }} />;
     };
-const handleExportToExcel = async () => {
-    if (!rows || rows.length === 0) {
-        alert("No data to export.");
-        return;
-    }
 
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Loco Dashboard");
+    // Selection helpers (store backend id values)
+    const toggleSelect = (id) => {
+        setSelectedIds(prev => {
+            const c = new Set(prev);
+            if (c.has(id)) c.delete(id);
+            else c.add(id);
+            return c;
+        });
+    };
+    const clearSelection = () => setSelectedIds(new Set());
 
-    // Define headers
-    const headers = [
-        "Loco Number",
-        "Loco Class",
-        "Loco Model",
-        "Inspector",
-        "Date",
-        "Time",
-        "Refurbish Value",
-        "Missing Value",
-        "Replace Value",
-        "Upload Status",
-        "Upload Date"
-    ];
+    // Build payload for upload from selected backend ids
+    const buildUploadPayload = () => {
+        const selectedRows = allRows.filter(r => selectedIds.has(r.id));
+        return selectedRows.map(r => ({
+            locoNumber: r.locoNumber ?? r.wagonNumber ?? null,
+            bodyPhotos: r.bodyPhotos ?? null,
+            assessmentQuote: r.assessmentQuote ?? null,
+            locoPhoto: r.locoPhoto ?? null,
+            missingPhotos: r.missingPhotos ?? null,
+            replacePhotos: r.replacePhotos ?? null
+        }));
+    };
 
-    worksheet.addRow(headers);
+    const handleUploadConfirmed = async () => {
+        const payload = buildUploadPayload();
+        if (!payload || payload.length === 0) {
+            setShowNoSelectModal(true);
+            return;
+        }
 
-    // Style the header row
-    const headerRow = worksheet.getRow(1);
-    headerRow.font = { bold: true };
-    headerRow.eachCell((cell) => {
-        cell.border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
-        cell.alignment = { vertical: "middle", horizontal: "center" };
-        cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFE8E8E8" } // Light gray background for headers
-        };
-    });
+        handleSaveScroll();
+        setShowConfirmModal(false);
+        setUploading(true);
 
-    // Add data rows
-    rows.forEach((row) => {
-        worksheet.addRow([
-            row.locoNumber,
-            row.locoClass,
-            row.locoModel,
-            row.inspectorName,
-            row.dateAssessed,
-            row.timeAssessed,
-            row.refurbishValue,
-            row.missingValue,
-            row.replaceValue,
-            row.uploadStatus,
-            row.uploadDate
-        ]);
-    });
+        try {
+            const resp = await fetch(`${BACKEND_URL}/api/Dashboard/uploadLocos`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
 
-    // Add borders to all cells
-    worksheet.eachRow((row) => {
-        row.eachCell((cell) => {
+            if (!resp.ok) {
+                const text = await resp.text();
+                throw new Error(`Server error: ${resp.status} - ${text}`);
+            }
+
+            const blob = await resp.blob();
+            let filename = `LocoDashboardUpload_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
+            const cd = resp.headers.get("content-disposition");
+            if (cd) {
+                const match = /filename\*=UTF-8''(.+)$/.exec(cd) || /filename="(.+)"/.exec(cd);
+                if (match) filename = decodeURIComponent(match[1]);
+            }
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+
+            await fetchData();
+            clearSelection();
+        } catch (err) {
+            console.error("Upload error:", err);
+            alert("Upload failed: " + (err.message || "Unknown error"));
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    // Export ALL rows to Excel (you asked for "Export all rows")
+    const handleExportToExcel = async () => {
+        const rowsToExport = allRows; // <-- Export ALL rows
+
+        if (!rowsToExport || rowsToExport.length === 0) {
+            alert("No data to export.");
+            return;
+        }
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Loco Dashboard");
+
+        const headers = [
+            "Loco Number",
+            "Loco Class",
+            "Loco Model",
+            "Inspector",
+            "Date",
+            "Time Completed",
+            "Time Started",
+            "Gps Latitude",
+            "Gps Longitude",
+            "Refurbish Value",
+            "Missing Value",
+            "Replace Value",
+            "Asset Value",
+            "Upload Status",
+            "Upload Date"
+        ];
+
+        worksheet.addRow(headers);
+
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.eachCell((cell) => {
             cell.border = {
                 top: { style: "thin" },
                 left: { style: "thin" },
@@ -134,32 +226,90 @@ const handleExportToExcel = async () => {
                 right: { style: "thin" }
             };
             cell.alignment = { vertical: "middle", horizontal: "center" };
+            cell.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "FFE8E8E8" }
+            };
         });
-    });
 
-    // Auto-adjust column widths
-    worksheet.columns.forEach((column) => {
-        let maxLength = 0;
-        column.eachCell({ includeEmpty: true }, (cell) => {
-            const cellLength = cell.value ? cell.value.toString().length : 10;
-            if (cellLength > maxLength) maxLength = cellLength;
+        rowsToExport.forEach((row) => {
+            worksheet.addRow([
+                row.locoNumber ?? row.wagonNumber ?? "",
+                row.locoClass ?? "",
+                row.locoModel ?? "",
+                row.inspectorName ?? row.inspector ?? "",
+                row.dateAssessed ?? "",
+                row.timeAssessed ?? "",
+                row.startTimeInspect ?? "",
+                row.gpsLatitude ?? "",
+                row.gpsLongitude ?? "",
+                row.refurbishValue ?? "",
+                row.missingValue ?? "",
+                row.replaceValue ?? "",
+                row.assetValue ?? "",
+                row.uploadStatus ?? "",
+                row.uploadDate ?? ""
+            ]);
         });
-        column.width = maxLength + 5;
-    });
 
-    // Generate Excel file and trigger download
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: "application/octet-stream" });
-    saveAs(blob, `LocoDashboard_${new Date().toISOString().split("T")[0]}.xlsx`);
-};
+        worksheet.eachRow((r) => {
+            r.eachCell((cell) => {
+                cell.border = {
+                    top: { style: "thin" },
+                    left: { style: "thin" },
+                    bottom: { style: "thin" },
+                    right: { style: "thin" }
+                };
+                cell.alignment = { vertical: "middle", horizontal: "center" };
+            });
+        });
 
-    const columns = [
+        worksheet.columns.forEach((column) => {
+            let maxLength = 0;
+            column.eachCell({ includeEmpty: true }, (cell) => {
+                const cellLength = cell.value ? cell.value.toString().length : 10;
+                if (cellLength > maxLength) maxLength = cellLength;
+            });
+            column.width = maxLength + 5;
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: "application/octet-stream" });
+        saveAs(blob, `LocoDashboard_${new Date().toISOString().split("T")[0]}.xlsx`);
+    };
+
+    // Columns (use backend id for selection)
+    const columns = useMemo(() => ([
+        {
+            field: "select",
+            headerName: "",
+            width: 60,
+            sortable: false,
+            filterable: false,
+            disableColumnMenu: true,
+            renderCell: (params) => {
+                const id = params.row.id;
+                const checked = selectedIds.has(id);
+                return (
+                    <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleSelect(id)}
+                        aria-label={`Select loco ${params.row.locoNumber ?? params.row.wagonNumber ?? id}`}
+                    />
+                );
+            }
+        },
         { field: "locoNumber", headerName: "Loco Number", width: 130 },
         { field: "locoClass", headerName: "Loco Class", width: 130 },
         { field: "locoModel", headerName: "Loco Model", width: 150 },
         { field: "inspectorName", headerName: "Inspector", width: 150 },
-        { field: "dateAssessed", headerName: "Date", width: 110 },
-        { field: "timeAssessed", headerName: "Time", width: 110 },
+        { field: "dateAssessed", headerName: "Date Completed", width: 110 },
+        { field: "timeAssessed", headerName: "Time Completed", width: 110 },
+        { field: "startTimeInspect", headerName: "Time Started", width: 110 },
+        { field: "gpsLatitude", headerName: "Gps Latitude", width: 130 },
+        { field: "gpsLongitude", headerName: "Gps Longitude", width: 130 },
         {
             field: "bodyPhotos",
             headerName: "Body Photos",
@@ -172,6 +322,7 @@ const handleExportToExcel = async () => {
         { field: "refurbishValue", headerName: "Refurbish Value", width: 130 },
         { field: "missingValue", headerName: "Missing Value", width: 130 },
         { field: "replaceValue", headerName: "Replace Value", width: 130 },
+        { field: "assetValue", headerName: "Asset Value", width: 120 },
         {
             field: "missingPhotos",
             headerName: "Missing Photos",
@@ -188,24 +339,24 @@ const handleExportToExcel = async () => {
                 <Button size="sm" onClick={() => handleOpenModal(params.value)}>View</Button>
             ),
         },
-       {
-                   field: "assessmentQuote",
-                   headerName: "Assessment Quote",
-                   width: 180,
-                   renderCell: (params) => (
-                       params.value && params.value !== "N/A" ? (
-                           <Button size="sm" variant="outline-primary" onClick={() => handleOpenPdf(params.value)}>
-                               View PDF
-                           </Button>
-                       ) : (
-                           <span>N/A</span>
-                       )
-                   ),
-               },
+        {
+            field: "assessmentQuote",
+            headerName: "Assessment Quote",
+            width: 180,
+            renderCell: (params) => (
+                params.value && params.value !== "N/A" ? (
+                    <Button size="sm" variant="outline-primary" onClick={() => handleOpenPdf(params.value)}>
+                        View PDF
+                    </Button>
+                ) : (
+                    <span>N/A</span>
+                )
+            ),
+        },
         { field: "assessmentCert", headerName: "Assessment Cert", width: 130 },
         { field: "uploadStatus", headerName: "Upload Status", width: 130 },
         { field: "uploadDate", headerName: "Upload Date", width: 130 },
-    ];
+    ]), [selectedIds]);
 
     if (loading) {
         return (
@@ -220,23 +371,59 @@ const handleExportToExcel = async () => {
             <Card className="mt-3" style={{ marginBottom: "30px" }}>
                 <Card.Header>Loco Dashboard</Card.Header>
                 <Card.Body style={{ height: 600, width: "100%" }}>
-                                    {/*PLEASE ADD*/}
-                                    <div className="d-flex justify-content-end mb-3">
-                                        <Button variant="success" size="sm" onClick={handleExportToExcel}>
-                                            Export to Excel
-                                        </Button>
-                                    </div>
-                                    <DataGrid
-                                        style={{height: 530}} 
-                        rows={rows}
-                        columns={columns}
-                        pageSize={10}
-                        rowsPerPageOptions={[10, 25, 50]}
-                        disableSelectionOnClick
-                        getRowId={(row) =>
-                            `${row.locoNumber ?? "NA"}-${row.inspectorId ?? "NA"}-${row.dateAssessed ?? "NA"}-${row.timeAssessed ?? "NA"}`
-                        }
-                    />
+                    <div className="d-flex justify-content-start mb-3">
+                        <Button variant="success" size="sm" onClick={handleExportToExcel} style={{ marginRight: "10px" }}>
+                            Export to Excel (All Rows)
+                        </Button>
+
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => {
+                                if (!selectedIds || selectedIds.size === 0) setShowNoSelectModal(true);
+                                else setShowConfirmModal(true);
+                            }}
+                        >
+                            Upload
+                        </Button>
+
+                        <div style={{ marginLeft: 12, alignSelf: "center" }}>
+                            {selectedIds.size > 0 ? `${selectedIds.size} selected` : ""}
+                        </div>
+                    </div>
+
+                    <div style={{ position: "relative" }} ref={gridContainerRef}>
+                        {uploading && (
+                            <div style={{
+                                position: "absolute",
+                                zIndex: 10,
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundColor: "rgba(255,255,255,0.6)",
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center"
+                            }}>
+                                <Spinner animation="border" />
+                            </div>
+                        )}
+
+                        <DataGrid
+                            style={{ height: 530 }}
+                            rows={visibleRows}
+                            columns={columns}
+                            paginationModel={{ page, pageSize }}
+                            onPaginationModelChange={(model) => {
+                                setPage(model.page);
+                                setPageSize(model.pageSize);
+                            }}
+                            rowsPerPageOptions={[10, 25, 50]}
+                            disableSelectionOnClick
+                            getRowId={(row) => row.id}
+                        />
+                    </div>
                 </Card.Body>
             </Card>
 
@@ -247,7 +434,6 @@ const handleExportToExcel = async () => {
                 <Modal.Body className="d-flex flex-wrap justify-content-center gap-2">
                     {modalPhotos.length > 0 ? (
                         modalPhotos.map((url, i) => {
-                            // Prepend BACKEND_URL or window.location.origin but keep folder structure
                             const imageUrl = url.startsWith("http") ? url : `${BACKEND_URL}/${url}`;
                             return (
                                 <img
@@ -266,25 +452,57 @@ const handleExportToExcel = async () => {
                     <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
                 </Modal.Footer>
             </Modal>
-             <Modal show={showPdfModal} onHide={() => setShowPdfModal(false)} size="xl">
-                            <Modal.Header closeButton>
-                                <Modal.Title>Assessment Quote PDF</Modal.Title>
-                            </Modal.Header>
-                            <Modal.Body style={{ height: "80vh" }}>
-                                {pdfUrl ? (
-                                    <iframe
-                                        src={pdfUrl}
-                                        title="Assessment Quote"
-                                        style={{ width: "100%", height: "100%", border: "none" }}
-                                    />
-                                ) : (
-                                    <p>No PDF available</p>
-                                )}
-                            </Modal.Body>
-                            <Modal.Footer>
-                                <Button variant="secondary" onClick={() => setShowPdfModal(false)}>Close</Button>
-                            </Modal.Footer>
-                        </Modal>
+
+            <Modal show={showPdfModal} onHide={() => setShowPdfModal(false)} size="xl">
+                <Modal.Header closeButton>
+                    <Modal.Title>Assessment Quote PDF</Modal.Title>
+                </Modal.Header>
+                <Modal.Body style={{ height: "80vh" }}>
+                    {pdfUrl ? (
+                        <iframe
+                            src={pdfUrl}
+                            title="Assessment Quote"
+                            style={{ width: "100%", height: "100%", border: "none" }}
+                        />
+                    ) : (
+                        <p>No PDF available</p>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowPdfModal(false)}>Close</Button>
+                </Modal.Footer>
+            </Modal>
+
+            <Modal show={showNoPdf} onHide={() => setShowNoPdf(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>No PDF available</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>There is no PDF available for this loco.</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowNoPdf(false)}>Close</Button>
+                </Modal.Footer>
+            </Modal>
+
+            <Modal show={showNoSelectModal} onHide={() => setShowNoSelectModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>No items selected</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>Please select one or more items in the grid to upload.</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowNoSelectModal(false)}>Close</Button>
+                </Modal.Footer>
+            </Modal>
+
+            <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Upload</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>Are you sure you want to upload the selected item(s)?</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>No</Button>
+                    <Button variant="primary" onClick={handleUploadConfirmed}>Yes</Button>
+                </Modal.Footer>
+            </Modal>
         </Container>
     );
 }
