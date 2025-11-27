@@ -4,7 +4,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import ExcelJS from "exceljs"; // npm i exceljs
 import { saveAs } from "file-saver"; // npm i file-saver
 
-export default function LocoDashboard() {
+export default function UploadedLocoDashboard() {
     const BACKEND_URL = "https://avi-app.co.za/AVIapi";
 //const BACKEND_URL = "http://41.87.206.94/AVIapi";
      const [page, setPage] = useState(0); 
@@ -34,7 +34,7 @@ const getRowUniqueId = (row) => `${row.locoNumber ?? "NA"}-${row.inspectorId ?? 
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllLocoDashboard`);
+            const res = await fetch(`${BACKEND_URL}/api/Dashboard/getUploadedLocoDashboard`);
             if (!res.ok) {
                 const t = await res.text();
                 throw new Error(`Fetch failed ${res.status}: ${t}`);
@@ -57,7 +57,7 @@ const getRowUniqueId = (row) => `${row.locoNumber ?? "NA"}-${row.inspectorId ?? 
 
     // visibleRows shown in grid (exclude uploaded)
     const visibleRows = useMemo(() => {
-        return allRows.filter(r => r.uploadStatus !== "Uploaded");
+        return allRows.filter(r => r.uploadStatus === "Uploaded");
     }, [allRows]);
 
     // Helpers for scroll
@@ -264,32 +264,7 @@ const handleOpenPdf = (pdfPath) => {
         saveAs(blob, `LocoDashboard_${new Date().toISOString().split("T")[0]}.xlsx`);
     };
 
-    const columns = useMemo(() => ([
-        {
-            field: "select",
-            headerName: "",
-            width: 60,
-            sortable: false,
-            filterable: false,
-            disableColumnMenu: true,
-            renderCell: (params) => {
-                const id = getRowUniqueId(params.row);
-                const checked = selectionModel.includes(id); //PLEASE ADD
-                return (
-                    <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(e) => { //PLEASE ADD
-                            const newSelection = e.target.checked
-                                ? [...selectionModel, id]
-                                : selectionModel.filter((sid) => sid !== id);
-                            setSelectionModel(newSelection);
-                        }}
-                        aria-label={`Select wagon ${params.row.wagonNumber}`}
-                    />
-                );
-            }
-        },
+    const columns = useMemo(() => ([       
         { field: "locoNumber", headerName: "Loco Number", width: 130 },
         { field: "locoClass", headerName: "Loco Class", width: 130 },
         { field: "locoModel", headerName: "Loco Model", width: 150 },
@@ -378,16 +353,7 @@ const handleOpenPdf = (pdfPath) => {
                             Export to Excel (All Rows)
                         </Button>
 
-                        <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={() => {
-                                if (!selectedIds || selectedIds.size === 0) setShowNoSelectModal(true);
-                                else setShowConfirmModal(true);
-                            }}
-                        >
-                            Upload
-                        </Button>
+                        
 
                         <div style={{ marginLeft: 12, alignSelf: "center" }}>
                             {selectedIds.size > 0 ? `${selectedIds.size} selected` : ""}

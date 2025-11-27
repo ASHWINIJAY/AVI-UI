@@ -1,40 +1,35 @@
-﻿import React, { useEffect, useRef, useState, useCallback, useMemo } from "react"; //PLEASE ADJUST
+﻿import React, { useEffect, useRef, useState, useCallback, useMemo } from "react"; 
 import { Container, Card, Modal, Button, Spinner } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 
 export default function WagonDashboard() {
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // <-- Adjust if different
-
-    const [page, setPage] = useState(0); //PLEASE ADD
-    const [pageSize, setPageSize] = useState(100); //PLEASE ADD 
-
-    const [allRows, setAllRows] = useState([]); //PLEASE ADD
+     //const BACKEND_URL = "http://41.87.206.94/AVIapi"; 
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // Adjust if different http://41.87.206.94/AVIapi
+  
+    const [page, setPage] = useState(0); 
+    const [pageSize, setPageSize] = useState(100);  
+    const [allRows, setAllRows] = useState([]); 
+    const [selectionModel, setSelectionModel] = useState([]); //PLEASE ADD
     const [loading, setLoading] = useState(true);
     const [modalPhotos, setModalPhotos] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [pdfUrl, setPdfUrl] = useState(null);
     const [showPdfModal, setShowPdfModal] = useState(false);
-
-    //PLEASE ADD
     const [showNoPdf, setShowNoPdf] = useState(false);
-
-    //PLEASE ADD
-    const [selectedIds, setSelectedIds] = useState(new Set());
+    const selectedIds = useMemo(() => new Set(selectionModel), [selectionModel]); //PLEASE ADJUST
     const [showNoSelectModal, setShowNoSelectModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false); //PLEASE ADD
 
-    // Preserve scroll position
-    const scrollPosRef = useRef(0); //PLEASE ADD
+    const scrollPosRef = useRef(0); 
 
-    const gridContainerRef = useRef(null); //PLEASE ADD
+    const gridContainerRef = useRef(null); 
 
-    //PLEASE ADD
     const getRowUniqueId = (row) => `${row.wagonNumber ?? "NA"}-${row.inspectorId ?? "NA"}-${row.dateAssessed ?? "NA"}-${row.timeAssessed ?? "NA"}`;
 
-    //PLEASE ADD AND ADJUST
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
@@ -51,13 +46,10 @@ export default function WagonDashboard() {
         }
     }, []);
 
-    //PLEASE ADJUST
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
-    //PLEASE ADD
-    // Visible rows: filter only at render time
     const visibleRows = useMemo(() => {
         return allRows.filter(r => r.uploadStatus !== "Uploaded");
     }, [allRows]);
@@ -78,7 +70,6 @@ export default function WagonDashboard() {
         }, 50);
     };
 
-    //PLEASE ADD
     const handleOpenModal = (photosValue) => {
         let photos = [];
 
@@ -113,10 +104,10 @@ export default function WagonDashboard() {
     };
 
     const handleOpenPdf = (pdfPath) => {
-        if (!pdfPath || pdfPath === "N/A" || pdfPath === "No File" || pdfPath === "Not Ready") { //PLEASE ADJUST
-            setPdfUrl(null); //PLEASE ADD
-            setShowPdfModal(false); //PLEASE ADD
-            setShowNoPdf(true); //PLEASE ADD
+        if (!pdfPath || pdfPath === "N/A" || pdfPath === "No File" || pdfPath === "Not Ready") { 
+            setPdfUrl(null); 
+            setShowPdfModal(false); 
+            setShowNoPdf(true); 
             return;
         }
 
@@ -133,9 +124,8 @@ export default function WagonDashboard() {
     };
 
     const handleExportToExcel = async () => {
-        const rowsToExport = visibleRows; //PLEASE ADD
+        const rowsToExport = visibleRows; 
 
-        //PLEASE ADD
         if (!rowsToExport.length) {
             alert("No rows to export.");
             return;
@@ -186,8 +176,6 @@ export default function WagonDashboard() {
             cell.alignment = { vertical: "middle", horizontal: "center" };
         });
 
-        //PLEASE ADJUST
-        // Add data rows
         rowsToExport.forEach((row) => {
             worksheet.addRow([
                 row.wagonNumber,
@@ -244,24 +232,20 @@ export default function WagonDashboard() {
         saveAs(blob, `WagonDashboard_${new Date().toISOString().split("T")[0]}.xlsx`);
     };
 
-    
+    //PLEASE REMOVE
+    //const toggleSelect = (id) => {
+    //    setSelectedIds(prev => {
+    //        const c = new Set(prev);
+    //        if (c.has(id)) c.delete(id);
+    //        else c.add(id);
+    //        return c;
+    //    });
+    //};
 
-    //PLEASE ADD
-    const toggleSelect = (id) => {
-        setSelectedIds(prev => {
-            const c = new Set(prev);
-            if (c.has(id)) c.delete(id);
-            else c.add(id);
-            return c;
-        });
-    };
+    const clearSelection = () => setSelectionModel([]); //PLEASE ADJUST
 
-    //PLEASE ADD
-    const clearSelection = () => setSelectedIds(new Set());
-
-    //PLEASE ADD
     const buildUploadPayload = () => {
-        const selectedRows = allRows.filter(r => selectedIds.has(getRowUniqueId(r)));
+        const selectedRows = allRows.filter(r => selectedIds.has(getRowUniqueId(r))); //PLEASE ADJUST
         return selectedRows.map(r => ({
             wagonNumber: r.wagonNumber,
             bodyPhotos: r.bodyPhotos,
@@ -275,7 +259,6 @@ export default function WagonDashboard() {
         }));
     };
 
-    //PLEASE ADD
     const handleUploadConfirmed = async () => {
         const payload = buildUploadPayload();
         if (!payload || payload.length === 0) {
@@ -288,6 +271,7 @@ export default function WagonDashboard() {
         setShowConfirmModal(false);
         setUploading(true);
 
+        //PLEASE ADJUST
         try {
             const resp = await fetch(`${BACKEND_URL}/api/Dashboard/uploadWagons`, {
                 method: "POST",
@@ -300,23 +284,13 @@ export default function WagonDashboard() {
                 throw new Error(`Server error: ${resp.status} - ${text}`);
             }
 
-            const blob = await resp.blob();
-            let filename = `WagonDashboardUpload_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
-            const cd = resp.headers.get("content-disposition");
-            if (cd) {
-                const match = /filename\*=UTF-8''(.+)$/.exec(cd) || /filename="(.+)"/.exec(cd);
-                if (match) filename = decodeURIComponent(match[1]);
-            }
+            // Optional: you can still get the response JSON if the backend returns some info
+            const result = await resp.json?.();
+            console.log("Upload successful:", result);
 
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
+            setShowSuccessModal(true); //PLEASE ADD
 
+            // Refresh dashboard data and clear selection
             await fetchData();
             clearSelection();
 
@@ -328,9 +302,7 @@ export default function WagonDashboard() {
         }
     };
 
-    //PLEASE ADD AND ADJUST
     const columns = useMemo(() => ([
-        //PLEASE ADD
         {
             field: "select",
             headerName: "",
@@ -340,12 +312,17 @@ export default function WagonDashboard() {
             disableColumnMenu: true,
             renderCell: (params) => {
                 const id = getRowUniqueId(params.row);
-                const checked = selectedIds.has(id);
+                const checked = selectionModel.includes(id); //PLEASE ADD
                 return (
                     <input
                         type="checkbox"
                         checked={checked}
-                        onChange={() => toggleSelect(id)}
+                        onChange={(e) => { //PLEASE ADD
+                            const newSelection = e.target.checked
+                                ? [...selectionModel, id]
+                                : selectionModel.filter((sid) => sid !== id);
+                            setSelectionModel(newSelection);
+                        }}
                         aria-label={`Select wagon ${params.row.wagonNumber}`}
                     />
                 );
@@ -397,7 +374,21 @@ export default function WagonDashboard() {
                 )
             ),
         },
-        { field: "assessmentCert", headerName: "Assessment Cert", width: 130 },
+        //PLEASE ADD
+        {
+            field: "assessmentCert",
+            headerName: "Assessment Cert",
+            width: 130,
+            renderCell: (params) => (
+                params.value && params.value !== "N/A" ? (
+                    <Button size="sm" variant="outline-primary" onClick={() => handleOpenPdf(params.value)}>
+                        View PDF
+                    </Button>
+                ) : (
+                    <span>N/A</span>
+                )
+            ),
+        },
         { field: "uploadStatus", headerName: "Upload Status", width: 130 },
         { field: "uploadDate", headerName: "Upload Date", width: 130 },
         { field: "wagonPhoto", headerName: "Wagon Photo", width: 150, renderCell: (params) => renderImageCell(params.value, "Wagon") },
@@ -417,7 +408,7 @@ export default function WagonDashboard() {
                 <Button size="sm" onClick={() => handleOpenModal(params.value)}>View</Button>
             ),
         },
-    ]), [selectedIds]); //PLEASE ADD
+    ]), [selectionModel]); //PLEASE ADD
 
     if (loading) {
         return (
@@ -478,16 +469,25 @@ export default function WagonDashboard() {
                         )}
                         <DataGrid
                             style={{ height: 530 }}
-                            rows={visibleRows} //PLEASE ADJUST
+                            rows={visibleRows} 
                             columns={columns}
-                            paginationModel={{ pageSize, page }} //PLEASE ADD
-                            onPaginationModelChange={(model) => { //PLEASE ADD
+                            getRowId={(row) => getRowUniqueId(row)} 
+                            paginationModel={{ pageSize, page }} 
+                            onPaginationModelChange={(model) => { 
                                 setPage(model.page);
                                 setPageSize(model.pageSize);
                             }}
-                            rowsPerPageOptions={[10, 25, 50]}
-                            disableSelectionOnClick
-                            getRowId={(row) => getRowUniqueId(row)} //PLEASE ADJUST
+                            disableRowSelectionOnClick
+                            selectionModel={selectionModel} //PLEASE ADD
+                            onRowClick={(params) => {
+                                const id = getRowUniqueId(params.row);
+                                setSelectionModel(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+                            }}
+                            sx={{
+                                "& .Mui-selected": { backgroundColor: "rgba(0, 123, 255, 0.2)", "&:hover": { backgroundColor: "rgba(0, 123, 255, 0.25)" } },
+                                cursor: "pointer"
+                            }}
+                            showToolbar //PLEASE ADD
                         />
                     </div>
                 </Card.Body>
@@ -540,7 +540,6 @@ export default function WagonDashboard() {
                 </Modal.Footer>
             </Modal>
 
-            {/*PLEASE ADD*/}
             <Modal show={showNoPdf} onHide={() => setShowNoPdf(false)}>
                 <Modal.Header closeButton>
                     <Modal.Title>No PDF available</Modal.Title>
@@ -551,7 +550,6 @@ export default function WagonDashboard() {
                 </Modal.Footer>
             </Modal>
 
-            {/*PLEASE ADD*/}
             <Modal show={showNoSelectModal} onHide={() => setShowNoSelectModal(false)}>
                 <Modal.Header closeButton>
                     <Modal.Title>No items selected</Modal.Title>
@@ -562,7 +560,6 @@ export default function WagonDashboard() {
                 </Modal.Footer>
             </Modal>
 
-            {/*PLEASE ADD*/}
             <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
                 <Modal.Header closeButton>
                     <Modal.Title>Confirm Upload</Modal.Title>
@@ -571,6 +568,19 @@ export default function WagonDashboard() {
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>No</Button>
                     <Button variant="primary" onClick={handleUploadConfirmed}>Yes</Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/*PLEASE ADD*/}
+            <Modal show={showSuccessModal} onHide={() => setShowSuccessModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Upload Successful</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    The selected wagon dashboard items have been successfully uploaded.
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={() => setShowSuccessModal(false)}>OK</Button>
                 </Modal.Footer>
             </Modal>
         </Container>

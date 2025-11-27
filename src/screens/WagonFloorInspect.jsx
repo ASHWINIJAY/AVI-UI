@@ -4,7 +4,6 @@ import { Container, Button, Modal, Spinner } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import axios from "../api/axios";
-import PdfQuote from "../pdf/PdfQuote"; //REMOVE
 
 const WagonFloorInspect = () => {
     const navigate = useNavigate();
@@ -342,33 +341,39 @@ const WagonFloorInspect = () => {
                 ReplaceValue: r.ReplaceValue ?? "0.00",
                 MissingPhoto: r.MissingPhoto ?? "No Photo",
                 DamagePhoto: r.DamagePhoto ?? "No Photo",
-                LaborValue: r.LaborValue ?? "0.00" //PLEASE ADD
+                LaborValue: r.LaborValue ?? "0.00" 
             }));
-            // (Luca) Change
+
             await axios.post("WagonFloorInspect/SubmitInspection", dtos,
                 { headers: { "Content-Type": "application/json" } }
             );
-
-
-           
-
-            //setPdfTrigger(true);
-            //setTimeout(() => setPdfTrigger(false), 3000); {/*REMOVE BOTH*/ }
-
-            await axios.post(
+ await axios.post(
                 `Dashboard/insertWagon?wagonNumber=${encodeURIComponent(parseInt(storedWagonNumber))}&userId=${encodeURIComponent(storedUserId)}`
             );
- axios.post("QuotePdf/GenerateAndSaveQuotePdf", parseInt(storedWagonNumber), {
+            axios.post("QuotePdf/GenerateAndSaveQuotePdf", parseInt(storedWagonNumber), {
                 headers: {
                     "Content-Type": "application/json"
                 }
-            })
+            });
+
+            //PLEASE ADD
+            axios.post("CertPdf/GenerateAndSaveCertPdf", parseInt(storedWagonNumber), {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            //PLEASE REMOVE
+            //setPdfTrigger(true);
+            //setTimeout(() => setPdfTrigger(false), 3000); {/*REMOVE BOTH*/ }
+
+           
+
             setInfo("Inspection submitted successfully.");
 
-           // setTimeout(() => {
-                setSubmitting(false);
+            
                 navigate("/choose"); //FOR TESTING PURPOSES ONLY
-          //  }, 8000);
+           
 
             //COMMENTED OUT FOR TESTING PURPOSES
             //localStorage.removeItem("wagonNumber");

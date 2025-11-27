@@ -273,6 +273,11 @@ await axios.post("E18Inspect/SubmitInspection", dtos);
               headers: { "Content-Type": "application/json" },
             }
           );
+          axios.post("CertPdf/GenerateAndSaveLocoCertPdf", parseInt(storedLocoNumber), {
+                          headers: {
+                              "Content-Type": "application/json"
+                          }
+                      });
           navigate("/choose");
         }
       }

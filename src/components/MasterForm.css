@@ -7,7 +7,7 @@
 
 /* Hamburger (mobile) */
 .hamburger {
-  display: none; /* shown in mobile with media query */
+  display: none;
   position: fixed;
   top: 12px;
   left: 12px;
@@ -21,7 +21,7 @@
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
-/* Overlay for mobile when sidebar opens */
+/* Overlay */
 .overlay {
   display: none;
 }
@@ -39,26 +39,26 @@
   background-color: #35727f;
   color: white;
   padding: 15px;
-  overflow-y: auto;
+
+  overflow-y: visible !important;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  height: 100vh;
   flex-shrink: 0;
+
   transition: transform 0.28s ease, box-shadow 0.28s ease;
-  position: relative; /* default desktop behavior */
-  z-index: 2000;
+  z-index: 950;
 }
 
-/* Mobile: slide-in sidebar */
+/* Mobile sidebar */
 @media (max-width: 768px) {
-  .hamburger {
-    display: block;
-  }
+  .hamburger { display: block; }
 
   .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 260px;            /* slightly wider on mobile */
-    transform: translateX(-110%); /* hidden by default */
+    width: 260px;
+    transform: translateX(-110%);
     box-shadow: 2px 0 8px rgba(0,0,0,0.25);
   }
 
@@ -66,112 +66,80 @@
     transform: translateX(0);
   }
 
-  /* ensure overlay shows above content but under sidebar */
-  .overlay {
-    display: none;
-  }
   .overlay.show {
-    display: block;
     z-index: 1800;
   }
 
-  /* when sidebar is open, prevent body scroll (optional) */
   body.sidebar-open {
     overflow: hidden;
   }
 }
 
-/* Header */
+/* Sidebar Header */
 .sidebar-header h3 {
   margin-bottom: 15px;
   font-size: 1.1rem;
 }
 
-/* Main menu */
+/* Menu */
 .main-menu {
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
-/* Common menu button/link style */
 .menu-btn {
   width: 100%;
-  text-align: left;
   padding: 12px 14px;
   background-color: #025373;
   border: none;
-  color: #fff;
-  font-weight: 600;
   border-radius: 6px;
+  color: white;
   cursor: pointer;
-  margin-bottom: 8px;
+  font-weight: 600;
   display: flex;
+  gap: 10px;
   align-items: center;
-  gap: 10px; /* space between icon and text */
+  margin-bottom: 8px;
+  text-decoration: none;
   transition: background 0.22s;
-  font-size: 0.98rem;
-  text-decoration: none; /* remove underline */
 }
-
-/* left icon */
-.menu-icon {
-  font-size: 18px;
-}
-
-/* label text should take available space */
-.menu-btn span {
-  flex: 1;
-}
-
-
-
 
 .menu-btn:hover {
   background-color: #014f6b;
 }
 
-/* Admin button with different color */
 .admin-btn {
   background-color: #036d91;
   border: 1px solid;
 }
-.admin-btn:hover {
-  background-color: #036d91;
-}
 
-/* Expand icon */
 .expand-icon {
   margin-left: 8px;
-  font-size: 0.92rem;
 }
 
-/* Submenu - hidden by default with animated max-height */
 .submenu {
   list-style: none;
   margin: 6px 0 12px 8px;
   padding: 0;
   overflow: hidden;
   max-height: 0;
-  transition: max-height 0.28s ease, padding 0.22s ease;
-  
+  transition: max-height 0.28s ease;
 }
 
 .submenu.open {
-  max-height: 1200px; /* sufficiently large for items */
+  max-height: 1200px;
 }
 
-/* Submenu links (box style) */
 .submenu li a {
   display: block;
   padding: 10px 12px;
   background-color: #036d91;
   border-radius: 6px;
-  color: #fff;
+  color: white;
   text-decoration: none;
-  font-size: 0.92rem;
   margin-bottom: 8px;
-  transition: transform 0.18s, background 0.18s;
+  transition: 0.18s;
 }
 
 .submenu li a:hover {
@@ -179,7 +147,7 @@
   transform: translateX(4px);
 }
 
-/* Logout button - keep at bottom on desktop; mobile will flow */
+/* Logout */
 .sidebar-footer {
   margin-top: 12px;
 }
@@ -190,42 +158,43 @@
   border: none;
   color: white;
   border-radius: 6px;
-  cursor: pointer;
 }
 .logout-btn:hover {
   background-color: #c9302c;
 }
 
-/* Content area */
+/* ---------------------------------------------------- */
+/*                CONTENT AREA (IMPORTANT FIX)          */
+/* ---------------------------------------------------- */
 .content {
   flex: 1;
   background: #0388a6;
   padding: 20px;
-  min-height: 100vh;
+
+  /* allow content to scroll normally */
+  height: 100vh;
+  overflow-y: auto;
+
+  /* prevent modal from being clipped */
+  overflow: visible !important;
+  position: relative;
+  z-index: 1;
+
+  /* push content right of sidebar */
+  margin-left: 220px;
 }
 
-/* Improve touch targets on mobile */
+/* Mobile content */
 @media (max-width: 768px) {
-  .menu-btn,
-  .submenu li a,
-  .hamburger,
-  .logout-btn {
-    padding: 14px 16px;
-    font-size: 1rem;
-  }
-
-  .sidebar {
-    padding: 18px;
+  .content {
+    margin-left: 0;
   }
 }
-/* remove underline for sidebar links */
+
+/* Remove link underline */
 .ins {
   text-decoration: none;
   display: flex;
- 
   width: 100%;
 }
-
-.ins span {
-  flex: 1;
-}
+.ins span { flex: 1; }

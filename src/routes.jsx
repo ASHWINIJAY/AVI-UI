@@ -27,6 +27,8 @@ import WelcomePage from "./screens/WelcomePage.jsx";
 import MasterForm from "./screens/MasterForm.jsx";
 import ChooseInspect from "./screens/ChooseInspect.jsx";
 import WagonLandingPage from "./screens/WagonLandingPage.jsx";
+import WagonDashboardUploaded from './screens/WagonDashboardUploaded.jsx';
+import UploadedLocoDashboard from './screens/UploadedLocoDashboard.jsx';
 import MapView from "./screens/MapView";
 import InspectionProcess from './screens/InspectionProcess.jsx';
 import CreateTeam from "./screens/CreateTeam.jsx";
@@ -211,7 +213,8 @@ export default function AppRoutes() {
           <Route path="dashboard1" element={<DashBoardItems />} />
           <Route path="wagondashboard" element={<WagonDashboard />} />
           <Route path="dashboard" element={<LocoDashboard />} />
-          
+          <Route path="wagonuploaded" element={<WagonDashboardUploaded />} />
+          <Route path="locouploaded" element={<UploadedLocoDashboard />} />
           <Route path="locoform" element={<LocoForm />} />
           <Route
         path="/inspection/:formId?"
