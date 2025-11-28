@@ -114,9 +114,11 @@ import WagonStanchionsInspect from './screens/WagonStanchionsInspect.jsx';
 import WagonTankersInspect from './screens/WagonTankersInspect.jsx';
 import WagonTwistlocksInspect from './screens/WagonTwistlocksInspect.jsx';
 import WagonDashboard from './screens/WagonDashboard.jsx';
-
+import InspectionStatus from "./screens/InspectionStatus";
 import PdfQuote from './pdf/PdfQuote.jsx';
 import LocoDashboard from './screens/LocoDashboard.jsx';
+import WagonStatusList from "./screens/WagonStatusList";
+import LocoStatusList from "./screens/LocoStatusList";
 
 import { hasOfflineData, syncOfflineData } from "./utils/offlineSync";
 import api from "./api/axios";
@@ -216,6 +218,9 @@ export default function AppRoutes() {
           <Route path="wagonuploaded" element={<WagonDashboardUploaded />} />
           <Route path="locouploaded" element={<UploadedLocoDashboard />} />
           <Route path="locoform" element={<LocoForm />} />
+          <Route path="inspection-status" element={<InspectionStatus />} />
+          <Route path="locostatus" element={<LocoStatusList />} />
+          <Route path="wagonstatus" element={<WagonStatusList />} />
           <Route
         path="/inspection/:formId?"
         element={<InspectionProcess/>}

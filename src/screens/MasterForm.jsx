@@ -99,6 +99,40 @@ export default function MasterForm() {
               <span>Wagon Uploaded Details</span>
             </Link>
           </li>
+         
+{/* REPORTS MENU (new) */}
+<li>
+  <button
+    className={`menu-btn admin-btn ${openMenu === "reports" ? "open" : ""}`}
+    onClick={() => toggleMenu("reports")}
+    aria-expanded={openMenu === "reports"}
+  >
+    <i className="fa fa-bar-chart menu-icon"></i>
+    <span>Reports</span>
+    <span className="expand-icon">
+      {openMenu === "reports" ? "▼" : "▶"}
+    </span>
+  </button>
+
+  <ul className={`submenu ${openMenu === "reports" ? "open" : ""}`}>
+    <li>
+      <Link to="/master/inspection-status" onClick={handleLinkClick}>
+        Inspection Overview
+      </Link>
+    </li>
+    <li>
+      <Link to="/master/locostatus" onClick={handleLinkClick}>
+        Loco Status
+      </Link>
+    </li>
+    <li>
+      <Link to="/master/wagonstatus" onClick={handleLinkClick}>
+        Wagon Status
+      </Link>
+    </li>
+  </ul>
+</li>
+
           <li>
             <Link
               to="/master/map"
