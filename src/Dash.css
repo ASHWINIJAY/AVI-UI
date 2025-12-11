@@ -1,0 +1,13 @@
+.hidden-select-all .p-checkbox {
+    display: none !important;
+}
+
+.selected-row {
+    /* use same highlight style as PrimeReact or your project */
+    background-color: rgba(0, 123, 255, 0.08) !important;
+}
+
+.p-datatable .p-datatable-tbody > tr.p-highlight > td {
+    /* keep the PrimeReact highlighted look if desired */
+    background-color: rgba(0, 123, 255, 0.08) !important;
+}

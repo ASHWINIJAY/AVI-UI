@@ -285,8 +285,12 @@ const handleOpenPdf = (pdfPath) => {
         { field: "locoPhoto", headerName: "Loco Photo", width: 150, renderCell: (params) => renderImageCell(params.value, "Locomotive") },
         { field: "refurbishValue", headerName: "Refurbish Value", width: 130 },
         { field: "missingValue", headerName: "Missing Value", width: 130 },
-        { field: "replaceValue", headerName: "Replace Value", width: 130 },
+        { field: "replaceValue", headerName: "Replace Value", width: 130 },        
+        { field: "totalLaborValue", headerName: "Labor Value", width: 130 },
+        { field: "totalValue", headerName: "Total Value", width: 130 },
+        { field: "marketValue", headerName: "Market Value", width: 130 },
         { field: "assetValue", headerName: "Asset Value", width: 120 },
+        
         {
             field: "missingPhotos",
             headerName: "Missing Photos",
@@ -320,6 +324,20 @@ const handleOpenPdf = (pdfPath) => {
          {
                     field: "assessmentCert",
                     headerName: "Assessment Cert",
+                    width: 130,
+                    renderCell: (params) => (
+                        params.value && params.value !== "N/A" ? (
+                            <Button size="sm" variant="outline-primary" onClick={() => handleOpenPdf(params.value)}>
+                                View PDF
+                            </Button>
+                        ) : (
+                            <span>N/A</span>
+                        )
+                    ),
+                },
+                {
+                    field: "assessmentSow",
+                    headerName: "Assessment SOW",
                     width: 130,
                     renderCell: (params) => (
                         params.value && params.value !== "N/A" ? (

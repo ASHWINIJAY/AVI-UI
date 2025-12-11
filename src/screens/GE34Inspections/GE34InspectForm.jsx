@@ -271,18 +271,7 @@ await axios.post("GE34Inspect/SubmitInspection", dtos);
               parseInt(storedLocoNumber)
             )}&userId=${encodeURIComponent(storedUserId)}`
           );
-           axios.post(
-            "QuotePdf/GenerateAndSaveQuotePdfForLocos",
-            parseInt(storedLocoNumber),
-            {
-              headers: { "Content-Type": "application/json" },
-            }
-          );
-          axios.post("CertPdf/GenerateAndSaveLocoCertPdf", parseInt(storedLocoNumber), {
-                                    headers: {
-                                        "Content-Type": "application/json"
-                                    }
-                                });
+           
           navigate("/choose");
         }
       }

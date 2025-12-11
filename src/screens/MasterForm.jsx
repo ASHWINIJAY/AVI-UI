@@ -59,13 +59,26 @@ export default function MasterForm() {
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <ul className="main-menu">
           {/* Dashboard - always show */}
+
+          <li>
+  <button
+    className={`menu-btn admin-btn ${openMenu === "dashboard" ? "open" : ""}`}
+    onClick={() => toggleMenu("dashboard")}
+    aria-expanded={openMenu === "dashboard"}
+  >
+    <i className="fa fa-bar-chart menu-icon"></i>
+    <span>Dashboard</span>
+    <span className="expand-icon">
+      {openMenu === "dashboard" ? "▼" : "▶"}
+    </span>
+  </button>
+<ul className={`submenu ${openMenu === "dashboard" ? "open" : ""}`}>
           <li>
             <Link
               to="/master/dashboard"
               className="menu-btn admin-btn ins"
               onClick={handleLinkClick}
             >
-              <FaTachometerAlt className="menu-icon" />
               <span>Loco Dashboard</span>
             </Link>
           </li>
@@ -75,7 +88,6 @@ export default function MasterForm() {
               className="menu-btn admin-btn ins"
               onClick={handleLinkClick}
             >
-              <FaTachometerAlt className="menu-icon" />
               <span>Loco Uploaded Details</span>
             </Link>
           </li>
@@ -85,7 +97,7 @@ export default function MasterForm() {
               className="menu-btn admin-btn ins"
               onClick={handleLinkClick}
             >
-              <FaTachometerAlt className="menu-icon" />
+              
               <span>Wagon Dashboard</span>
             </Link>
           </li>
@@ -95,11 +107,11 @@ export default function MasterForm() {
               className="menu-btn admin-btn ins"
               onClick={handleLinkClick}
             >
-              <FaTachometerAlt className="menu-icon" />
               <span>Wagon Uploaded Details</span>
             </Link>
           </li>
-         
+          </ul>
+         </li>
 {/* REPORTS MENU (new) */}
 <li>
   <button

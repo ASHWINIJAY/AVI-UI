@@ -7,3 +7,17 @@ html, body, #root { height: 100%; }
 body { margin: 0; font-family: var(--font-body); }
 h1.brand { font-family: var(--font-display); }
 
+@keyframes pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+}

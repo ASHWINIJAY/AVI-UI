@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { Form, Button, Container, Row, Col, Alert, Card } from "react-bootstrap";
 import Loader from "../components/Loader"; // 👈 common loader
+import { startGeoLocationUploader } from "../utils/geolocationService";
 
 // 🔹 Helper to decode JWT expiry
 function isTokenValid(token) {
@@ -30,6 +31,9 @@ const [locoMasterList, setLocoMasterList] = useState([]);
     if (normalizedRole === "super user") {
       navigate("/master/welcome");
     } else if (normalizedRole === "assessor") {
+      navigate("/master/welcome");
+    }
+    else if (normalizedRole === "asset monitor") {
       navigate("/master/welcome");
     } else {
       navigate("/choose");
@@ -108,7 +112,7 @@ const [locoMasterList, setLocoMasterList] = useState([]);
       localStorage.setItem("userId", response.data.userId);
       localStorage.setItem("userRole", response.data.userRole);
       localStorage.setItem("name", response.data.name);
-
+startGeoLocationUploader();
       redirectUser(response.data.userRole);
 
     } catch (err) {
