@@ -142,6 +142,11 @@ export default function MasterForm() {
         Wagon Status
       </Link>
     </li>
+    <li>
+      <Link to="/master/generatedcf" onClick={handleLinkClick}>
+       Generate DCF Report
+      </Link>
+    </li>
   </ul>
 </li>
 
@@ -176,6 +181,11 @@ export default function MasterForm() {
                 </button>
 
                 <ul className={`submenu ${openMenu === "admin" ? "open" : ""}`}>
+                  <li>
+                    <Link to="/master/adminoptions" onClick={handleLinkClick}>
+                      DCF Setup/Generation
+                    </Link>
+                  </li>
                   <li>
                     <Link to="/master/usercreation" onClick={handleLinkClick}>
                       User Creation

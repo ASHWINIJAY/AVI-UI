@@ -6,7 +6,7 @@ import { saveAs } from "file-saver"; // npm i file-saver
 
 export default function UploadedLocoDashboard() {
     const BACKEND_URL = "https://avi-app.co.za/AVIapi";
-//const BACKEND_URL = "http://41.87.206.94/AVIapi";
+//const BACKEND_URL = "https://avi-app.co.za/AVIapi";
      const [page, setPage] = useState(0); 
         const [pageSize, setPageSize] = useState(100);  
         const [allRows, setAllRows] = useState([]); 

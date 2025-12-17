@@ -119,7 +119,13 @@ import PdfQuote from './pdf/PdfQuote.jsx';
 import LocoDashboard from './screens/LocoDashboard.jsx';
 import WagonStatusList from "./screens/WagonStatusList";
 import LocoStatusList from "./screens/LocoStatusList";
-
+import WaccSetup from './screens/WaccSetup.jsx'; //PLEASE ADD (NEW)
+import WagonInputs from './screens/WagonInputs.jsx'; //PLEASE ADD (NEW)
+import LocoInputs from './screens/LocoInputs.jsx'; //PLEASE ADD (NEW)
+import AdminOptions from './screens/AdminOptions.jsx'; //PLEASE ADD (NEW)
+import GenerateDCFReport from './screens/GenerateDCFReport.jsx'; //PLEASE ADD (NEW)
+import DCFReport from './screens/DCFReport.jsx'; //PLEASE ADD (NEW)
+import AssetTypeSetup from './screens/AssetTypeSetup.jsx';
 import { hasOfflineData, syncOfflineData } from "./utils/offlineSync";
 import api from "./api/axios";
 // ✅ Auth guard
@@ -221,6 +227,14 @@ export default function AppRoutes() {
           <Route path="inspection-status" element={<InspectionStatus />} />
           <Route path="locostatus" element={<LocoStatusList />} />
           <Route path="wagonstatus" element={<WagonStatusList />} />
+          <Route path="adminoptions" element={<AdminOptions />} />
+          <Route path="waccsetup" element={<WaccSetup />} />
+          <Route path="wagoninputs" element={<WagonInputs />} />
+<Route path="locoinputs" element={<LocoInputs />} />
+<Route path="generatedcf" element={<GenerateDCFReport />} />
+<Route path="dcfreport" element={<DCFReport />} />
+<Route path="assetsetup" element={<AssetTypeSetup />} />            
+         
           <Route
         path="/inspection/:formId?"
         element={<InspectionProcess/>}

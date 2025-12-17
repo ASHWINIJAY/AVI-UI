@@ -5,8 +5,8 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 
 function WagonDashboardUploaded() {
-  //   const BACKEND_URL = "http://41.87.206.94/AVIapi"; 
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // Adjust if different http://41.87.206.94/AVIapi
+  //   const BACKEND_URL = "https://avi-app.co.za/AVIapi"; 
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // Adjust if different https://avi-app.co.za/AVIapi
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(100);
     const [allRows, setAllRows] = useState([]);

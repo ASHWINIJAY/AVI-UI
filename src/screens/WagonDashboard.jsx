@@ -1,5 +1,4 @@
-﻿// Ensure PrimeReact is installed: npm install primereact primeicons
-import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
+﻿import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Container, Card, Modal, Button, Spinner, Form } from "react-bootstrap";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
@@ -8,9 +7,8 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; // assume your existing css; you can add the small .selected-row rule if needed
 
 export default function WagonDashboard() {
-     //const BACKEND_URL = "http://41.87.206.94/AVIapi"; 
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // Adjust if different http://41.87.206.94/AVIapi
-  
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; 
+    //const BACKEND_URL = "https://avi-app.co.za/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 
     const [allRows, setAllRows] = useState([]);
@@ -94,9 +92,12 @@ export default function WagonDashboard() {
         }
     }, [userRole, adminView]);
 
+    //PLEASE ADJUST (NEW)
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+        //PLEASE DO NOT REMOVE
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userRole, adminView]);
 
     // Visible rows according to your existing filter rules — NOT changed
     const visibleRows = useMemo(() => {
@@ -123,15 +124,25 @@ export default function WagonDashboard() {
 
     const rowsWithId = useMemo(() => visibleRows.map(row => ({ ...row, id: getRowUniqueId(row) })), [visibleRows]);
 
-    // Keep selectedRows valid after data refresh
+    //PLEASE ADD (NEW)
+    const prevSelectedRef = useRef(selectedRows);
+
+    //PLEASE ADJUST (NEW)
     useEffect(() => {
         const validIds = new Set(rowsWithId.map(r => r.id));
-        setSelectedRows(prevSelected => prevSelected.filter(r => validIds.has(r.id)));
-        // clamp pagination if needed (don't reset page unless out of bounds)
+        const newSelected = prevSelectedRef.current.filter(s => validIds.has(s.id));
+
+        // only update if actually different
+        if (newSelected.length !== prevSelectedRef.current.length ||
+            newSelected.some((r, i) => r.id !== prevSelectedRef.current[i]?.id)) {
+            setSelectedRows(newSelected);
+            prevSelectedRef.current = newSelected;
+        }
+
         const total = rowsWithId.length;
         const maxFirst = total > 0 ? Math.floor((Math.max(0, total - 1)) / dtRows) * dtRows : 0;
-        if (dtFirst > maxFirst) setDtFirst(maxFirst);
-    }, [rowsWithId, dtRows, dtFirst]);
+        setDtFirst(prev => (prev > maxFirst ? maxFirst : prev));
+    }, [rowsWithId, dtRows]); // removed selectedRows from dependency
 
     // Helper to check "all three PDFs exist" logic
     const okPdf = (v) => !!v && v !== "N/A" && v !== "No File" && v !== "Not Ready" && v !== "NotReady";
@@ -187,7 +198,8 @@ export default function WagonDashboard() {
             "Wagon Number", "Wagon Group", "Wagon Type", "Inspector", "Date Completed", "Time Completed",
             "Time Started", "Gps Latitude", "Gps Longitude", "Lift Date", "Lift Lapsed", "Barrel Test Date",
             "Barrel Lapsed", "Brake Test Date", "Brake Lapsed", "Refurbish Value", "Missing Value",
-            "Replace Value", "Labor Value", "LiftValue", "BarrelValue", "TotalValue", "Market Value", "Asset Value", "Wagon Status", "Upload Date"
+            "Replace Value", "Labor Value", "LiftValue", "BarrelValue", "TotalValue", "Market Value", "Asset Value", "Wagon Status", "Upload Date",
+            "ConditionScore", "OperationalStatus", //PLEASE ADD (NEW)
         ];
         worksheet.addRow(headers).font = { bold: true };
 
@@ -195,7 +207,8 @@ export default function WagonDashboard() {
             row.wagonNumber, row.wagonGroup, row.wagonType, row.inspectorName, row.dateAssessed, row.timeAssessed,
             row.startTimeInspect, row.gpsLatitude, row.gpsLongitude, row.liftDate, row.liftLapsed, row.barrelDate,
             row.barrelLapsed, row.brakeDate, row.brakeLapsed, row.refurbishValue, row.missingValue, row.replaceValue,
-            row.totalLaborValue, row.liftValue, row.BarrelValue, row.totalValue, row.marketValue, row.assetValue, row.wagonStatus, row.uploadDate
+            row.totalLaborValue, row.liftValue, row.BarrelValue, row.totalValue, row.marketValue, row.assetValue, row.wagonStatus, row.uploadDate,
+            row.conditionScore, row.operationalStatus, //PLEASE ADD (NEW)
         ]));
 
         const buffer = await workbook.xlsx.writeBuffer();
@@ -325,6 +338,7 @@ export default function WagonDashboard() {
 
     // Row class to show selected highlight only when checkbox is selected
     const rowClassName = (rowData) => {
+        if (!rowData || !rowData.id) return '';
         return selectedRows.some(r => r.id === rowData.id) ? 'p-highlight selected-row' : '';
     };
 
@@ -374,8 +388,10 @@ export default function WagonDashboard() {
         const onChange = (e) => {
             e.stopPropagation();
             const checked = e.target.checked;
-            if (!allExist) return; // extra safety
-
+            if (isAssessorMonitor || adminView === "Assessor Ticked") {
+                if (!allExist) return; // extra safety
+            }
+            
             // Two behaviours:
             // 1) TICK flow: Assessor (or Admin when adminView === "Inspection Complete") should open tick modal and NOT toggle selection here.
             // 2) UPLOAD selection flow: Asset Monitor (or Admin when adminView === "Assessor Ticked") should toggle selection for upload.
@@ -417,15 +433,31 @@ export default function WagonDashboard() {
         };
 
         return (
-            <div style={{ display: "flex", justifyContent: "center" }} onClick={(ev) => ev.stopPropagation()}>
-                <input
-                    type="checkbox"
-                    checked={isChecked}
-                    disabled={!allExist}
-                    onChange={onChange}
-                    style={{ transform: 'scale(1.35)', cursor: allExist ? 'pointer' : 'not-allowed' }}
-                />
-            </div>
+           <div style={{ display: "flex", justifyContent: "center" }} onClick={(ev) => ev.stopPropagation()}>
+
+    {/* Assessor OR Admin (Inspection Complete view) */}
+    {(isAssessor || (isAdmin && adminView === "Inspection Complete")) && (
+        <input
+            type="checkbox"
+            checked={isChecked}
+            onChange={onChange}
+            style={{ transform: "scale(1.35)", cursor: "pointer" }}
+        />
+    )}
+
+    {/* Assessor Monitor OR Admin (Assessor Ticked view) */}
+    {(!isAssessor && (isAssessorMonitor || (isAdmin && adminView === "Assessor Ticked"))) && (
+        <input
+            type="checkbox"
+            checked={isChecked}
+            disabled={!allExist}
+            onChange={onChange}
+            style={{ transform: "scale(1.35)", cursor: allExist ? "pointer" : "not-allowed" }}
+        />
+    )}
+
+</div>
+
         );
     };
 
@@ -494,21 +526,20 @@ export default function WagonDashboard() {
                             className="p-datatable-sm"
                             scrollable
                             scrollHeight="510px"
-                            scrollDirection="both"
                             dataKey="id"
                             rowClassName={rowClassName}
                             onRowClick={onRowClick}
                         >
                             {/* Checkbox column (custom checkbox) */}
                             <Column
-                                header={isAssessor ? "" : renderHeaderSelectAll()}
+                                header={isAssessor || isAdmin ? "" : renderHeaderSelectAll()} //PLEASE ADJUST (NEW)
                                 headerStyle={{ width: '3rem' }}
                                 body={(row) => renderRowCheckbox(row)}
                                 style={{ width: '3rem' }}
                             />
 
                             {/* Generate PDFs column — only visible to Assessors */}
-                            {(isAssessor || (isAdmin && adminView === "Inspection Complete")) && (
+                            {(isAssessorMonitor || (isAdmin && adminView === "Assessor Ticked")) && ( //PLEASE ADJUST (NEW)
                                 <Column
                                     header="Generate PDFs"
                                     body={(row) => {
@@ -564,6 +595,19 @@ export default function WagonDashboard() {
                             <Column header="Wagon Photo" body={row => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'wagonPhoto')}</div>} style={{ minWidth: 140 }} />
                             <Column header="Missing Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.missingPhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
                             <Column header="Replace Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.replacePhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
+                            {/*PLEASE ADD (NEW)*/}
+                            <Column
+                                header="Condition Score"
+                                field="conditionScore"
+                                style={{ minWidth: 140 }}
+                                body={(row) => row?.conditionScore ?? 0}
+                            />
+                            <Column
+                                header="Operational Status"
+                                field="operationalStatus"
+                                style={{ minWidth: 140 }}
+                                body={(row) => row?.operationalStatus ?? "N/A"}
+                            />
                         </DataTable>
                     </div>
                 </Card.Body>
