@@ -5,8 +5,8 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 
 function WagonDashboardUploaded() {
-  //   const BACKEND_URL = "https://avi-app.co.za/AVIapi"; 
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // Adjust if different https://avi-app.co.za/AVIapi
+  //   const BACKEND_URL = "http://41.87.206.94/AVIapi"; 
+    const BACKEND_URL = "http://41.87.206.94/AVIapi"; // Adjust if different http://41.87.206.94/AVIapi
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(100);
     const [allRows, setAllRows] = useState([]);
@@ -222,6 +222,8 @@ function WagonDashboardUploaded() {
         { field: "wagonPhoto", headerName: "Wagon Photo", width: 150, renderCell: (params) => renderImageCell(params.value, "Wagon") },
         { field: "missingPhotos", headerName: "Missing Photos", width: 150, renderCell: (params) => (<Button size="sm" onClick={() => handleOpenModal(params.value)}>View</Button>) },
         { field: "replacePhotos", headerName: "Replace Photos", width: 150, renderCell: (params) => (<Button size="sm" onClick={() => handleOpenModal(params.value)}>View</Button>) },
+        { field: "conditionScore", headerName: "Condition Score", width: 130 },
+        { field: "operationalStatus", headerName: "Operational Status", width: 130 },
     ]), []);
 
     if (loading) {

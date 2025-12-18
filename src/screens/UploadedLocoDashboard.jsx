@@ -5,8 +5,8 @@ import ExcelJS from "exceljs"; // npm i exceljs
 import { saveAs } from "file-saver"; // npm i file-saver
 
 export default function UploadedLocoDashboard() {
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
-//const BACKEND_URL = "https://avi-app.co.za/AVIapi";
+    const BACKEND_URL = "http://41.87.206.94/AVIapi";
+//const BACKEND_URL = "http://41.87.206.94/AVIapi";
      const [page, setPage] = useState(0); 
         const [pageSize, setPageSize] = useState(100);  
         const [allRows, setAllRows] = useState([]); 
@@ -195,6 +195,10 @@ const handleOpenPdf = (pdfPath) => {
             "Missing Value",
             "Replace Value",
             "Asset Value",
+            "Market Value",
+            "Total Value",
+            "Condition Score",
+            "Operational Status",
             "Upload Status",
             "Upload Date"
         ];
@@ -233,6 +237,10 @@ const handleOpenPdf = (pdfPath) => {
                 row.missingValue ?? "",
                 row.replaceValue ?? "",
                 row.assetValue ?? "",
+                row.marketValue ?? "",
+                row.totalValue ?? "",
+                row.conditionScore ?? "",
+                row.operationalStatus ?? "",
                 row.uploadStatus ?? "",
                 row.uploadDate ?? ""
             ]);
@@ -349,8 +357,10 @@ const handleOpenPdf = (pdfPath) => {
                         )
                     ),
                 },
-        { field: "uploadStatus", headerName: "Upload Status", width: 130 },
+        { field: "uploadStatus", headerName: "Loco Status", width: 130 },
         { field: "uploadDate", headerName: "Upload Date", width: 130 },
+         { field: "conditionScore", headerName: "Condition Score", width: 130 },
+        { field: "operationalStatus", headerName: "Operational Status", width: 130 },
     ]), [selectionModel]);
 
     if (loading) {

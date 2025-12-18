@@ -3,16 +3,17 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { Container, Card, Modal, Button, Spinner, Form } from "react-bootstrap";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
+import { Dropdown } from 'primereact/dropdown';
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import '../Dash.css'; // assume your existing css; you can add the small .selected-row rule if needed
 
 export default function LocoDashboard() {
-     const BACKEND_URL = "https://avi-app.co.za/AVIapi"; 
-    //const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // Adjust if different https://avi-app.co.za/AVIapi
+     const BACKEND_URL = "http://41.87.206.94/AVIapi"; 
+    //const BACKEND_URL = "http://41.87.206.94/AVIapi"; // Adjust if different http://41.87.206.94/AVIapi
   
     const [userRole] = useState(localStorage.getItem("userRole"));
-
+const [score, setScore] = useState([]);
     const [allRows, setAllRows] = useState([]);
     const [selectedRows, setSelectedRows] = useState([]); // array of row objects
     const [loading, setLoading] = useState(true);
@@ -66,7 +67,26 @@ export default function LocoDashboard() {
             if (viewport) viewport.scrollTop = scrollPosRef.current;
         }, 50);
     };
-
+    //PLEASE ADD (NEW)
+    const fetchScore = async () => {
+        try {
+            let res;
+            res = await fetch(`${BACKEND_URL}/api/Dashboard/getScoreList`);
+            const data = await res.json();
+            setScore(data || []);
+        }
+        catch (err) {
+            console.error("Error fetching Score data:", err);
+            setScore([]);
+        }
+    }
+    const onConditionScoreChange = (row, value) => {
+    setAllRows(prev =>
+        prev.map(r =>
+            r.id === row.id ? { ...r, conditionScore: value } : r
+        )
+    );
+};
     // Fetch data
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -95,6 +115,7 @@ export default function LocoDashboard() {
     }, [userRole, adminView]);
 
    useEffect(() => {
+    fetchScore();
            fetchData();
            //PLEASE DO NOT REMOVE
            // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,7 +149,36 @@ export default function LocoDashboard() {
     //PLEASE ADD (NEW)
     const prevSelectedRef = useRef(selectedRows);
 
-    
+    const mapOperationalStatus = (score) => {
+    switch (String(score)) {
+        case "1":  return "Scrap only";
+        case "2":  return "Non-operational, wreck repair";
+        case "3":  return "Non-operational, needs major overhaul";
+        case "4":  return "Partially operational or limited use";
+        case "5":  return "Operational but maintenance is needed";
+        case "6":  return "Operational but needs scheduled repair";
+        case "7":  return "Operational with minor issues";
+        case "8":
+        case "9":
+        case "10": return "Fully operational";
+        default:   return "";
+    }
+};
+const onConditionStatusInstantUpdate = (row, value) => {
+    const newStatus = mapOperationalStatus(value);
+
+    setAllRows(prev =>
+        prev.map(r =>
+            r.id === row.id
+                ? {
+                    ...r,
+                    conditionScore: value,
+                    operationalStatus: newStatus
+                }
+                : r
+        )
+    );
+};
     useEffect(() => {
         const validIds = new Set(rowsWithId.map(r => r.id));
         const newSelected = prevSelectedRef.current.filter(s => validIds.has(s.id));
@@ -188,6 +238,28 @@ export default function LocoDashboard() {
         }
         setPdfUrl(pdfPath.startsWith("http") ? pdfPath : `${BACKEND_URL}/${pdfPath}`);
         setShowPdfModal(true);
+    };
+
+    //PLEASE ADD (NEW)
+    const updateConditionScore = async (locoNumber, value) => {
+        saveScroll();
+        try {
+            await fetch(`${BACKEND_URL}/api/Dashboard/updateLocoCondition`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    locoNumber: locoNumber.toString(),
+                    conditionScore: String(value)
+                })
+            });
+             //await fetchData();
+        } catch (err) {
+            console.error("Failed to update condition score:", err);
+            alert("Failed to save Condition Score");
+        }
+        finally {
+            requestAnimationFrame(() => restoreScroll());
+        }
     };
 
     // Export to excel (unchanged)
@@ -291,6 +363,10 @@ export default function LocoDashboard() {
     const confirmGeneratePdfs = async () => {
         if (!generatePdfTarget) return;
         // Save scroll & pagination
+        if (!generatePdfTarget?.conditionScore || generatePdfTarget.conditionScore === "") {
+        alert("Please select a Condition Score before generating PDFs.");
+        return;  // stop PDF generation
+    }
         saveScroll();
         setShowGeneratePdfModal(false);
         setGeneratingPdf(true);
@@ -585,18 +661,39 @@ export default function LocoDashboard() {
                             <Column field="uploadDate" header="Upload Date" style={{ minWidth: 120 }} />
                              <Column header="Missing Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.missingPhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
                             <Column header="Replace Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.replacePhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
-                        <Column
-                                header="Condition Score"
-                                field="conditionScore"
-                                style={{ minWidth: 140 }}
-                                body={(row) => row?.conditionScore ?? 0}
-                            />
-                            <Column
-                                header="Operational Status"
-                                field="operationalStatus"
-                                style={{ minWidth: 140 }}
-                                body={(row) => row?.operationalStatus ?? "N/A"}
-                            />
+                                                    {/*PLEASE ADJUST (NEW)*/}
+                                                   {(isAssessorMonitor || (isAdmin && adminView === "Assessor Ticked")) && (
+                                                       <Column
+                                                           header="Condition Score"
+                                                           style={{ minWidth: 140 }}
+                                                           body={(row) => (
+                                                               <Dropdown
+                                                                   value={row.conditionScore}
+                                                                   options={score}
+                                                                   optionLabel="conditionScore"
+                                                                   optionValue="conditionScore"
+                                                                   placeholder="Select Score"
+                                                                   onClick={(e) => e.stopPropagation()}
+                                                                   onChange={(e) => {
+                               onConditionScoreChange(row, e.value);  // <-- UPDATE UI immediately
+                               updateConditionScore(row.wagonNumber, e.value); // <-- SEND CORRECT VALUE
+                               onConditionStatusInstantUpdate(row, e.value);
+                           }}
+                                                                   className="w-100"
+                                                               />
+                                                           )}
+                                                       />
+                                                   )}
+                       
+                                                   {/*PLEASE ADJUST (NEW)*/}
+                                                   {(isAssessorMonitor || (isAdmin && adminView === "Assessor Ticked")) && (
+                                                       <Column
+                                                           header="Operational Status"
+                                                           field="operationalStatus"
+                                                           style={{ minWidth: 140 }}
+                                                           body={(row) => row?.operationalStatus ?? ""}
+                                                       />
+                                                   )}
                         </DataTable>
                     </div>
                 </Card.Body>
