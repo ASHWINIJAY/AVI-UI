@@ -4,6 +4,8 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Dropdown } from 'primereact/dropdown';
 import ExcelJS from "exceljs";
+import { InputText } from "primereact/inputtext"; //PLEASE ADD (FILTERING)
+import { FilterMatchMode } from "primereact/api";
 import { saveAs } from "file-saver";
 import '../Dash.css'; // assume your existing css; you can add the small .selected-row rule if needed
 
@@ -43,6 +45,15 @@ const [score, setScore] = useState([]);
     const [dtRows, setDtRows] = useState(100);
     const scrollPosRef = useRef(0);
     const gridContainerRef = useRef(null);
+        const [filters, setFilters] = useState({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        wagonNumber: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        wagonGroup: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        inspectorName: { value: null, matchMode: FilterMatchMode.CONTAINS }
+    });
+
+    //PLEASE ADD (FILTERING)
+    const [globalFilterValue, setGlobalFilterValue] = useState("");
 
     // ADMIN view state: default "Inspection Complete"
     const isAdmin = userRole === "Super User";
@@ -66,18 +77,89 @@ const [score, setScore] = useState([]);
         }, 50);
     };
     //PLEASE ADD (NEW)
+    //PLEASE ADD (NEW)
     const fetchScore = async () => {
-        try {
-            let res;
-            res = await fetch(`${BACKEND_URL}/api/Dashboard/getScoreList`);
-            const data = await res.json();
-            setScore(data || []);
-        }
-        catch (err) {
-            console.error("Error fetching Score data:", err);
-            setScore([]);
-        }
+    try {
+        let res = await fetch(`${BACKEND_URL}/api/Dashboard/getScoreList`);
+        const data = await res.json();
+
+        // 🔥 Enhance each item: add label with score + condition
+        const formatted = (data || []).map(s => ({
+            ...s,
+            label: ` - ${s.condition}`,
+            value: s.conditionScore,
+            color: getScoreColor(s.conditionScore)
+        }));
+
+        setScore(formatted);
     }
+    catch (err) {
+        console.error("Error fetching Score data:", err);
+        setScore([]);
+    }
+};
+
+const getScoreColor = (score) => {
+    switch (String(score)) {
+        case "1": return "danger";       // red
+        case "2": return "danger";
+        case "3": return "warning";      // orange/yellow
+        case "4": return "warning";
+        case "5": return "info";         // blueish
+        case "6": return "info";
+        case "7": return "primary";      // blue
+        case "8": return "success";      // green
+        case "9": return "success";
+        case "10": return "success";
+        default: return "secondary";
+    }
+};
+const getBackgroundColor = (score) => {
+    switch (String(score)) {
+        case "1": return "#c71e18ff"
+        case "2": return "#d9534f"; // red
+
+        case "3": return "#f0da4eff";
+        case "4": return "#c3c609ff"; // orange/yellow
+
+        case "5": return "#5bc0de"; 
+        case "6": return "#3d97b2ff"; // light blue
+
+        case "7": return "#0275d8"; // blue
+
+        case "8": return "#5cb85c";
+        case "9": return "#378537ff";
+        case "10": return "#197219ff"; // green
+
+        default: return "#6c757d"; // grey
+    }
+};
+
+const scoreTemplate = (option, props) => {
+
+    // 🔥 When no option selected → show placeholder text
+    if (!option) {
+        return <span style={{ opacity: 0.6 }}>{props?.placeholder}</span>;
+    }
+
+    return (
+        <div
+            style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "6px 10px",
+                borderRadius: "8px",
+                backgroundColor: getBackgroundColor(option.value),
+                color: "white",
+                fontWeight: "500"
+            }}
+        >
+            <span>{option.value}</span>
+            <span>{option.label}</span>
+        </div>
+    );
+};
     const onConditionScoreChange = (row, value) => {
     setAllRows(prev =>
         prev.map(r =>
@@ -218,7 +300,7 @@ const [score, setScore] = useState([]);
 
         const headers = [
             "Wagon Number", "Wagon Group", "Wagon Type", "Inspector", "Date Completed", "Time Completed",
-            "Time Started", "Gps Latitude", "Gps Longitude", "Lift Date", "Lift Lapsed", "Barrel Test Date",
+            "Time Started", "Gps Latitude", "Gps Longitude","City", "Lift Date", "Lift Lapsed", "Barrel Test Date",
             "Barrel Lapsed", "Brake Test Date", "Brake Lapsed", "Refurbish Value", "Missing Value",
             "Replace Value", "Labor Value", "LiftValue", "BarrelValue", "TotalValue", "Market Value", "Asset Value", "Wagon Status", "Upload Date",
             "ConditionScore", "OperationalStatus", //PLEASE ADD (NEW)
@@ -227,7 +309,7 @@ const [score, setScore] = useState([]);
 
         rowsWithId.forEach(row => worksheet.addRow([
             row.wagonNumber, row.wagonGroup, row.wagonType, row.inspectorName, row.dateAssessed, row.timeAssessed,
-            row.startTimeInspect, row.gpsLatitude, row.gpsLongitude, row.liftDate, row.liftLapsed, row.barrelDate,
+            row.startTimeInspect, row.gpsLatitude, row.gpsLongitude,row.city, row.liftDate, row.liftLapsed, row.barrelDate,
             row.barrelLapsed, row.brakeDate, row.brakeLapsed, row.refurbishValue, row.missingValue, row.replaceValue,
             row.totalLaborValue, row.liftValue, row.BarrelValue, row.totalValue, row.marketValue, row.assetValue, row.wagonStatus, row.uploadDate,
             row.conditionScore, row.operationalStatus, //PLEASE ADD (NEW)
@@ -236,7 +318,15 @@ const [score, setScore] = useState([]);
         const buffer = await workbook.xlsx.writeBuffer();
         saveAs(new Blob([buffer], { type: "application/octet-stream" }), `WagonDashboard_${new Date().toISOString().split("T")[0]}.xlsx`);
     };
+const onGlobalFilterChange = (e) => {
+        const value = e.target.value;
+        let _filters = { ...filters };
 
+        _filters.global.value = value;
+
+        setFilters(_filters);
+        setGlobalFilterValue(value);
+    };
     const clearSelection = () => { setSelectedRows([]); };
 
     const buildUploadPayload = () => {
@@ -580,7 +670,16 @@ const onConditionStatusInstantUpdate = (row, value) => {
                         )}
                         <div style={{ marginLeft: 12, alignSelf: "center" }}>{selectedRows.length ? `${selectedRows.length} selected` : ""}</div>
                     </div>
-
+  <div className="d-flex justify-content-start mb-2">
+                        <span className="p-input-icon-left">
+                            <InputText
+                                value={globalFilterValue}
+                                onChange={onGlobalFilterChange}
+                                placeholder="Search Wagon Number, Group, Inspector"
+                                style={{ width: "500px" }}
+                            />
+                        </span>
+                    </div>
                     <div style={{ position: "relative" }} ref={gridContainerRef}>
                         {/* overlay spinners */}
                         {(uploading || generatingPdf) && (
@@ -606,6 +705,8 @@ const onConditionStatusInstantUpdate = (row, value) => {
                             dataKey="id"
                             rowClassName={rowClassName}
                             onRowClick={onRowClick}
+                            filters={filters} 
+                            globalFilterFields={["wagonNumber", "wagonGroup", "inspectorName"]} 
                         >
                             {/* Checkbox column (custom checkbox) */}
                             <Column
@@ -645,6 +746,7 @@ const onConditionStatusInstantUpdate = (row, value) => {
                             <Column field="startTimeInspect" header="Time Started" style={{ minWidth: 110 }} />
                             <Column field="gpsLatitude" header="Gps Latitude" style={{ minWidth: 120 }} />
                             <Column field="gpsLongitude" header="Gps Longitude" style={{ minWidth: 120 }} />
+                            <Column field="city" header="City" style={{ minWidth: 120 }} />
                             <Column header="Body Photos" body={(row) => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.bodyPhotos, e); }}>View</Button>} style={{ minWidth: 120 }} />
                             <Column header="Lift Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'liftPhoto')}</div>} style={{ minWidth: 140 }} />
                             <Column field="liftDate" header="Lift Date" style={{ minWidth: 110 }} />
@@ -681,15 +783,17 @@ const onConditionStatusInstantUpdate = (row, value) => {
                                         <Dropdown
                                             value={row.conditionScore}
                                             options={score}
-                                            optionLabel="conditionScore"
-                                            optionValue="conditionScore"
+                                            optionLabel="label"
+                                            optionValue="value"
+                                            itemTemplate={scoreTemplate}
+                                            valueTemplate={scoreTemplate}
                                             placeholder="Select Score"
                                             onClick={(e) => e.stopPropagation()}
                                             onChange={(e) => {
-        onConditionScoreChange(row, e.value);  // <-- UPDATE UI immediately
-        updateConditionScore(row.wagonNumber, e.value); // <-- SEND CORRECT VALUE
-        onConditionStatusInstantUpdate(row, e.value);
-    }}
+                                                onConditionScoreChange(row, e.value);
+                                                updateConditionScore(row.wagonNumber, e.value);
+                                                onConditionStatusInstantUpdate(row, e.value);
+                                            }}
                                             className="w-100"
                                         />
                                     )}

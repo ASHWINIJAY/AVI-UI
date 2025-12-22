@@ -3,6 +3,8 @@ import { Container, Card, Modal, Button, Spinner } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
 import ExcelJS from "exceljs"; // npm i exceljs
 import { saveAs } from "file-saver"; // npm i file-saver
+import { InputText } from "primereact/inputtext"; //PLEASE ADD (FILTERING)
+import { FilterMatchMode } from "primereact/api";
 
 export default function UploadedLocoDashboard() {
     const BACKEND_URL = "http://41.87.206.94/AVIapi";
@@ -26,7 +28,15 @@ export default function UploadedLocoDashboard() {
 const [showSuccessModal, setShowSuccessModal] = useState(false); //PLEASE ADD
     // scroll preservation
   const scrollPosRef = useRef(0); 
+   const [filters, setFilters] = useState({
+          global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          locoNumber: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          locoModel: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          inspectorName: { value: null, matchMode: FilterMatchMode.CONTAINS }
+      });
   
+      //PLEASE ADD (FILTERING)
+      const [globalFilterValue, setGlobalFilterValue] = useState("");
       const gridContainerRef = useRef(null); 
 const getRowUniqueId = (row) => `${row.locoNumber ?? "NA"}-${row.inspectorId ?? "NA"}-${row.dateAssessed ?? "NA"}-${row.timeAssessed ?? "NA"}`;
 
@@ -113,7 +123,15 @@ const handleOpenPdf = (pdfPath) => {
         const url = value.startsWith("http") ? value : `${BACKEND_URL}/${value}`;
         return <img src={url} alt={alt} style={{ maxWidth: 100, maxHeight: 100, objectFit: "cover" }} />;
     };
+const onGlobalFilterChange = (e) => {
+        const value = e.target.value;
+        let _filters = { ...filters };
 
+        _filters.global.value = value;
+
+        setFilters(_filters);
+        setGlobalFilterValue(value);
+    };
     // Selection helpers (store backend id values)
   const clearSelection = () => setSelectionModel([]); //PLEASE ADJUST
 
@@ -191,6 +209,7 @@ const handleOpenPdf = (pdfPath) => {
             "Time Started",
             "Gps Latitude",
             "Gps Longitude",
+            "City",
             "Refurbish Value",
             "Missing Value",
             "Replace Value",
@@ -233,6 +252,7 @@ const handleOpenPdf = (pdfPath) => {
                 row.startTimeInspect ?? "",
                 row.gpsLatitude ?? "",
                 row.gpsLongitude ?? "",
+                row.city??"",
                 row.refurbishValue ?? "",
                 row.missingValue ?? "",
                 row.replaceValue ?? "",
@@ -282,6 +302,7 @@ const handleOpenPdf = (pdfPath) => {
         { field: "startTimeInspect", headerName: "Time Started", width: 110 },
         { field: "gpsLatitude", headerName: "Gps Latitude", width: 130 },
         { field: "gpsLongitude", headerName: "Gps Longitude", width: 130 },
+        { field: "city", headerName: "City", width: 130 },
         {
             field: "bodyPhotos",
             headerName: "Body Photos",

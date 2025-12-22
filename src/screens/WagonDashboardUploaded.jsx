@@ -3,6 +3,8 @@ import { Container, Card, Modal, Button, Spinner } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
+import { InputText } from "primereact/inputtext"; //PLEASE ADD (FILTERING)
+import { FilterMatchMode } from "primereact/api";
 
 function WagonDashboardUploaded() {
   //   const BACKEND_URL = "http://41.87.206.94/AVIapi"; 
@@ -17,7 +19,15 @@ function WagonDashboardUploaded() {
     const [showPdfModal, setShowPdfModal] = useState(false);
     const [showNoPdf, setShowNoPdf] = useState(false);
     const gridContainerRef = React.useRef(null);
+ const [filters, setFilters] = useState({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        wagonNumber: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        wagonGroup: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        inspectorName: { value: null, matchMode: FilterMatchMode.CONTAINS }
+    });
 
+    //PLEASE ADD (FILTERING)
+    const [globalFilterValue, setGlobalFilterValue] = useState("");
     const getRowUniqueId = (row) => `${row.wagonNumber ?? "NA"}-${row.inspectorId ?? "NA"}-${row.dateAssessed ?? "NA"}-${row.timeAssessed ?? "NA"}`;
 
     const fetchData = useCallback(async () => {
@@ -74,6 +84,15 @@ function WagonDashboardUploaded() {
         setPdfUrl(fullUrl);
         setShowPdfModal(true);
     };
+    const onGlobalFilterChange = (e) => {
+        const value = e.target.value;
+        let _filters = { ...filters };
+
+        _filters.global.value = value;
+
+        setFilters(_filters);
+        setGlobalFilterValue(value);
+    };
 
     const renderImageCell = (value, alt) => {
         if (!value || value === "N/A") return <span>N/A</span>;
@@ -104,6 +123,7 @@ function WagonDashboardUploaded() {
             "Time Started",
             "Gps Latitude",
             "Gps Longitude",
+            "City",
             "Lift Date",
             "Lift Lapsed",
             "Barrel Test Date",
@@ -145,6 +165,7 @@ function WagonDashboardUploaded() {
                 row.startTimeInspect,
                 row.gpsLatitude,
                 row.gpsLongitude,
+                row.city,
                 row.liftDate,
                 row.liftLapsed,
                 row.barrelDate,
@@ -199,6 +220,7 @@ function WagonDashboardUploaded() {
         { field: "startTimeInspect", headerName: "Time Started", width: 110 },
         { field: "gpsLatitude", headerName: "Gps Latitude", width: 130 },
         { field: "gpsLongitude", headerName: "Gps Longitude", width: 130 },
+        { field: "city", headerName: "City", width: 130 },
         { field: "bodyPhotos", headerName: "Body Photos", width: 150, renderCell: (params) => (<Button size="sm" onClick={() => handleOpenModal(params.value)}>View</Button>) },
         { field: "liftPhoto", headerName: "Lift Photo", width: 150, renderCell: (params) => renderImageCell(params.value, "Lift") },
         { field: "liftDate", headerName: "Lift Date", width: 110 },
