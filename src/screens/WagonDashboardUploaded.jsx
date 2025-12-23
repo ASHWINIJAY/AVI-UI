@@ -6,9 +6,10 @@ import { saveAs } from "file-saver";
 import { InputText } from "primereact/inputtext"; //PLEASE ADD (FILTERING)
 import { FilterMatchMode } from "primereact/api";
 
+
 function WagonDashboardUploaded() {
-  //   const BACKEND_URL = "http://41.87.206.94/AVIapi"; 
-    const BACKEND_URL = "http://41.87.206.94/AVIapi"; // Adjust if different http://41.87.206.94/AVIapi
+  //   const BACKEND_URL = "https://avi-app.co.za/AVIapi"; 
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // Adjust if different https://avi-app.co.za/AVIapi
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(100);
     const [allRows, setAllRows] = useState([]);
@@ -279,6 +280,14 @@ function WagonDashboardUploaded() {
                             }}
                             disableSelectionOnClick
                             showToolbar
+                            sx={{
+    "& .MuiDataGrid-toolbarContainer": {
+      justifyContent: "flex-start",
+    },
+    "& .MuiDataGrid-toolbarButtons": {
+      marginLeft: "0 !important",   // ✅ THIS is the key
+    }
+  }}
                         />
                     </div>
                 </Card.Body>

@@ -7,8 +7,8 @@ import { InputText } from "primereact/inputtext"; //PLEASE ADD (FILTERING)
 import { FilterMatchMode } from "primereact/api";
 
 export default function UploadedLocoDashboard() {
-    const BACKEND_URL = "http://41.87.206.94/AVIapi";
-//const BACKEND_URL = "http://41.87.206.94/AVIapi";
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
+//const BACKEND_URL = "https://avi-app.co.za/AVIapi";
      const [page, setPage] = useState(0); 
         const [pageSize, setPageSize] = useState(100);  
         const [allRows, setAllRows] = useState([]); 
@@ -123,15 +123,7 @@ const handleOpenPdf = (pdfPath) => {
         const url = value.startsWith("http") ? value : `${BACKEND_URL}/${value}`;
         return <img src={url} alt={alt} style={{ maxWidth: 100, maxHeight: 100, objectFit: "cover" }} />;
     };
-const onGlobalFilterChange = (e) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
 
-        _filters.global.value = value;
-
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
     // Selection helpers (store backend id values)
   const clearSelection = () => setSelectionModel([]); //PLEASE ADJUST
 
