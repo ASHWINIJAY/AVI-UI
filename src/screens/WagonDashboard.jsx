@@ -40,6 +40,8 @@ const [score, setScore] = useState([]);
     const [showGenerateSuccessModal, setShowGenerateSuccessModal] = useState(false);
     const [showTickSuccessModal, setShowTickSuccessModal] = useState(false);
 
+const [showNoInput, setShowNoInput] = useState(false); //PLEASE ADD (NEW)
+
     // Pagination/scroll persistence
     const [dtFirst, setDtFirst] = useState(0);
     const [dtRows, setDtRows] = useState(100);
@@ -52,15 +54,40 @@ const [score, setScore] = useState([]);
         inspectorName: { value: null, matchMode: FilterMatchMode.CONTAINS }
     });
 
+    // Status filter (Asset Monitor only)
+
+
+const STATUS = {
+    INSPECTION_DONE: "Inspection Complete",
+    READY_FOR_ASSESSMENT: "ReadyForAssessment",
+    ASSESSED_READY_FOR_UPLOAD: "AssessedReadyForUpload"
+};
+
+const [statusFilter, setStatusFilter] = useState(STATUS.INSPECTION_DONE);
+
+const statusOptions = [
+    { label: "Inspection Complete", value: STATUS.INSPECTION_DONE },
+    { label: "Assessed Ready For Upload", value: STATUS.ASSESSED_READY_FOR_UPLOAD }
+];
+
     //PLEASE ADD (FILTERING)
     const [globalFilterValue, setGlobalFilterValue] = useState("");
 
     // ADMIN view state: default "Inspection Complete"
     const isAdmin = userRole === "Super User";
-    const [adminView, setAdminView] = useState("Inspection Complete"); // "Inspection Complete" | "Assessor Ticked"
+    //const [adminView, setAdminView] = useState("Inspection Complete"); // "Inspection Complete" | "Assessor Ticked"
+const [adminMode, setAdminMode] = useState("Asset Monitor"); 
+// "Asset Monitor" | "Assessor"
+
+// "Assessor" | "Asset Monitor"
 
     const isAssessor = userRole === "Assessor";
     const isAssessorMonitor = userRole === "Asset Monitor";
+const effectiveRole = isAdmin
+    ? adminMode
+    : isAssessor
+        ? "Assessor"
+        : "Asset Monitor";
 
     const getRowUniqueId = (row) =>
         row.id ?? `${row.wagonNumber ?? "NA"}-${row.inspectorId ?? "NA"}-${row.dateAssessed ?? "NA"}-${row.timeAssessed ?? "NA"}`;
@@ -176,13 +203,22 @@ const scoreTemplate = (option, props) => {
             if (userRole === "Assessor") {
                 res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllWagonDashboard`);
             } else if (userRole === "Asset Monitor") {
-                res = await fetch(`${BACKEND_URL}/api/Dashboard/getTickWagonDashboard`);
-            } else if (userRole === "Super User" && adminView === "Inspection Complete") {
                 res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllWagonDashboard`);
-            } else if (userRole === "Super User" && adminView === "Assessor Ticked") {
-                res = await fetch(`${BACKEND_URL}/api/Dashboard/getTickWagonDashboard`);
+            } else if (userRole === "Super User" && effectiveRole === "Inspection Complete") {
+                res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllWagonDashboard`);
+            } else if (userRole === "Super User" && effectiveRole === "Assessor Ticked") {
+                res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllWagonDashboard`);
             }
-            
+            if (userRole === "Super User" && effectiveRole === "Assessor") {
+    res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllWagonDashboard`);
+}
+else if (
+    userRole === "Super User" &&
+    effectiveRole === "Asset Monitor"
+) {
+    res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllWagonDashboard`);
+}
+
             const data = await res.json();
             setAllRows(data || []);
         } catch (err) {
@@ -193,38 +229,50 @@ const scoreTemplate = (option, props) => {
             // restore scroll after render
             requestAnimationFrame(() => restoreScroll());
         }
-    }, [userRole, adminView]);
+    }, [userRole, effectiveRole]);
 
     //PLEASE ADJUST (NEW)
     useEffect(() => {
         fetchScore();
         fetchData();
+         if (isAssessorMonitor || (isAdmin && effectiveRole === "Asset Monitor")) {
+        setStatusFilter("Inspection Complete");
+    } else {
+        setStatusFilter(null);
+    }
         //PLEASE DO NOT REMOVE
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userRole, adminView]);
+    }, [userRole, effectiveRole]);
 
     // Visible rows according to your existing filter rules — NOT changed
-    const visibleRows = useMemo(() => {
-        // Assessor: same as before (exclude assessor ticked)
-        if (isAssessor) return allRows.filter(r => r.wagonStatus !== "Assessor Ticked");
+const visibleRows = useMemo(() => {
+    let rows = allRows;
 
-        // Asset Monitor: same as before (exclude inspection complete)
-        if (isAssessorMonitor) return allRows.filter(r => r.wagonStatus !== "Inspection Complete");
+    // Role-based visibility
+    if (effectiveRole === "Assessor") {
+        rows = rows.filter(
+            r => r.wagonStatus === STATUS.READY_FOR_ASSESSMENT
+        );
+    }
 
-        // Admin: control by adminView selection
-        if (isAdmin) {
-            if (adminView === "Inspection Complete") {
-                // show rows that have wagonStatus === "Inspection Complete"
-                return allRows.filter(r => (r.wagonStatus || "").toString().trim() === "Inspection Complete");
-            } else {
-                // adminView === "Assessor Ticked" => show rows that have wagonStatus === "Assessor Ticked"
-                return allRows.filter(r => (r.wagonStatus || "").toString().trim() === "Assessor Ticked");
-            }
-        }
+    if (effectiveRole === "Asset Monitor") {
+        rows = rows.filter(
+            r =>
+                r.wagonStatus === STATUS.INSPECTION_DONE ||
+                r.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD
+        );
+    }
 
-        // default (other roles) -> full list
-        return allRows;
-    }, [allRows, isAssessor, isAssessorMonitor, isAdmin, adminView]);
+    // Status dropdown filter (final)
+    if (statusFilter) {
+        rows = rows.filter(
+            r => r.wagonStatus === statusFilter
+        );
+    }
+
+    return rows;
+}, [allRows, effectiveRole, statusFilter]);
+
 
     const rowsWithId = useMemo(() => visibleRows.map(row => ({ ...row, id: getRowUniqueId(row) })), [visibleRows]);
 
@@ -250,8 +298,18 @@ const scoreTemplate = (option, props) => {
 
     // Helper to check "all three PDFs exist" logic
     const okPdf = (v) => !!v && v !== "N/A" && v !== "No File" && v !== "Not Ready" && v !== "NotReady";
-    const hasAllPdfs = (row) => okPdf(row?.assessmentQuote) && okPdf(row?.assessmentCert) && okPdf(row?.assessmentSow);
+    const hasAllPdfs = (row) => {
+    // 🔐 Only allowed in final status
+    if (row?.wagonStatus !== STATUS.ASSESSED_READY_FOR_UPLOAD) {
+        return false;
+    }
 
+    return (
+        okPdf(row?.assessmentQuote) &&
+        okPdf(row?.assessmentCert) &&
+        okPdf(row?.assessmentSow)
+    );
+};
     // Photos modal
     const handleOpenModal = (photosValue, e) => {
         e?.stopPropagation();
@@ -401,32 +459,62 @@ const onConditionStatusInstantUpdate = (row, value) => {
 
     // Confirm tick (assessor tick)
     const confirmTickWagon = async () => {
-        if (!tickTargetRow) return;
-        const payload = { wagonNumber: tickTargetRow.wagonNumber.toString() };
-        saveScroll();
-        try {
-            const response = await fetch(`${BACKEND_URL}/api/Dashboard/tickWagon`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                alert("Error: " + (errorData?.message ?? JSON.stringify(errorData)));
-                return;
-            }
-            setShowTickConfirmModal(false);
-            setTickTargetRow(null);
-            setShowTickSuccessModal(true);
-            await fetchData();
-            // don't clear selection automatically; leave that behaviour as before
-        } catch (err) {
-            console.error("Error confirming wagon tick:", err);
-            alert("Error confirming wagon tick: " + err.message);
-        } finally {
-            requestAnimationFrame(() => restoreScroll());
+    if (!tickTargetRow) return;
+
+    saveScroll();
+
+    try {
+        let url = "";
+        let payload = {
+            wagonNumber: Number(tickTargetRow.wagonNumber)
+        };
+
+        // 🚦 STATUS-BASED API ROUTING
+        if (
+            effectiveRole === "Asset Monitor" &&
+            tickTargetRow.wagonStatus === STATUS.INSPECTION_DONE
+        ) {
+            // InspectionDone → ReadyForAssessment
+            url = `${BACKEND_URL}/api/Dashboard/markReadyForAssessment`;
         }
-    };
+        else if (
+            effectiveRole === "Assessor" &&
+            tickTargetRow.wagonStatus === STATUS.READY_FOR_ASSESSMENT
+        ) {
+            // ReadyForAssessment → AssessedReadyForUpload
+            url = `${BACKEND_URL}/api/Dashboard/markAssessedReadyForUpload`;
+        }
+        else {
+            alert("Invalid status transition");
+            return;
+        }
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(err);
+        }
+
+        setShowTickConfirmModal(false);
+        setTickTargetRow(null);
+        setShowTickSuccessModal(true);
+
+        await fetchData();
+    }
+    catch (err) {
+        console.error("Tick failed:", err);
+        alert("Failed to update status");
+    }
+    finally {
+        requestAnimationFrame(() => restoreScroll());
+    }
+};
+
 
     //PLEASE ADD (NEW)
     const updateConditionScore = async (wagonNumber, value) => {
@@ -462,6 +550,13 @@ const onConditionStatusInstantUpdate = (row, value) => {
         alert("Please select a Condition Score before generating PDFs.");
         return;  // stop PDF generation
     }
+            let resp = await fetch(`${BACKEND_URL}/api/Dashboard/checkWagonInputs/${parseInt(generatePdfTarget.wagonNumber)}`);
+        const resMessage = await resp.json();
+        if (resMessage.message === "No") {
+            setShowGeneratePdfModal(false);
+            setShowNoInput(true);
+            return;
+        }
         saveScroll();
         setShowGeneratePdfModal(false);
         setGeneratingPdf(true);
@@ -547,86 +642,112 @@ const onConditionStatusInstantUpdate = (row, value) => {
         );
     };
 
+    const canTick = (row) => {
+    // Asset Monitor → InspectionDone → ReadyForAssessment
+    if (
+        effectiveRole === "Asset Monitor" &&
+        row.wagonStatus === STATUS.INSPECTION_DONE
+    ) {
+        return true;
+    }
+
+    // Assessor → ReadyForAssessment → AssessedReadyForUpload
+    if (
+        effectiveRole === "Assessor" &&
+        row.wagonStatus === STATUS.READY_FOR_ASSESSMENT
+    ) {
+        return true;
+    }
+
+    return false;
+};
+
+
+const isUploadSelectable = (row) => {
+    return (
+        effectiveRole === "Asset Monitor" &&
+        row.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD &&
+        hasAllPdfs(row)
+    );
+};
+
+const canUpload =
+    effectiveRole === "Asset Monitor" &&
+    selectedRows.length > 0 &&
+    selectedRows.every(
+        r => r.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD
+    );
+
+
     // Single-row checkbox template (bigger checkbox, disabled when not all PDFs exist)
-    const renderRowCheckbox = (row) => {
-        const allExist = hasAllPdfs(row);
-        const isChecked = selectedRows.some(r => r.id === row.id);
+const renderRowCheckbox = (row) => {
+    const isChecked = selectedRows.some(r => r.id === row.id);
+    const tickAllowed = canTick(row);
+    const uploadAllowed = isUploadSelectable(row);
 
-        const onChange = (e) => {
-            e.stopPropagation();
-            const checked = e.target.checked;
-            if (isAssessorMonitor || adminView === "Assessor Ticked") {
-                if (!allExist) return; // extra safety
-            }
-            
-            // Two behaviours:
-            // 1) TICK flow: Assessor (or Admin when adminView === "Inspection Complete") should open tick modal and NOT toggle selection here.
-            // 2) UPLOAD selection flow: Asset Monitor (or Admin when adminView === "Assessor Ticked") should toggle selection for upload.
-            const wantsTick = (isAssessor) || (isAdmin && adminView === "Inspection Complete");
-            const wantsUploadSelection = (isAssessorMonitor) || (isAdmin && adminView === "Assessor Ticked");
+    const onChange = (e) => {
+        e.stopPropagation();
 
-            if (wantsTick) {
-                // open tick confirmation modal (do NOT toggle selection here)
-                setTickTargetRow(row);
-                setShowTickConfirmModal(true);
-                // optionally visually show provisional check for UX (we won't add to selectedRows)
-                return;
-            }
+        // ✅ STATUS TRANSITION (InspectionDone → ReadyForAssessment)
+        if (
+            effectiveRole === "Asset Monitor" &&
+            row.wagonStatus === STATUS.INSPECTION_DONE
+        ) {
+            setTickTargetRow(row);
+            setShowTickConfirmModal(true);
+            return;
+        }
 
-            if (wantsUploadSelection) {
+        // ✅ STATUS TRANSITION (ReadyForAssessment → AssessedReadyForUpload)
+        if (
+            effectiveRole === "Assessor" &&
+            row.wagonStatus === STATUS.READY_FOR_ASSESSMENT
+        ) {
+            setTickTargetRow(row);
+            setShowTickConfirmModal(true);
+            return;
+        }
 
+        // ✅ UPLOAD SELECTION ONLY
+        if (uploadAllowed) {
+            if (e.target.checked) {
+                setSelectedRows(prev =>
+                    prev.some(r => r.id === row.id)
+                        ? prev
+                        : [...prev, row]
+                );
                 setShowConfirmModal(true);
-                // toggle selection for upload
-                if (checked) {
-                    setSelectedRows(prev => {
-                        if (prev.some(s => s.id === row.id)) return prev;
-                        return [...prev, row];
-                    });
-                } else {
-                    setSelectedRows(prev => prev.filter(s => s.id !== row.id));
-                }
-                return;
-            }
-
-            // fallback: toggle selection (safe default)
-            if (checked) {
-                setSelectedRows(prev => {
-                    if (prev.some(s => s.id === row.id)) return prev;
-                    return [...prev, row];
-                });
             } else {
-                setSelectedRows(prev => prev.filter(s => s.id !== row.id));
+                setSelectedRows(prev =>
+                    prev.filter(r => r.id !== row.id)
+                );
             }
-        };
-
-        return (
-           <div style={{ display: "flex", justifyContent: "center" }} onClick={(ev) => ev.stopPropagation()}>
-
-    {/* Assessor OR Admin (Inspection Complete view) */}
-    {(isAssessor || (isAdmin && adminView === "Inspection Complete")) && (
-        <input
-            type="checkbox"
-            checked={isChecked}
-            onChange={onChange}
-            style={{ transform: "scale(1.35)", cursor: "pointer" }}
-        />
-    )}
-
-    {/* Assessor Monitor OR Admin (Assessor Ticked view) */}
-    {(!isAssessor && (isAssessorMonitor || (isAdmin && adminView === "Assessor Ticked"))) && (
-        <input
-            type="checkbox"
-            checked={isChecked}
-            disabled={!allExist}
-            onChange={onChange}
-            style={{ transform: "scale(1.35)", cursor: allExist ? "pointer" : "not-allowed" }}
-        />
-    )}
-
-</div>
-
-        );
+        }
     };
+
+    return (
+        <div
+            style={{ display: "flex", justifyContent: "center" }}
+            onClick={(ev) => ev.stopPropagation()}
+        >
+            <input
+                type="checkbox"
+                checked={isChecked}
+                disabled={!tickAllowed && !uploadAllowed}
+                onChange={onChange}
+                style={{
+                    transform: "scale(1.35)",
+                    cursor:
+                        tickAllowed || uploadAllowed
+                            ? "pointer"
+                            : "not-allowed"
+                }}
+            />
+        </div>
+    );
+};
+
+
 
     // Prevent row clicks from selecting (selection is only via checkbox)
     const onRowClick = (e) => {
@@ -647,28 +768,59 @@ const onConditionStatusInstantUpdate = (row, value) => {
                 <Card.Body style={{ height: 640, width: "100%" }}>
                     <div className="d-flex justify-content-start mb-3">
                         <Button variant="success" size="sm" onClick={handleExportToExcel} className="me-2">Export to Excel</Button>
-                        {(isAssessorMonitor || (isAdmin && adminView === "Assessor Ticked")) && (
-                            <Button variant="primary" size="sm" onClick={() => selectedRows.length ? setShowConfirmModal(true) : setShowNoSelectModal(true)}>Upload</Button>
-                        )}
-                        {isAdmin && (
-                            <Form.Select
-                                size="sm"
-                                value={adminView}
-                                onChange={(e) => {
-                                    setAdminView(e.target.value);
-                                    // reset selection when switching views
-                                    setSelectedRows([]);
-                                    setDtFirst(0);
-                                }}
-                                style={{ width: 220, display: "inline-block", marginLeft: 8 }}
-                                aria-label="Admin View Select"
-                                className="me-2"
-                            >
-                                <option value="Inspection Complete">Inspection Complete</option>
-                                <option value="Assessor Ticked">Assessor Ticked</option>
-                            </Form.Select>
-                        )}
+                        {(isAssessorMonitor || (isAdmin && effectiveRole === "Assessor Ticked")) && (
+                            <Button
+    variant="primary"
+    size="sm"
+    disabled={!canUpload}
+    onClick={() =>
+        selectedRows.length
+            ? setShowConfirmModal(true)
+            : setShowNoSelectModal(true)
+    }
+>
+    Upload
+</Button>
+   )}
+   
+                       {isAdmin && (
+                      <div className="d-flex align-items-center mb-2">
+    <span className="me-2 fw-bold">Role:</span>  
+    <Form.Select
+        size="sm"
+        value={adminMode}
+        onChange={(e) => {
+            setAdminMode(e.target.value);
+            setSelectedRows([]);
+            setDtFirst(0);
+            setStatusFilter(STATUS.INSPECTION_DONE);
+        }}
+        style={{ width: 220, marginLeft: 8 }}
+    >
+        <option value="Asset Monitor">Asset Monitor Role</option>
+        <option value="Assessor">Assessor Role</option>
+    </Form.Select>
+    </div>
+)}
+{(isAssessorMonitor || (effectiveRole === "Asset Monitor")) && (
+    <div className="d-flex align-items-center mb-2">
+    <span className="me-2 fw-bold">Status:</span>
+    <Dropdown
+        value={statusFilter}
+        options={statusOptions}
+        onChange={(e) => {
+            setStatusFilter(e.value);
+            setSelectedRows([]);
+            setDtFirst(0);
+        }}
+        style={{ width: 300 }}
+    />
+</div>
+
+)}
+
                         <div style={{ marginLeft: 12, alignSelf: "center" }}>{selectedRows.length ? `${selectedRows.length} selected` : ""}</div>
+                           
                     </div>
   <div className="d-flex justify-content-start mb-2">
                         <span className="p-input-icon-left">
@@ -679,6 +831,9 @@ const onConditionStatusInstantUpdate = (row, value) => {
                                 style={{ width: "500px" }}
                             />
                         </span>
+                       
+
+
                     </div>
                     <div style={{ position: "relative" }} ref={gridContainerRef}>
                         {/* overlay spinners */}
@@ -716,25 +871,35 @@ const onConditionStatusInstantUpdate = (row, value) => {
                                 style={{ width: '3rem' }}
                             />
 
-                            {/* Generate PDFs column — only visible to Assessors */}
-                            {(isAssessorMonitor || (isAdmin && adminView === "Assessor Ticked")) && ( //PLEASE ADJUST (NEW)
-                                <Column
-                                    header="Generate PDFs"
-                                    body={(row) => {
-                                        const allExist = hasAllPdfs(row);
-                                        return (
-                                            <Button
-                                                size="sm"
-                                                onClick={(e) => { e.stopPropagation(); handleGeneratePdfClick(row); }}
-                                                disabled={allExist} // disabled if all exist (per requirement)
-                                            >
-                                                Generate
-                                            </Button>
-                                        );
-                                    }}
-                                    style={{ minWidth: 150 }}
-                                />
-                            )}
+                         {effectiveRole === "Asset Monitor" && (
+    <Column
+        header="Generate PDFs"
+        body={(row) => {
+            const isReadyForAssessment =
+                row.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD;
+
+            const alreadyGenerated = hasAllPdfs(row);
+
+            const disabled =
+                !isReadyForAssessment || alreadyGenerated;
+
+            return (
+                <Button
+                    size="sm"
+                    disabled={disabled}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleGeneratePdfClick(row);
+                    }}
+                >
+                    Generate
+                </Button>
+            );
+        }}
+        style={{ minWidth: 150 }}
+    />
+)}
+
 
                             {/* All other columns are kept intact */}
                             <Column field="wagonNumber" header="Wagon Number" style={{ minWidth: 120 }} />
@@ -775,40 +940,41 @@ const onConditionStatusInstantUpdate = (row, value) => {
                             <Column header="Missing Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.missingPhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
                             <Column header="Replace Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.replacePhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
                              {/*PLEASE ADJUST (NEW)*/}
-                            {(isAssessorMonitor || (isAdmin && adminView === "Assessor Ticked")) && (
+                           
                                 <Column
-                                    header="Condition Score"
-                                    style={{ minWidth: 140 }}
-                                    body={(row) => (
-                                        <Dropdown
-                                            value={row.conditionScore}
-                                            options={score}
-                                            optionLabel="label"
-                                            optionValue="value"
-                                            itemTemplate={scoreTemplate}
-                                            valueTemplate={scoreTemplate}
-                                            placeholder="Select Score"
-                                            onClick={(e) => e.stopPropagation()}
-                                            onChange={(e) => {
-                                                onConditionScoreChange(row, e.value);
-                                                updateConditionScore(row.wagonNumber, e.value);
-                                                onConditionStatusInstantUpdate(row, e.value);
-                                            }}
-                                            className="w-100"
-                                        />
-                                    )}
-                                />
-                            )}
+    header="Condition Score"
+    style={{ minWidth: 140 }}
+    body={(row) => (
+        <Dropdown
+            value={row.conditionScore}
+            options={score}
+            optionLabel="label"
+            optionValue="value"
+            itemTemplate={scoreTemplate}
+            valueTemplate={scoreTemplate}
+            placeholder="Select Score"
+            disabled={effectiveRole === "Assessor"}   // ✅ KEY LINE
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => {
+                onConditionScoreChange(row, e.value);
+                updateConditionScore(row.wagonNumber, e.value);
+                onConditionStatusInstantUpdate(row, e.value);
+            }}
+            className="w-100"
+        />
+    )}
+/>
 
-                            {/*PLEASE ADJUST (NEW)*/}
-                            {(isAssessorMonitor || (isAdmin && adminView === "Assessor Ticked")) && (
+                            
+
+                           
                                 <Column
                                     header="Operational Status"
                                     field="operationalStatus"
                                     style={{ minWidth: 140 }}
                                     body={(row) => row?.operationalStatus ?? ""}
                                 />
-                            )}
+                          
                        
                         </DataTable>
                     </div>
@@ -854,8 +1020,24 @@ const onConditionStatusInstantUpdate = (row, value) => {
             {/* Tick Confirmation Modal */}
             <Modal show={showTickConfirmModal} onHide={() => setShowTickConfirmModal(false)}>
                 <Modal.Header closeButton><Modal.Title>Confirm Tick</Modal.Title></Modal.Header>
-                <Modal.Body>Are you sure you want to tick Wagon <b>{tickTargetRow?.wagonNumber}</b> for upload?</Modal.Body>
-                <Modal.Footer>
+                <Modal.Body>
+    {tickTargetRow?.wagonStatus === STATUS.INSPECTION_DONE && (
+        <>
+            Are you sure you want to tick Wagon{" "}
+            <b>{tickTargetRow?.wagonNumber}</b> for{" "}
+            <b>Ready For Assessment</b>?
+        </>
+    )}
+
+    {tickTargetRow?.wagonStatus === STATUS.READY_FOR_ASSESSMENT && (
+        <>
+            Are you sure you want to tick Wagon{" "}
+            <b>{tickTargetRow?.wagonNumber}</b> for{" "}
+            <b>Assessed Ready For Upload</b>?
+        </>
+    )}
+</Modal.Body>
+<Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowTickConfirmModal(false)}>Cancel</Button>
                     <Button variant="primary" onClick={confirmTickWagon}>Confirm</Button>
                 </Modal.Footer>
@@ -901,6 +1083,11 @@ const onConditionStatusInstantUpdate = (row, value) => {
                     <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>Cancel</Button>
                     <Button variant="primary" onClick={handleUploadConfirmed}>Upload</Button>
                 </Modal.Footer>
+            </Modal>
+            <Modal show={showNoInput} onHide={() => setShowNoInput(false)}>
+                <Modal.Header closeButton><Modal.Title>Missing Inputs</Modal.Title></Modal.Header>
+                <Modal.Body>The inputs for this wagon cannot be found. Therefore the PDFs cannot be generated. Please contact your administrator.</Modal.Body>
+                <Modal.Footer><Button variant="secondary" onClick={() => setShowNoInput(false)}>Close</Button></Modal.Footer>
             </Modal>
 
             {/* Upload Success Modal */}

@@ -1,90 +1,272 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Container, Card, Modal, Button, Spinner } from "react-bootstrap";
-import { DataGrid } from "@mui/x-data-grid";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { Container, Card, Modal, Button, Spinner, Form } from "react-bootstrap";
+import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
+import { Dropdown } from 'primereact/dropdown';
+import { InputText } from "primereact/inputtext"; 
+import { FilterMatchMode } from "primereact/api"; 
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import { InputText } from "primereact/inputtext"; //PLEASE ADD (FILTERING)
-import { FilterMatchMode } from "primereact/api";
-
+import '../Dash.css'; 
 
 function WagonDashboardUploaded() {
-  //   const BACKEND_URL = "https://avi-app.co.za/AVIapi"; 
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // Adjust if different https://avi-app.co.za/AVIapi
-    const [page, setPage] = useState(0);
-    const [pageSize, setPageSize] = useState(100);
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; 
+    const [userRole] = useState(localStorage.getItem("userRole"));
+
     const [allRows, setAllRows] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [modalPhotos, setModalPhotos] = useState([]);
-    const [showModal, setShowModal] = useState(false);
-    const [pdfUrl, setPdfUrl] = useState(null);
-    const [showPdfModal, setShowPdfModal] = useState(false);
-    const [showNoPdf, setShowNoPdf] = useState(false);
-    const gridContainerRef = React.useRef(null);
- const [filters, setFilters] = useState({
+
+    const [filters, setFilters] = useState({
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
         wagonNumber: { value: null, matchMode: FilterMatchMode.CONTAINS },
         wagonGroup: { value: null, matchMode: FilterMatchMode.CONTAINS },
         inspectorName: { value: null, matchMode: FilterMatchMode.CONTAINS }
     });
 
-    //PLEASE ADD (FILTERING)
     const [globalFilterValue, setGlobalFilterValue] = useState("");
-    const getRowUniqueId = (row) => `${row.wagonNumber ?? "NA"}-${row.inspectorId ?? "NA"}-${row.dateAssessed ?? "NA"}-${row.timeAssessed ?? "NA"}`;
+
+    const [score, setScore] = useState([]);
+
+    const [showNoInput, setShowNoInput] = useState(false); //PLEASE ADD (NEW)
+
+    const [recalculating, setRecalculating] = useState(false);
+
+    const [showNoValues, setShowNoValues] = useState(false);
+
+    const [showRecalSuccess, setShowRecalSuccess] = useState(false);
+
+    const [modalPhotos, setModalPhotos] = useState([]);
+    const [showModal, setShowModal] = useState(false);
+
+    const [showGeneratePdfModal, setShowGeneratePdfModal] = useState(false);
+    const [generatePdfTarget, setGeneratePdfTarget] = useState(null);
+
+    const [pdfUrl, setPdfUrl] = useState(null);
+    const [showPdfModal, setShowPdfModal] = useState(false);
+    const [showNoPdf, setShowNoPdf] = useState(false);
+
+    const [generatingPdf, setGeneratingPdf] = useState(false);
+    const [showGenerateSuccessModal, setShowGenerateSuccessModal] = useState(false);
+
+    const [showNoCondition, setShowNoCondition] = useState(false);
+
+    const [dtFirst, setDtFirst] = useState(0);
+    const [dtRows, setDtRows] = useState(100);
+    const scrollPosRef = useRef(0);
+    const gridContainerRef = useRef(null);
+
+    const isAdmin = userRole === "Super User";
+    const isAssessorModerator = userRole === "Asset Monitor";
+
+    const getRowUniqueId = (row) =>
+        row.id ?? `${row.wagonNumber ?? "NA"}-${row.inspectorId ?? "NA"}-${row.dateAssessed ?? "NA"}-${row.timeAssessed ?? "NA"}`;
+
+    const saveScroll = () => {
+        const viewport = gridContainerRef.current?.querySelector(".p-datatable-wrapper");
+        if (viewport) scrollPosRef.current = viewport.scrollTop;
+    };
+
+    const restoreScroll = () => {
+        setTimeout(() => {
+            const viewport = gridContainerRef.current?.querySelector(".p-datatable-wrapper");
+            if (viewport) viewport.scrollTop = scrollPosRef.current;
+        }, 50);
+    };
+
+    const fetchScore = async () => {
+        try {
+            let res = await fetch(`${BACKEND_URL}/api/Dashboard/getScoreList`);
+            const data = await res.json();
+
+            const formatted = (data || []).map(s => ({
+                ...s,
+                label: ` - ${s.condition}`,
+                value: s.conditionScore,
+                color: getScoreColor(s.conditionScore)
+            }));
+
+            setScore(formatted);
+        }
+        catch (err) {
+            console.error("Error fetching Score data:", err);
+            setScore([]);
+        }
+    };
+
+    const getScoreColor = (score) => {
+        switch (String(score)) {
+            case "1": return "danger";       // red
+            case "2": return "danger";
+            case "3": return "warning";      // orange/yellow
+            case "4": return "warning";
+            case "5": return "info";         // blueish
+            case "6": return "info";
+            case "7": return "primary";      // blue
+            case "8": return "success";      // green
+            case "9": return "success";
+            case "10": return "success";
+            default: return "secondary";
+        }
+    };
+
+    const getBackgroundColor = (score) => {
+        switch (String(score)) {
+            case "1": return "#c71e18ff"
+            case "2": return "#d9534f"; // red
+
+            case "3": return "#f0da4eff";
+            case "4": return "#c3c609ff"; // orange/yellow
+
+            case "5": return "#5bc0de";
+            case "6": return "#3d97b2ff"; // light blue
+
+            case "7": return "#0275d8"; // blue
+
+            case "8": return "#5cb85c";
+            case "9": return "#378537ff";
+            case "10": return "#197219ff"; // green
+
+            default: return "#6c757d"; // grey
+        }
+    };
+
+    const scoreTemplate = (option, props) => {
+
+        // When no option selected → show placeholder text
+        if (!option) {
+            return <span style={{ opacity: 0.6 }}>{props?.placeholder}</span>;
+        }
+
+        return (
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "6px 10px",
+                    borderRadius: "8px",
+                    backgroundColor: getBackgroundColor(option.value),
+                    color: "white",
+                    fontWeight: "500"
+                }}
+            >
+                <span>{option.value}</span>
+                <span>{option.label}</span>
+            </div>
+        );
+    };
+
+    const onConditionScoreChange = (row, value) => {
+        setAllRows(prev =>
+            prev.map(r =>
+                r.id === row.id ? { ...r, conditionScore: value } : r
+            )
+        );
+    };
 
     const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const res = await fetch(`${BACKEND_URL}/api/Dashboard/getUploadedWagons`);
-            const data = await res.json();
-            setAllRows(data);
-        } catch (err) {
-            console.error("Error fetching dashboard data:", err);
-        } finally {
+    console.log("fetchData CALLED");
+
+    setLoading(true);
+
+    try {
+        if (!isAdmin && !isAssessorModerator) {
+            console.warn("No permission");
+            setAllRows([]);
             setLoading(false);
+            return;
         }
-    }, []);
+
+        const res = await fetch(`${BACKEND_URL}/api/Dashboard/getUploadedWagons`);
+        const data = await res.json();
+        setAllRows(data || []);
+    } catch (err) {
+        console.error(err);
+        setAllRows([]);
+    } finally {
+        setLoading(false);
+    }
+}, [isAdmin, isAssessorModerator]);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    if (!userRole) return;
 
-    const visibleRows = useMemo(() => allRows, [allRows]);
+    fetchScore();
+    fetchData();
+}, [userRole, fetchData]);
 
-    const handleOpenModal = (photosValue) => {
+
+   const visibleRows = useMemo(() => {
+    return allRows.filter(r => r.wagonStatus === "Uploaded");
+}, [allRows]);
+
+
+    const rowsWithId = useMemo(() => visibleRows.map(row => ({ ...row, id: getRowUniqueId(row) })), [visibleRows]);
+
+    const handleOpenModal = (photosValue, e) => {
+        e?.stopPropagation();
         let photos = [];
-
-        if (!photosValue || photosValue === "No Photos" || photosValue === "N/A") {
-            photos = [];
-        } else {
+        if (!photosValue || photosValue === "No Photos" || photosValue === "N/A") photos = [];
+        else {
             try {
                 if (typeof photosValue === "string") {
-                    if (photosValue.trim().startsWith("[")) photos = JSON.parse(photosValue);
-                    else photos = photosValue.split(",").map(p => p.trim());
+                    photos = photosValue.trim().startsWith("[") ? JSON.parse(photosValue) : photosValue.split(",").map(p => p.trim());
                 } else if (Array.isArray(photosValue)) photos = photosValue;
                 else photos = [photosValue];
-
                 photos = photos.filter(p => p && p !== "No Photos" && p !== "N/A");
             } catch {
                 photos = [photosValue];
             }
         }
-
         setModalPhotos(photos);
         setShowModal(true);
     };
 
-    const handleOpenPdf = (pdfPath) => {
-        if (!pdfPath || pdfPath === "N/A" || pdfPath === "No File" || pdfPath === "Not Ready") {
+    const renderImageCell = (rowData, field) => {
+        const value = rowData[field];
+        if (!value || value === "N/A") return <span>N/A</span>;
+        const url = value.startsWith("http") ? value : `${BACKEND_URL}/${value}`;
+        return <img src={url} alt={field} style={{ maxWidth: 100, maxHeight: 100, objectFit: "cover" }} />;
+    };
+
+    const handleOpenPdf = (pdfPath, e) => {
+        e?.stopPropagation();
+        if (!pdfPath || ["N/A", "No File", "Not Ready"].includes(pdfPath)) {
             setPdfUrl(null);
             setShowPdfModal(false);
             setShowNoPdf(true);
             return;
         }
-
-        const fullUrl = pdfPath.startsWith("http") ? pdfPath : `${BACKEND_URL}/${pdfPath}`;
-        setPdfUrl(fullUrl);
+        setPdfUrl(pdfPath.startsWith("http") ? pdfPath : `${BACKEND_URL}/${pdfPath}`);
         setShowPdfModal(true);
     };
+
+    const handleExportToExcel = async () => {
+        if (!rowsWithId.length) { alert("No rows to export."); return; }
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Wagon Dashboard");
+
+        const headers = [
+            "Wagon Number", "Wagon Group", "Wagon Type", "Inspector", "Date Completed", "Time Completed",
+            "Time Started", "Gps Latitude", "Gps Longitude", "Lift Date", "Lift Lapsed", "Barrel Test Date",
+            "Barrel Lapsed", "Brake Test Date", "Brake Lapsed", "Refurbish Value", "Missing Value",
+            "Replace Value", "Labor Value", "LiftValue", "BarrelValue", "TotalValue", "Market Value", "Asset Value", "Wagon Status", "Upload Date",
+            "ConditionScore", "OperationalStatus"
+        ];
+        worksheet.addRow(headers).font = { bold: true };
+
+        rowsWithId.forEach(row => worksheet.addRow([
+            row.wagonNumber, row.wagonGroup, row.wagonType, row.inspectorName, row.dateAssessed, row.timeAssessed,
+            row.startTimeInspect, row.gpsLatitude, row.gpsLongitude, row.liftDate, row.liftLapsed, row.barrelDate,
+            row.barrelLapsed, row.brakeDate, row.brakeLapsed, row.refurbishValue, row.missingValue, row.replaceValue,
+            row.totalLaborValue, row.liftValue, row.BarrelValue, row.totalValue, row.marketValue, row.assetValue, row.wagonStatus, row.uploadDate,
+            row.conditionScore, row.operationalStatus
+        ]));
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(new Blob([buffer], { type: "application/octet-stream" }), `WagonDashboardUpload_${new Date().toISOString().split("T")[0]}.xlsx`);
+    };
+
     const onGlobalFilterChange = (e) => {
         const value = e.target.value;
         let _filters = { ...filters };
@@ -95,250 +277,394 @@ function WagonDashboardUploaded() {
         setGlobalFilterValue(value);
     };
 
-    const renderImageCell = (value, alt) => {
-        if (!value || value === "N/A") return <span>N/A</span>;
-        const url = value.startsWith("http") ? value : `${BACKEND_URL}${value}`;
-        return <img src={url} alt={alt} style={{ maxWidth: 100, maxHeight: 100, objectFit: "cover" }} />;
+    const handleGeneratePdfClick = (row) => {
+        setGeneratePdfTarget(row);
+        setShowGeneratePdfModal(true);
     };
 
-    const handleExportToExcel = async () => {
-        const rowsToExport = visibleRows;
+    const confirmGeneratePdfs = async () => {
+        if (!generatePdfTarget) return;
 
-        if (!rowsToExport.length) {
-            alert("No rows to export.");
+        if (!generatePdfTarget?.conditionScore || generatePdfTarget.conditionScore === "") {
+            setShowGeneratePdfModal(false); 
+            setShowNoCondition(true); 
             return;
         }
 
-        setLoading(true);
+        if (generatePdfTarget.totalLaborValue === "" || generatePdfTarget.liftValue === "") {
+            setShowGeneratePdfModal(false);
+            setShowNoValues(true);
+            return;
+        }
 
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet("Wagon Dashboard");
+        let resp = await fetch(`${BACKEND_URL}/api/Dashboard/checkWagonInputs/${parseInt(generatePdfTarget.wagonNumber)}`);
+        const resMessage = await resp.json();
+        if (resMessage.message === "No") {
+            setShowGeneratePdfModal(false);
+            setShowNoInput(true);
+            return;
+        }
 
-        const headers = [
-            "Wagon Number",
-            "Wagon Group",
-            "Wagon Type",
-            "Inspector",
-            "Date Completed",
-            "Time Completed",
-            "Time Started",
-            "Gps Latitude",
-            "Gps Longitude",
-            "City",
-            "Lift Date",
-            "Lift Lapsed",
-            "Barrel Test Date",
-            "Barrel Lapsed",
-            "Brake Test Date",
-            "Brake Lapsed",
-            "Refurbish Value",
-            "Missing Value",
-            "Replace Value",
-            "Labor Value",
-            "Replacement Value",
-            "Asset Value",
-            "Upload Status",
-            "Upload Date"
-        ];
+        saveScroll();
+        setShowGeneratePdfModal(false);
+        setGeneratingPdf(true);
 
-        worksheet.addRow(headers);
+        const wagonNumber = generatePdfTarget.wagonNumber.toString();
+        const userId = localStorage.getItem("userId");
 
-        const headerRow = worksheet.getRow(1);
-        headerRow.font = { bold: true };
-        headerRow.eachCell((cell) => {
-            cell.border = {
-                top: { style: "thick" },
-                left: { style: "thick" },
-                bottom: { style: "thick" },
-                right: { style: "thick" }
-            };
-            cell.alignment = { vertical: "middle", horizontal: "center" };
-        });
+        try {
+            const endpoints = [
+                { url: `${BACKEND_URL}/api/QuotePdf/RegenerateAndSaveQuotePdf` },
+                { url: `${BACKEND_URL}/api/CertPdf/RegenerateAndSaveCertPdf` },
+                { url: `${BACKEND_URL}/api/QuotePdf/RegenerateAndSaveSowPdf` }
+            ];
 
-        rowsToExport.forEach((row) => {
-            worksheet.addRow([
-                row.wagonNumber,
-                row.wagonGroup,
-                row.wagonType,
-                row.inspectorName,
-                row.dateAssessed,
-                row.timeAssessed,
-                row.startTimeInspect,
-                row.gpsLatitude,
-                row.gpsLongitude,
-                row.city,
-                row.liftDate,
-                row.liftLapsed,
-                row.barrelDate,
-                row.barrelLapsed,
-                row.brakeDate,
-                row.brakeLapsed,
-                row.refurbishValue,
-                row.missingValue,
-                row.replaceValue,
-                row.totalLaborValue,
-                row.replacementValue,
-                row.assetValue,
-                row.uploadStatus,
-                row.uploadDate
-            ]);
-        });
+            for (const ep of endpoints) {
+                const res = await fetch(ep.url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId, wagonNumber }),
+                });
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(`Failed at ${ep.url}: ${res.status} ${errText}`);
+                }
+                // wait a tick so UI updates; ensures strict ordering
+                await new Promise(r => setTimeout(r, 250));
+            }
 
-        worksheet.eachRow((row, rowNumber) => {
-            row.eachCell((cell) => {
-                cell.border = {
-                    top: { style: "thin" },
-                    left: { style: "thin" },
-                    bottom: { style: "thin" },
-                    right: { style: "thin" }
-                };
-            });
-        });
-
-        worksheet.columns.forEach((column) => {
-            let maxLength = 0;
-            column.eachCell({ includeEmpty: true }, (cell) => {
-                const cellLength = cell.value ? cell.value.toString().length : 10;
-                if (cellLength > maxLength) maxLength = cellLength;
-            });
-            column.width = maxLength + 5;
-        });
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: "application/octet-stream" });
-        saveAs(blob, `WagonDashboardUploaded_${new Date().toISOString().split("T")[0]}.xlsx`);
-
-        setLoading(false);
+            // success
+            setShowGenerateSuccessModal(true);
+            await fetchData();
+        } catch (err) {
+            console.error("Error generating PDFs:", err);
+            alert("Error generating PDFs: " + (err.message || err));
+        } finally {
+            setGeneratingPdf(false);
+            requestAnimationFrame(() => restoreScroll());
+            setGeneratePdfTarget(null);
+        }
     };
 
-    const columns = useMemo(() => ([
-        { field: "wagonNumber", headerName: "Wagon Number", width: 130 },
-        { field: "wagonGroup", headerName: "Wagon Group", width: 130 },
-        { field: "wagonType", headerName: "Wagon Type", width: 150 },
-        { field: "inspectorName", headerName: "Inspector", width: 150 },
-        { field: "dateAssessed", headerName: "Date Completed", width: 110 },
-        { field: "timeAssessed", headerName: "Time Completed", width: 110 },
-        { field: "startTimeInspect", headerName: "Time Started", width: 110 },
-        { field: "gpsLatitude", headerName: "Gps Latitude", width: 130 },
-        { field: "gpsLongitude", headerName: "Gps Longitude", width: 130 },
-        { field: "city", headerName: "City", width: 130 },
-        { field: "bodyPhotos", headerName: "Body Photos", width: 150, renderCell: (params) => (<Button size="sm" onClick={() => handleOpenModal(params.value)}>View</Button>) },
-        { field: "liftPhoto", headerName: "Lift Photo", width: 150, renderCell: (params) => renderImageCell(params.value, "Lift") },
-        { field: "liftDate", headerName: "Lift Date", width: 110 },
-        { field: "liftLapsed", headerName: "Lift Lapsed", width: 110 },
-        { field: "barrelPhoto", headerName: "Barrel Photo", width: 150, renderCell: (params) => renderImageCell(params.value, "Barrel") },
-        { field: "barrelDate", headerName: "Barrel Test Date", width: 110 },
-        { field: "barrelLapsed", headerName: "Barrel Lapsed", width: 110 },
-        { field: "brakePhoto", headerName: "Brake Photo", width: 150, renderCell: (params) => renderImageCell(params.value, "Brake") },
-        { field: "brakeDate", headerName: "Brake Test Date", width: 110 },
-        { field: "brakeLapsed", headerName: "Brake Lapsed", width: 110 },
-        { field: "refurbishValue", headerName: "Refurbish Value", width: 130 },
-        { field: "missingValue", headerName: "Missing Value", width: 130 },
-        { field: "replaceValue", headerName: "Replace Value", width: 130 },
-        { field: "totalLaborValue", headerName: "Labor Value", width: 130 },
-        { field: "replacementValue", headerName: "Replacement Value", width: 130 },
-        { field: "assetValue", headerName: "Asset Value", width: 120 },
-        { field: "assessmentQuote", headerName: "Assessment Quote", width: 180, renderCell: (params) => (params.value && params.value !== "N/A" ? (<Button size="sm" variant="outline-primary" onClick={() => handleOpenPdf(params.value)}>View PDF</Button>) : (<span>N/A</span>)) },
-        { field: "assessmentCert", headerName: "Assessment Cert", width: 130, renderCell: (params) => (params.value && params.value !== "N/A" ? (<Button size="sm" variant="outline-primary" onClick={() => handleOpenPdf(params.value)}>View PDF</Button>) : (<span>N/A</span>)) },
-        { field: "uploadStatus", headerName: "Upload Status", width: 130 },
-        { field: "uploadDate", headerName: "Upload Date", width: 130 },
-        { field: "wagonPhoto", headerName: "Wagon Photo", width: 150, renderCell: (params) => renderImageCell(params.value, "Wagon") },
-        { field: "missingPhotos", headerName: "Missing Photos", width: 150, renderCell: (params) => (<Button size="sm" onClick={() => handleOpenModal(params.value)}>View</Button>) },
-        { field: "replacePhotos", headerName: "Replace Photos", width: 150, renderCell: (params) => (<Button size="sm" onClick={() => handleOpenModal(params.value)}>View</Button>) },
-        { field: "conditionScore", headerName: "Condition Score", width: 130 },
-        { field: "operationalStatus", headerName: "Operational Status", width: 130 },
-    ]), []);
+    const mapOperationalStatus = (score) => {
+        switch (String(score)) {
+            case "1": return "Scrap only";
+            case "2": return "Non-operational, wreck repair";
+            case "3": return "Non-operational, needs major overhaul";
+            case "4": return "Partially operational or limited use";
+            case "5": return "Operational but maintenance is needed";
+            case "6": return "Operational but needs scheduled repair";
+            case "7": return "Operational with minor issues";
+            case "8":
+            case "9":
+            case "10": return "Fully operational";
+            default: return "";
+        }
+    };
 
-    if (loading) {
-        return (
-            <Container className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
-                <Spinner animation="border" />
-            </Container>
+    const onConditionStatusInstantUpdate = (row, value) => {
+        const newStatus = mapOperationalStatus(value);
+
+        setAllRows(prev =>
+            prev.map(r =>
+                r.id === row.id
+                    ? {
+                        ...r,
+                        conditionScore: value,
+                        operationalStatus: newStatus
+                    }
+                    : r
+            )
         );
+    };
+
+    const updateConditionScore = async (wagonNumber, value) => {
+        saveScroll();
+        try {
+            await fetch(`${BACKEND_URL}/api/Dashboard/updateConditionUpload`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    wagonNumber: wagonNumber.toString(),
+                    conditionScore: String(value)
+                })
+            });
+        } catch (err) {
+            console.error("Failed to update condition score:", err);
+            alert("Failed to save Condition Score");
+        }
+        finally {
+            requestAnimationFrame(() => restoreScroll());
+        }
+    };
+
+    const handleRecalculateClick = async (row) => {
+        if (!row?.wagonNumber) return;
+
+        const payload = { wagonNumber: row.wagonNumber.toString() };
+        saveScroll();
+        setRecalculating(true)
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/Dashboard/recalculateValuesUpload`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                alert("Error: " + (errorData?.message ?? JSON.stringify(errorData)));
+                return;
+            }
+
+            setShowRecalSuccess(true);
+            await fetchData();
+            // don't clear selection automatically; leave that behaviour as before
+        } catch (err) {
+            console.error("Error recalculating:", err);
+            alert("Error recalculating: " + err.message);
+        } finally {
+            setRecalculating(false);
+            requestAnimationFrame(() => restoreScroll());
+        }
     }
+
+    if (loading) return (
+        <Container className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
+            <Spinner animation="border" />
+        </Container>
+    );
 
     return (
         <Container fluid>
-            <Card className="mt-3" style={{ marginBottom: "30px" }}>
+            <Card className="mt-3 mb-3">
                 <Card.Header>Wagon Dashboard (Uploaded)</Card.Header>
-                <Card.Body style={{ height: 600, width: "100%" }}>
+                <Card.Body style={{ height: 680, width: "100%" }}>
                     <div className="d-flex justify-content-start mb-3">
-                        <Button variant="success" size="sm" onClick={handleExportToExcel} style={{ marginRight: "10px" }}>
-                            Export to Excel
-                        </Button>
+                        <Button variant="success" size="sm" onClick={handleExportToExcel} className="me-2">Export to Excel</Button>
                     </div>
+
+                    <div className="d-flex justify-content-end mb-2">
+                        <span className="p-input-icon-left">
+                            <InputText
+                                value={globalFilterValue}
+                                onChange={onGlobalFilterChange}
+                                placeholder="Search Wagon Number, Group, Inspector"
+                                style={{ width: "300px" }}
+                            />
+                        </span>
+                    </div>
+
                     <div style={{ position: "relative" }} ref={gridContainerRef}>
-                        <DataGrid
-                            style={{ height: 530 }}
-                            rows={visibleRows}
-                            columns={columns}
-                            getRowId={(row) => getRowUniqueId(row)}
-                            paginationModel={{ pageSize, page }}
-                            onPaginationModelChange={(model) => {
-                                setPage(model.page);
-                                setPageSize(model.pageSize);
+
+                        {(generatingPdf || recalculating) && (
+                            <div style={{ position: "absolute", zIndex: 10, top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(255,255,255,0.6)", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                <Spinner animation="border" />
+                            </div>
+                        )}
+
+                        <DataTable
+                            value={rowsWithId}
+                            paginator
+                            first={dtFirst}
+                            rows={dtRows}
+                            rowsPerPageOptions={[25, 50, 100, 200]}
+                            onPage={(e) => {
+                                setDtFirst(e.first);
+                                setDtRows(e.rows);
+                                saveScroll();
                             }}
-                            disableSelectionOnClick
-                            showToolbar
-                            sx={{
-    "& .MuiDataGrid-toolbarContainer": {
-      justifyContent: "flex-start",
-    },
-    "& .MuiDataGrid-toolbarButtons": {
-      marginLeft: "0 !important",   // ✅ THIS is the key
-    }
-  }}
-                        />
+                            className="p-datatable-sm"
+                            scrollable
+                            scrollHeight="510px"
+                            dataKey="id"
+                            filters={filters}
+                            globalFilterFields={["wagonNumber", "wagonGroup", "inspectorName"]}
+                        >
+                            {(isAssessorModerator || isAdmin) && (
+                                <Column
+                                    header="Recalculate Values"
+                                    body={(row) => {
+                                        return (
+                                            <Button
+                                                size="sm"
+                                                onClick={(e) => { e.stopPropagation(); handleRecalculateClick(row); }}
+                                            >
+                                                Recalculate
+                                            </Button>
+                                        );
+                                    }}
+                                    style={{ minWidth: 150 }}
+                                />
+                            )}
+                            {(isAssessorModerator || isAdmin) && ( 
+                                <Column
+                                    header="Regenerate PDFs"
+                                    body={(row) => {
+                                        return (
+                                            <Button
+                                                size="sm"
+                                                onClick={(e) => { e.stopPropagation(); handleGeneratePdfClick(row); }}
+                                            >
+                                                Regenerate
+                                            </Button>
+                                        );
+                                    }}
+                                    style={{ minWidth: 150 }}
+                                />
+                            )}
+
+                            <Column field="wagonNumber" header="Wagon Number" style={{ minWidth: 120 }} />
+                            <Column field="wagonGroup" header="Wagon Group" style={{ minWidth: 120 }} />
+                            <Column field="wagonType" header="Wagon Type" style={{ minWidth: 140 }} />
+                            <Column field="inspectorName" header="Inspector" style={{ minWidth: 140 }} />
+                            <Column field="dateAssessed" header="Date Completed" style={{ minWidth: 110 }} />
+                            <Column field="timeAssessed" header="Time Completed" style={{ minWidth: 110 }} />
+                            <Column field="startTimeInspect" header="Time Started" style={{ minWidth: 110 }} />
+                            <Column field="gpsLatitude" header="Gps Latitude" style={{ minWidth: 120 }} />
+                            <Column field="gpsLongitude" header="Gps Longitude" style={{ minWidth: 120 }} />
+                            <Column header="Body Photos" body={(row) => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.bodyPhotos, e); }}>View</Button>} style={{ minWidth: 120 }} />
+                            <Column header="Lift Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'liftPhoto')}</div>} style={{ minWidth: 140 }} />
+                            <Column field="liftDate" header="Lift Date" style={{ minWidth: 110 }} />
+                            <Column field="liftLapsed" header="Lift Lapsed" style={{ minWidth: 110 }} />
+                            <Column header="Barrel Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'barrelPhoto')}</div>} style={{ minWidth: 140 }} />
+                            <Column field="barrelDate" header="Barrel Test Date" style={{ minWidth: 110 }} />
+                            <Column field="barrelLapsed" header="Barrel Lapsed" style={{ minWidth: 110 }} />
+                            <Column header="Brake Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'brakePhoto')}</div>} style={{ minWidth: 140 }} />
+                            <Column field="brakeDate" header="Brake Test Date" style={{ minWidth: 110 }} />
+                            <Column field="brakeLapsed" header="Brake Lapsed" style={{ minWidth: 110 }} />
+                            <Column field="refurbishValue" header="Refurbish Value" style={{ minWidth: 120 }} />
+                            <Column field="missingValue" header="Missing Value" style={{ minWidth: 120 }} />
+                            <Column field="replaceValue" header="Replace Value" style={{ minWidth: 120 }} />
+                            <Column field="totalLaborValue" header="Labor Value" style={{ minWidth: 120 }} />
+                            <Column field="liftValue" header="Lift Value" style={{ minWidth: 120 }} />
+                            <Column field="barrelValue" header="Barrel Value" style={{ minWidth: 120 }} />
+                            <Column field="totalValue" header="Total Value" style={{ minWidth: 120 }} />
+                            <Column field="marketValue" header="Market Value" style={{ minWidth: 140 }} />
+                            <Column field="assetValue" header="Asset Value" style={{ minWidth: 120 }} />
+                            <Column header="Assessment Quote" body={(row) => row.assessmentQuote && row.assessmentQuote !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentQuote, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 160 }} />
+                            <Column header="Assessment Cert" body={(row) => row.assessmentCert && row.assessmentCert !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentCert, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />
+                            <Column header="Assessment SOW" body={(row) => row.assessmentSow && row.assessmentSow !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentSow, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />
+                            <Column field="wagonStatus" header="Wagon Status" style={{ minWidth: 120 }} />
+                            <Column field="uploadDate" header="Upload Date" style={{ minWidth: 120 }} />
+                            <Column header="Wagon Photo" body={row => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'wagonPhoto')}</div>} style={{ minWidth: 140 }} />
+                            <Column header="Missing Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.missingPhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
+                            <Column header="Replace Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.replacePhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
+                            {(isAssessorModerator || isAdmin) && (
+                                <Column
+                                    header="Condition Score"
+                                    style={{ minWidth: 140 }}
+                                    body={(row) => (
+                                        <Dropdown
+                                            value={row.conditionScore}
+                                            options={score}
+                                            optionLabel="label"
+                                            optionValue="value"
+                                            itemTemplate={scoreTemplate}
+                                            valueTemplate={scoreTemplate}
+                                            placeholder="Select Score"
+                                            onClick={(e) => e.stopPropagation()}
+                                            onChange={(e) => {
+                                                onConditionScoreChange(row, e.value);
+                                                updateConditionScore(row.wagonNumber, e.value);
+                                                onConditionStatusInstantUpdate(row, e.value);
+                                            }}
+                                            className="w-100"
+                                        />
+                                    )}
+                                />
+                            )}
+                            {(isAssessorModerator || isAdmin) && (
+                                <Column
+                                    header="Operational Status"
+                                    field="operationalStatus"
+                                    style={{ minWidth: 140 }}
+                                    body={(row) => row?.operationalStatus ?? ""}
+                                />
+                            )}
+                        </DataTable>
                     </div>
                 </Card.Body>
             </Card>
 
-            {/* Photo Modal */}
-            <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-                <Modal.Header closeButton>
-                    <Modal.Title>Photos</Modal.Title>
-                </Modal.Header>
-                <Modal.Body className="d-flex flex-wrap justify-content-center gap-2">
-                    {modalPhotos.length > 0 ? (
-                        modalPhotos.map((url, i) => {
-                            const imageUrl = url.startsWith("http") ? url : `${BACKEND_URL}/${url}`;
-                            return <img key={i} src={imageUrl} alt={`Photo ${i + 1}`} style={{ maxWidth: 200, maxHeight: 200, objectFit: "cover" }} />;
-                        })
+            {/* Photos Modal */}
+            <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" scrollable>
+                <Modal.Header closeButton><Modal.Title>Photos</Modal.Title></Modal.Header>
+                <Modal.Body>
+                    {modalPhotos.length ? (
+                        <div className="d-flex flex-wrap gap-2">
+                            {modalPhotos.map((url, idx) => (
+                                <img key={idx} src={url.startsWith("http") ? url : `${BACKEND_URL}/${url}`} alt={`photo-${idx}`} style={{ maxWidth: 150, maxHeight: 150, objectFit: "cover" }} />
+                            ))}
+                        </div>
                     ) : (
-                        <p>No Photos Available</p>
+                        <p>No photos available.</p>
                     )}
                 </Modal.Body>
+                <Modal.Footer><Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button></Modal.Footer>
+            </Modal>
+
+            {/* No Condition Modal */}
+            <Modal show={showNoCondition} onHide={() => setShowNoCondition(false)}>
+                <Modal.Header closeButton><Modal.Title>No Condition</Modal.Title></Modal.Header>
+                <Modal.Body>Please select a Condition Score before generating PDFs.</Modal.Body>
+                <Modal.Footer><Button variant="secondary" onClick={() => setShowNoCondition(false)}>Close</Button></Modal.Footer>
+            </Modal>
+
+            {/* No Values Modal */}
+            <Modal show={showNoValues} onHide={() => setShowNoValues(false)}>
+                <Modal.Header closeButton><Modal.Title>Missing Values</Modal.Title></Modal.Header>
+                <Modal.Body>Please racalculate missing values before doing this action.</Modal.Body>
+                <Modal.Footer><Button variant="secondary" onClick={() => setShowNoValues(false)}>Close</Button></Modal.Footer>
+            </Modal>
+
+            {/* Generate PDF Confirmation Modal */}
+            <Modal show={showGeneratePdfModal} onHide={() => setShowGeneratePdfModal(false)}>
+                <Modal.Header closeButton><Modal.Title>Generate PDFs</Modal.Title></Modal.Header>
+                <Modal.Body>Are you sure you want to (re)generate the PDFs for Wagon <b>{generatePdfTarget?.wagonNumber}</b>?</Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
+                    <Button variant="secondary" onClick={() => setShowGeneratePdfModal(false)}>Cancel</Button>
+                    <Button variant="primary" onClick={confirmGeneratePdfs}>Generate</Button>
                 </Modal.Footer>
             </Modal>
 
-            {/* PDF Modal */}
-            <Modal show={showPdfModal} onHide={() => setShowPdfModal(false)} size="xl">
-                <Modal.Header closeButton>
-                    <Modal.Title>Assessment Quote PDF</Modal.Title>
-                </Modal.Header>
-                <Modal.Body style={{ height: "80vh" }}>
-                    {pdfUrl ? (
-                        <iframe src={pdfUrl} title="Assessment Quote" style={{ width: "100%", height: "100%", border: "none" }} />
-                    ) : (
-                        <p>No PDF available</p>
-                    )}
-                </Modal.Body>
+            {/* No Inputs Modal */}
+            <Modal show={showNoInput} onHide={() => setShowNoInput(false)}>
+                <Modal.Header closeButton><Modal.Title>Missing Inputs</Modal.Title></Modal.Header>
+                <Modal.Body>The inputs for this wagon cannot be found. Therefore the PDFs cannot be generated. Please contact your administrator.</Modal.Body>
+                <Modal.Footer><Button variant="secondary" onClick={() => setShowNoInput(false)}>Close</Button></Modal.Footer>
+            </Modal>
+
+            {/* Generate success modal */}
+            <Modal show={showGenerateSuccessModal} onHide={() => setShowGenerateSuccessModal(false)}>
+                <Modal.Header closeButton><Modal.Title>PDFs Generated</Modal.Title></Modal.Header>
+                <Modal.Body>All PDFs have been successfully generated.</Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowPdfModal(false)}>Close</Button>
+                    <Button variant="primary" onClick={() => setShowGenerateSuccessModal(false)}>OK</Button>
                 </Modal.Footer>
+            </Modal>
+
+            <Modal show={showRecalSuccess} onHide={() => setShowRecalSuccess(false)}>
+                <Modal.Header closeButton><Modal.Title>Values Recalculate</Modal.Title></Modal.Header>
+                <Modal.Body>Missing values recalculated successfully.</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={() => setShowRecalSuccess(false)}>OK</Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* PDF Viewer Modal */}
+            <Modal show={showPdfModal} onHide={() => setShowPdfModal(false)} size="xl">
+                <Modal.Header closeButton><Modal.Title>PDF Viewer</Modal.Title></Modal.Header>
+                <Modal.Body>
+                    {pdfUrl ? <iframe src={pdfUrl} style={{ width: "100%", height: "600px" }} title="PDF Viewer"></iframe> : <p>No PDF available.</p>}
+                </Modal.Body>
+                <Modal.Footer><Button variant="secondary" onClick={() => setShowPdfModal(false)}>Close</Button></Modal.Footer>
             </Modal>
 
             {/* No PDF Modal */}
             <Modal show={showNoPdf} onHide={() => setShowNoPdf(false)}>
-                <Modal.Header closeButton>
-                    <Modal.Title>No PDF available</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>There is no PDF available for this wagon.</Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowNoPdf(false)}>Close</Button>
-                </Modal.Footer>
+                <Modal.Header closeButton><Modal.Title>No PDF</Modal.Title></Modal.Header>
+                <Modal.Body>No PDF file is available for this wagon.</Modal.Body>
+                <Modal.Footer><Button variant="secondary" onClick={() => setShowNoPdf(false)}>Close</Button></Modal.Footer>
             </Modal>
         </Container>
     );
