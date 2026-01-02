@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Container, Card, Modal, Button, Spinner, Form } from "react-bootstrap";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
@@ -10,24 +10,25 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; 
 
 function WagonDashboardUploaded() {
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; 
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 
     const [allRows, setAllRows] = useState([]);
+    const [totalRecords, setTotalRecords] = useState(0);
     const [loading, setLoading] = useState(true);
-
-    const [filters, setFilters] = useState({
-        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        wagonNumber: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        wagonGroup: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        inspectorName: { value: null, matchMode: FilterMatchMode.CONTAINS }
-    });
+    const [tableLoading, setTableLoading] = useState(false);
 
     const [globalFilterValue, setGlobalFilterValue] = useState("");
 
+    const [lazyParams, setLazyParams] = useState({
+        first: 0,
+        rows: 25,
+        globalFilter: ""
+    });
+
     const [score, setScore] = useState([]);
 
-    const [showNoInput, setShowNoInput] = useState(false); //PLEASE ADD (NEW)
+    const [showNoInput, setShowNoInput] = useState(false);
 
     const [recalculating, setRecalculating] = useState(false);
 
@@ -50,64 +51,82 @@ function WagonDashboardUploaded() {
 
     const [showNoCondition, setShowNoCondition] = useState(false);
 
-    const [dtFirst, setDtFirst] = useState(0);
-    const [dtRows, setDtRows] = useState(100);
     const scrollPosRef = useRef(0);
     const gridContainerRef = useRef(null);
 
     const isAdmin = userRole === "Super User";
     const isAssessorModerator = userRole === "Asset Monitor";
 
-    const getRowUniqueId = (row) =>
-        row.id ?? `${row.wagonNumber ?? "NA"}-${row.inspectorId ?? "NA"}-${row.dateAssessed ?? "NA"}-${row.timeAssessed ?? "NA"}`;
-
-    const saveScroll = () => {
+    const saveScroll = useCallback(() => {
         const viewport = gridContainerRef.current?.querySelector(".p-datatable-wrapper");
-        if (viewport) scrollPosRef.current = viewport.scrollTop;
-    };
+        if (viewport) {
+            scrollPosRef.current = viewport.scrollTop;
+        }
+    }, []);
 
-    const restoreScroll = () => {
+    const restoreScroll = useCallback(() => {
         setTimeout(() => {
             const viewport = gridContainerRef.current?.querySelector(".p-datatable-wrapper");
-            if (viewport) viewport.scrollTop = scrollPosRef.current;
+            if (viewport) {
+                viewport.scrollTop = scrollPosRef.current;
+            }
         }, 50);
-    };
+    }, []);
 
-    const fetchScore = async () => {
+    const fetchData = useCallback(async () => {
+        setTableLoading(true);
+
         try {
-            let res = await fetch(`${BACKEND_URL}/api/Dashboard/getScoreList`);
-            const data = await res.json();
+            const res = await fetch(
+                `${BACKEND_URL}/api/Dashboard/getUploadedWagonsPaged`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(lazyParams)
+                }
+            );
 
-            const formatted = (data || []).map(s => ({
-                ...s,
-                label: ` - ${s.condition}`,
-                value: s.conditionScore,
-                color: getScoreColor(s.conditionScore)
+            if (!res.ok) throw new Error("Failed to load data");
+
+            const result = await res.json();
+
+            const rowsWithId = result.data.map(row => ({
+                ...row,
+                id:
+                    row.id ??
+                    `${row.wagonNumber}-${row.inspectorId}-${row.dateAssessed}-${row.timeAssessed}`
             }));
 
-            setScore(formatted);
+            setAllRows(rowsWithId);
+            setTotalRecords(result.totalRecords);
         }
         catch (err) {
-            console.error("Error fetching Score data:", err);
-            setScore([]);
+            console.error(err);
+            setAllRows([]);
+            setTotalRecords(0);
         }
-    };
+        finally {
+            setLoading(false);
+            setTableLoading(false);
+            restoreScroll();
+        }
+    }, [lazyParams, restoreScroll]);
 
-    const getScoreColor = (score) => {
+    const getScoreColor = useCallback((score) => {
         switch (String(score)) {
-            case "1": return "danger";       // red
+            case "1": return "danger";
             case "2": return "danger";
-            case "3": return "warning";      // orange/yellow
+            case "3": return "warning";
             case "4": return "warning";
-            case "5": return "info";         // blueish
+            case "5": return "info";
             case "6": return "info";
-            case "7": return "primary";      // blue
-            case "8": return "success";      // green
+            case "7": return "primary";
+            case "8": return "success";
             case "9": return "success";
             case "10": return "success";
             default: return "secondary";
         }
-    };
+    }, []);
 
     const getBackgroundColor = (score) => {
         switch (String(score)) {
@@ -130,78 +149,49 @@ function WagonDashboardUploaded() {
         }
     };
 
-    const scoreTemplate = (option, props) => {
+    const fetchScore = useCallback(async () => {
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/Dashboard/getScoreList`);
+            const data = await res.json();
 
-        // When no option selected → show placeholder text
-        if (!option) {
-            return <span style={{ opacity: 0.6 }}>{props?.placeholder}</span>;
+            const formatted = (data || []).map(s => ({
+                ...s,
+                label: ` - ${mapOperationalStatus(s.conditionScore)}`,
+                value: s.conditionScore,
+                color: getScoreColor(s.conditionScore)
+            }));
+
+            setScore(formatted);
+        } catch (err) {
+            console.error("Error fetching Score data:", err);
+            setScore([]);
         }
-
-        return (
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    padding: "6px 10px",
-                    borderRadius: "8px",
-                    backgroundColor: getBackgroundColor(option.value),
-                    color: "white",
-                    fontWeight: "500"
-                }}
-            >
-                <span>{option.value}</span>
-                <span>{option.label}</span>
-            </div>
-        );
-    };
-
-    const onConditionScoreChange = (row, value) => {
-        setAllRows(prev =>
-            prev.map(r =>
-                r.id === row.id ? { ...r, conditionScore: value } : r
-            )
-        );
-    };
-
-    const fetchData = useCallback(async () => {
-    console.log("fetchData CALLED");
-
-    setLoading(true);
-
-    try {
-        if (!isAdmin && !isAssessorModerator) {
-            console.warn("No permission");
-            setAllRows([]);
-            setLoading(false);
-            return;
-        }
-
-        const res = await fetch(`${BACKEND_URL}/api/Dashboard/getUploadedWagons`);
-        const data = await res.json();
-        setAllRows(data || []);
-    } catch (err) {
-        console.error(err);
-        setAllRows([]);
-    } finally {
-        setLoading(false);
-    }
-}, [isAdmin, isAssessorModerator]);
+    }, [BACKEND_URL, getScoreColor]);
 
     useEffect(() => {
-    if (!userRole) return;
+        fetchData();
+    }, [fetchData]);
 
-    fetchScore();
-    fetchData();
-}, [userRole, fetchData]);
+    const didInit = useRef(false);
 
+    useEffect(() => {
+        if (didInit.current) return;
+        didInit.current = true;
 
-   const visibleRows = useMemo(() => {
-    return allRows.filter(r => r.wagonStatus === "Uploaded");
-}, [allRows]);
+        fetchScore();
+    }, [fetchScore]);
 
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setLazyParams(prev => ({
+                ...prev,
+                first: 0,
+                globalFilter: globalFilterValue
+            }));
+        }, 400); // debounce delay
 
-    const rowsWithId = useMemo(() => visibleRows.map(row => ({ ...row, id: getRowUniqueId(row) })), [visibleRows]);
+        return () => clearTimeout(handler);
+    }, [globalFilterValue]);
 
     const handleOpenModal = (photosValue, e) => {
         e?.stopPropagation();
@@ -242,22 +232,22 @@ function WagonDashboardUploaded() {
     };
 
     const handleExportToExcel = async () => {
-        if (!rowsWithId.length) { alert("No rows to export."); return; }
+        if (!allRows.length) { alert("No rows to export."); return; }
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Wagon Dashboard");
 
         const headers = [
             "Wagon Number", "Wagon Group", "Wagon Type", "Inspector", "Date Completed", "Time Completed",
-            "Time Started", "Gps Latitude", "Gps Longitude", "Lift Date", "Lift Lapsed", "Barrel Test Date",
+            "Time Started", "Gps Latitude", "Gps Longitude","City", "Lift Date", "Lift Lapsed", "Barrel Test Date",
             "Barrel Lapsed", "Brake Test Date", "Brake Lapsed", "Refurbish Value", "Missing Value",
             "Replace Value", "Labor Value", "LiftValue", "BarrelValue", "TotalValue", "Market Value", "Asset Value", "Wagon Status", "Upload Date",
             "ConditionScore", "OperationalStatus"
         ];
         worksheet.addRow(headers).font = { bold: true };
 
-        rowsWithId.forEach(row => worksheet.addRow([
+        allRows.forEach(row => worksheet.addRow([
             row.wagonNumber, row.wagonGroup, row.wagonType, row.inspectorName, row.dateAssessed, row.timeAssessed,
-            row.startTimeInspect, row.gpsLatitude, row.gpsLongitude, row.liftDate, row.liftLapsed, row.barrelDate,
+            row.startTimeInspect, row.gpsLatitude, row.gpsLongitude,row.city, row.liftDate, row.liftLapsed, row.barrelDate,
             row.barrelLapsed, row.brakeDate, row.brakeLapsed, row.refurbishValue, row.missingValue, row.replaceValue,
             row.totalLaborValue, row.liftValue, row.BarrelValue, row.totalValue, row.marketValue, row.assetValue, row.wagonStatus, row.uploadDate,
             row.conditionScore, row.operationalStatus
@@ -268,13 +258,38 @@ function WagonDashboardUploaded() {
     };
 
     const onGlobalFilterChange = (e) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
+        setGlobalFilterValue(e.target.value);
+    };
 
-        _filters.global.value = value;
+    const scoreTemplate = (option, props) => {
+        if (!option) {
+            return <span style={{ opacity: 0.6 }}>{props?.placeholder}</span>;
+        }
 
-        setFilters(_filters);
-        setGlobalFilterValue(value);
+        return (
+            <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            padding: "6px 10px",
+            borderRadius: "8px",
+            backgroundColor: getBackgroundColor(option.value),
+            color: "white",
+            fontWeight: "500"
+        }}
+        >
+                <span>{option.value}</span>
+                <span>{option.label}</span>
+
+            </div>);
+    };
+
+    const onConditionScoreChange = (row, value) => {
+        setAllRows(prev =>
+            prev.map(r =>
+                r.id === row.id ? { ...r, conditionScore: value } : r
+            )
+        );
     };
 
     const handleGeneratePdfClick = (row) => {
@@ -398,18 +413,24 @@ function WagonDashboardUploaded() {
         }
     };
 
-    const handleRecalculateClick = async (row) => {
+    const handleRecalculateClick = useCallback(async (row) => {
         if (!row?.wagonNumber) return;
 
         const payload = { wagonNumber: row.wagonNumber.toString() };
+
         saveScroll();
-        setRecalculating(true)
+        setRecalculating(true);
+
         try {
-            const response = await fetch(`${BACKEND_URL}/api/Dashboard/recalculateValuesUpload`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
+            const response = await fetch(
+                `${BACKEND_URL}/api/Dashboard/recalculateValuesUpload`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                }
+            );
+
             if (!response.ok) {
                 const errorData = await response.json();
                 alert("Error: " + (errorData?.message ?? JSON.stringify(errorData)));
@@ -418,7 +439,6 @@ function WagonDashboardUploaded() {
 
             setShowRecalSuccess(true);
             await fetchData();
-            // don't clear selection automatically; leave that behaviour as before
         } catch (err) {
             console.error("Error recalculating:", err);
             alert("Error recalculating: " + err.message);
@@ -426,7 +446,12 @@ function WagonDashboardUploaded() {
             setRecalculating(false);
             requestAnimationFrame(() => restoreScroll());
         }
-    }
+    }, [BACKEND_URL, fetchData, saveScroll, restoreScroll]);
+
+    const onRecalculateClick = useCallback((row, e) => {
+        e.stopPropagation();
+        handleRecalculateClick(row);
+    }, [handleRecalculateClick]);
 
     if (loading) return (
         <Container className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
@@ -456,29 +481,32 @@ function WagonDashboardUploaded() {
 
                     <div style={{ position: "relative" }} ref={gridContainerRef}>
 
-                        {(generatingPdf || recalculating) && (
+                        {(generatingPdf || recalculating || tableLoading) && (
                             <div style={{ position: "absolute", zIndex: 10, top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(255,255,255,0.6)", display: "flex", justifyContent: "center", alignItems: "center" }}>
                                 <Spinner animation="border" />
                             </div>
                         )}
 
                         <DataTable
-                            value={rowsWithId}
+                            lazy
+                            value={allRows}
                             paginator
-                            first={dtFirst}
-                            rows={dtRows}
+                            totalRecords={totalRecords}
+                            first={lazyParams.first}
+                            rows={lazyParams.rows}
                             rowsPerPageOptions={[25, 50, 100, 200]}
                             onPage={(e) => {
-                                setDtFirst(e.first);
-                                setDtRows(e.rows);
                                 saveScroll();
+                                setLazyParams(prev => ({
+                                    ...prev,
+                                    first: e.first,
+                                    rows: e.rows
+                                }));
                             }}
                             className="p-datatable-sm"
                             scrollable
                             scrollHeight="510px"
                             dataKey="id"
-                            filters={filters}
-                            globalFilterFields={["wagonNumber", "wagonGroup", "inspectorName"]}
                         >
                             {(isAssessorModerator || isAdmin) && (
                                 <Column
@@ -487,7 +515,7 @@ function WagonDashboardUploaded() {
                                         return (
                                             <Button
                                                 size="sm"
-                                                onClick={(e) => { e.stopPropagation(); handleRecalculateClick(row); }}
+                                                onClick={(e) => onRecalculateClick(row, e)}
                                             >
                                                 Recalculate
                                             </Button>
@@ -522,6 +550,7 @@ function WagonDashboardUploaded() {
                             <Column field="startTimeInspect" header="Time Started" style={{ minWidth: 110 }} />
                             <Column field="gpsLatitude" header="Gps Latitude" style={{ minWidth: 120 }} />
                             <Column field="gpsLongitude" header="Gps Longitude" style={{ minWidth: 120 }} />
+                            <Column field="city" header="City" style={{ minWidth: 120 }} />
                             <Column header="Body Photos" body={(row) => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.bodyPhotos, e); }}>View</Button>} style={{ minWidth: 120 }} />
                             <Column header="Lift Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'liftPhoto')}</div>} style={{ minWidth: 140 }} />
                             <Column field="liftDate" header="Lift Date" style={{ minWidth: 110 }} />
@@ -552,7 +581,7 @@ function WagonDashboardUploaded() {
                             {(isAssessorModerator || isAdmin) && (
                                 <Column
                                     header="Condition Score"
-                                    style={{ minWidth: 140 }}
+                                    style={{ minWidth: 230 }}
                                     body={(row) => (
                                         <Dropdown
                                             value={row.conditionScore}
@@ -577,7 +606,7 @@ function WagonDashboardUploaded() {
                                 <Column
                                     header="Operational Status"
                                     field="operationalStatus"
-                                    style={{ minWidth: 140 }}
+                                    style={{ minWidth: 200 }}
                                     body={(row) => row?.operationalStatus ?? ""}
                                 />
                             )}

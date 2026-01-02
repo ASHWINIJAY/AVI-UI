@@ -22,10 +22,15 @@ const [score, setScore] = useState([]);
 
     const [modalPhotos, setModalPhotos] = useState([]);
     const [showModal, setShowModal] = useState(false);
+const [showNoInput, setShowNoInput] = useState(false); //PLEASE ADD (NEW)
 
     const [showGeneratePdfModal, setShowGeneratePdfModal] = useState(false);
     const [generatePdfTarget, setGeneratePdfTarget] = useState(null);
+const [recalculating, setRecalculating] = useState(false);
 
+    const [showNoValues, setShowNoValues] = useState(false);
+
+    const [showRecalSuccess, setShowRecalSuccess] = useState(false);
     const [showTickConfirmModal, setShowTickConfirmModal] = useState(false);
     const [tickTargetRow, setTickTargetRow] = useState(null);
 
@@ -391,7 +396,35 @@ const onConditionStatusInstantUpdate = (row, value) => {
             requestAnimationFrame(() => restoreScroll());
         }
     };
+const handleRecalculateClick = async (row) => {
+        if (!row?.locoNumber) return;
 
+        const payload = { wagonNumber: row.locoNumber.toString() };
+        saveScroll();
+        setRecalculating(true)
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/Dashboard/recalculateLocoValues`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                alert("Error: " + (errorData?.message ?? JSON.stringify(errorData)));
+                return;
+            }
+        
+            setShowRecalSuccess(true);
+            await fetchData();
+            // don't clear selection automatically; leave that behaviour as before
+        } catch (err) {
+            console.error("Error recalculating:", err);
+            alert("Error recalculating: " + err.message);
+        } finally {
+            setRecalculating(false);
+            requestAnimationFrame(() => restoreScroll());
+        }
+    }
     // Export to excel (unchanged)
     const handleExportToExcel = async () => {
         if (!rowsWithId.length) { alert("No rows to export."); return; }
@@ -535,6 +568,13 @@ const onGlobalFilterChange = (e) => {
         alert("Please select a Condition Score before generating PDFs.");
         return;  // stop PDF generation
     }
+    let resp = await fetch(`${BACKEND_URL}/api/Dashboard/checkLocoInputs/${parseInt(generatePdfTarget.wagonNumber)}`);
+        const resMessage = await resp.json();
+        if (resMessage.message === "No") {
+            setShowGeneratePdfModal(false);
+            setShowNoInput(true);
+            return;
+        }
         saveScroll();
         setShowGeneratePdfModal(false);
         setGeneratingPdf(true);
@@ -845,7 +885,34 @@ const renderRowCheckbox = (row) => {
     body={(row) => renderRowCheckbox(row)}
     style={{ width: '3rem' }}
 />
+{(isAssessor || isAdmin) && (
+    <Column
+        header="Recalculate Values"
+        body={(row) => {
+            const isInsCompleted =
+                row.uploadStatus === STATUS.INSPECTION_DONE;
 
+            // ✅ Assessor → always allowed
+            // ✅ Admin → only when inspection is completed
+            if (isAssessor || (isAdmin && isInsCompleted)) {
+                return (
+                    <Button
+                        size="sm"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleRecalculateClick(row);
+                        }}
+                    >
+                        Recalculate
+                    </Button>
+                );
+            }
+
+            return null; // hide button
+        }}
+        style={{ minWidth: 150 }}
+    />
+)}
 
                             {/* Generate PDFs column — only visible to Assessors */}
                                                     {effectiveRole === "Asset Monitor" && (
@@ -959,7 +1026,11 @@ const renderRowCheckbox = (row) => {
                 </Modal.Body>
                 <Modal.Footer><Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button></Modal.Footer>
             </Modal>
-
+<Modal show={showNoInput} onHide={() => setShowNoInput(false)}>
+                <Modal.Header closeButton><Modal.Title>Missing Inputs</Modal.Title></Modal.Header>
+                <Modal.Body>The inputs for this loco cannot be found. Therefore the PDFs cannot be generated. Please contact your administrator.</Modal.Body>
+                <Modal.Footer><Button variant="secondary" onClick={() => setShowNoInput(false)}>Close</Button></Modal.Footer>
+            </Modal>
             {/* Generate PDF Confirmation Modal */}
             <Modal show={showGeneratePdfModal} onHide={() => setShowGeneratePdfModal(false)}>
                 <Modal.Header closeButton><Modal.Title>Generate PDFs</Modal.Title></Modal.Header>
@@ -969,7 +1040,13 @@ const renderRowCheckbox = (row) => {
                     <Button variant="primary" onClick={confirmGeneratePdfs}>Generate</Button>
                 </Modal.Footer>
             </Modal>
-
+<Modal show={showRecalSuccess} onHide={() => setShowRecalSuccess(false)}>
+                <Modal.Header closeButton><Modal.Title>Values Recalculate</Modal.Title></Modal.Header>
+                <Modal.Body>Missing values recalculated successfully.</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={() => setShowRecalSuccess(false)}>OK</Button>
+                </Modal.Footer>
+            </Modal>
             {/* Generate success modal */}
             <Modal show={showGenerateSuccessModal} onHide={() => setShowGenerateSuccessModal(false)}>
                 <Modal.Header closeButton><Modal.Title>PDFs Generated</Modal.Title></Modal.Header>

@@ -39,7 +39,11 @@ const [score, setScore] = useState([]);
     const [generatingPdf, setGeneratingPdf] = useState(false);
     const [showGenerateSuccessModal, setShowGenerateSuccessModal] = useState(false);
     const [showTickSuccessModal, setShowTickSuccessModal] = useState(false);
+    const [recalculating, setRecalculating] = useState(false);
 
+    const [showNoValues, setShowNoValues] = useState(false);
+
+    const [showRecalSuccess, setShowRecalSuccess] = useState(false);
 const [showNoInput, setShowNoInput] = useState(false); //PLEASE ADD (NEW)
 
     // Pagination/scroll persistence
@@ -349,6 +353,35 @@ const visibleRows = useMemo(() => {
         setPdfUrl(pdfPath.startsWith("http") ? pdfPath : `${BACKEND_URL}/${pdfPath}`);
         setShowPdfModal(true);
     };
+const handleRecalculateClick = async (row) => {
+        if (!row?.wagonNumber) return;
+
+        const payload = { wagonNumber: row.wagonNumber.toString() };
+        saveScroll();
+        setRecalculating(true)
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/Dashboard/recalculateValues`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                alert("Error: " + (errorData?.message ?? JSON.stringify(errorData)));
+                return;
+            }
+        
+            setShowRecalSuccess(true);
+            await fetchData();
+            // don't clear selection automatically; leave that behaviour as before
+        } catch (err) {
+            console.error("Error recalculating:", err);
+            alert("Error recalculating: " + err.message);
+        } finally {
+            setRecalculating(false);
+            requestAnimationFrame(() => restoreScroll());
+        }
+    }
 
     // Export to excel (unchanged)
     const handleExportToExcel = async () => {
@@ -870,6 +903,34 @@ const renderRowCheckbox = (row) => {
                                 body={(row) => renderRowCheckbox(row)}
                                 style={{ width: '3rem' }}
                             />
+                            {(isAssessor || isAdmin) && (
+    <Column
+        header="Recalculate Values"
+        body={(row) => {
+            const isInsCompleted =
+                row.wagonStatus === STATUS.INSPECTION_DONE;
+
+            // ✅ Assessor → always allowed
+            // ✅ Admin → only when inspection is completed
+            if (isAssessor || (isAdmin && isInsCompleted)) {
+                return (
+                    <Button
+                        size="sm"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleRecalculateClick(row);
+                        }}
+                    >
+                        Recalculate
+                    </Button>
+                );
+            }
+
+            return null; // hide button
+        }}
+        style={{ minWidth: 150 }}
+    />
+)}
 
                          {effectiveRole === "Asset Monitor" && (
     <Column
@@ -1016,7 +1077,13 @@ const renderRowCheckbox = (row) => {
                     <Button variant="primary" onClick={() => setShowGenerateSuccessModal(false)}>OK</Button>
                 </Modal.Footer>
             </Modal>
-
+<Modal show={showRecalSuccess} onHide={() => setShowRecalSuccess(false)}>
+                <Modal.Header closeButton><Modal.Title>Values Recalculate</Modal.Title></Modal.Header>
+                <Modal.Body>Missing values recalculated successfully.</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={() => setShowRecalSuccess(false)}>OK</Button>
+                </Modal.Footer>
+            </Modal>
             {/* Tick Confirmation Modal */}
             <Modal show={showTickConfirmModal} onHide={() => setShowTickConfirmModal(false)}>
                 <Modal.Header closeButton><Modal.Title>Confirm Tick</Modal.Title></Modal.Header>
