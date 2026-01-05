@@ -7,7 +7,7 @@ import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { AutoComplete } from "primereact/autocomplete";
 //const API = "https://localhost:7066";
-const API = "https://avi-app.co.za/AVIapi";
+const API = "http://41.87.206.94/AVIapi";
 function WagonInputs() {
     const [wagonList, setWagonList] = useState([]);
 const [filteredWagons, setFilteredWagons] = useState([]);

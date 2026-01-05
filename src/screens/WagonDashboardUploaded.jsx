@@ -10,7 +10,7 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; 
 
 function WagonDashboardUploaded() {
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
+    const BACKEND_URL = "http://41.87.206.94/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 
     const [allRows, setAllRows] = useState([]);
@@ -127,7 +127,22 @@ function WagonDashboardUploaded() {
             default: return "secondary";
         }
     }, []);
+const fetchAllForExport = async () => {
+    const res = await fetch(
+        `${BACKEND_URL}/api/Dashboard/getUploadedWagonsForExport`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                globalFilter: lazyParams.globalFilter
+            })
+        }
+    );
 
+    if (!res.ok) throw new Error("Export fetch failed");
+    const json = await res.json();
+    return json.data;// full list
+};
     const getBackgroundColor = (score) => {
         switch (String(score)) {
             case "1": return "#c71e18ff"
@@ -232,7 +247,12 @@ function WagonDashboardUploaded() {
     };
 
     const handleExportToExcel = async () => {
-        if (!allRows.length) { alert("No rows to export."); return; }
+        const exportRows = await fetchAllForExport();
+
+        if (!exportRows.length) {
+            alert("No data to export");
+            return;
+        }
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Wagon Dashboard");
 
@@ -245,7 +265,7 @@ function WagonDashboardUploaded() {
         ];
         worksheet.addRow(headers).font = { bold: true };
 
-        allRows.forEach(row => worksheet.addRow([
+        exportRows.forEach(row => worksheet.addRow([
             row.wagonNumber, row.wagonGroup, row.wagonType, row.inspectorName, row.dateAssessed, row.timeAssessed,
             row.startTimeInspect, row.gpsLatitude, row.gpsLongitude,row.city, row.liftDate, row.liftLapsed, row.barrelDate,
             row.barrelLapsed, row.brakeDate, row.brakeLapsed, row.refurbishValue, row.missingValue, row.replaceValue,

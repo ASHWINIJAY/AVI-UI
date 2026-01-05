@@ -10,7 +10,7 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; 
 
 function UploadedLocoDashboard() {
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
+    const BACKEND_URL = "http://41.87.206.94/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 
     const [allRows, setAllRows] = useState([]);
@@ -232,7 +232,12 @@ function UploadedLocoDashboard() {
     };
 
     const handleExportToExcel = async () => {
-        if (!allRows.length) { alert("No rows to export."); return; }
+        const exportRows = await fetchAllForExport();
+
+        if (!exportRows.length) {
+            alert("No data to export");
+            return;
+        }
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Loco Dashboard");
 
@@ -260,7 +265,7 @@ function UploadedLocoDashboard() {
         ];
         worksheet.addRow(headers).font = { bold: true };
 
-        allRows.forEach(row => worksheet.addRow([
+        exportRows.forEach(row => worksheet.addRow([
             row.locoNumber ?? row.locoNumber ?? "",
                 row.locoClass ?? "",
                 row.locoModel ?? "",
@@ -326,6 +331,22 @@ function UploadedLocoDashboard() {
         setGeneratePdfTarget(row);
         setShowGeneratePdfModal(true);
     };
+const fetchAllForExport = async () => {
+    const res = await fetch(
+        `${BACKEND_URL}/api/Dashboard/getUploadedLocosForExport`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                globalFilter: lazyParams.globalFilter
+            })
+        }
+    );
+
+    if (!res.ok) throw new Error("Export fetch failed");
+    const json = await res.json();
+    return json.data;
+};
 
     const confirmGeneratePdfs = async () => {
         if (!generatePdfTarget) return;

@@ -11,8 +11,8 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; // assume your existing css; you can add the small .selected-row rule if needed
 
 export default function LocoDashboard() {
-     const BACKEND_URL = "https://avi-app.co.za/AVIapi"; 
-    //const BACKEND_URL = "https://avi-app.co.za/AVIapi"; // Adjust if different https://avi-app.co.za/AVIapi
+     const BACKEND_URL = "http://41.87.206.94/AVIapi"; 
+    //const BACKEND_URL = "http://41.87.206.94/AVIapi"; // Adjust if different http://41.87.206.94/AVIapi
   
     const [userRole] = useState(localStorage.getItem("userRole"));
 const [score, setScore] = useState([]);
@@ -568,7 +568,7 @@ const onGlobalFilterChange = (e) => {
         alert("Please select a Condition Score before generating PDFs.");
         return;  // stop PDF generation
     }
-    let resp = await fetch(`${BACKEND_URL}/api/Dashboard/checkLocoInputs/${parseInt(generatePdfTarget.wagonNumber)}`);
+    let resp = await fetch(`${BACKEND_URL}/api/Dashboard/checkLocoInputs/${parseInt(generatePdfTarget.locoNumber)}`);
         const resMessage = await resp.json();
         if (resMessage.message === "No") {
             setShowGeneratePdfModal(false);
@@ -885,7 +885,7 @@ const renderRowCheckbox = (row) => {
     body={(row) => renderRowCheckbox(row)}
     style={{ width: '3rem' }}
 />
-{(isAssessor || isAdmin) && (
+{(effectiveRole === "Asset Monitor") && statusFilter === STATUS.INSPECTION_DONE && (
     <Column
         header="Recalculate Values"
         body={(row) => {
@@ -894,7 +894,7 @@ const renderRowCheckbox = (row) => {
 
             // ✅ Assessor → always allowed
             // ✅ Admin → only when inspection is completed
-            if (isAssessor || (isAdmin && isInsCompleted)) {
+            if (effectiveRole === "Asset Monitor"  && isInsCompleted) {
                 return (
                     <Button
                         size="sm"
