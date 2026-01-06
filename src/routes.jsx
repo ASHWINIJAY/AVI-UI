@@ -13,6 +13,7 @@ import LeftMidDoorInspect from "./screens/LeftMidDoorInspect.jsx";
 import CirBreakPanInspect from "./screens/CirBreakPanInspect.jsx";
 import TopRightPanInspect from "./screens/TopRightPanInspect.jsx";
 import MidPanInspect from "./screens/MidPanInspect.jsx";
+import CockpitAllocation from "./screens/CockpitAllocation.jsx";
 import BotLeftPanInspect from "./screens/BotLeftPanInspect.jsx";
 import CenAirInspect from "./screens/CenAirInspect.jsx";
 import EngineDeckInspect from "./screens/EngineDeckInspect.jsx";
@@ -40,6 +41,7 @@ import AirBrakePartsInspect from './screens/AirBrakePartsInspect.jsx';
 import VacBrakePartsInspect from './screens/VacBrakePartsInspect.jsx';
 import WagonFloorInspect from './screens/WagonFloorInspect.jsx';
 import LocoInfoCapture from './screens/LocoInfoCapture.jsx';
+import CockpitAllocationByRefNo from './screens/CockpitAllocationByRefNo.jsx';
 import E18BD001Inspect from './screens/E18Inspections/E18BD001Inspect.jsx';
 import E18FL001Inspect from './screens/E18Inspections/E18FL001Inspect.jsx';
 import E18BE001Inspect from './screens/E18Inspections/E18BE001Inspect.jsx';
@@ -234,7 +236,8 @@ export default function AppRoutes() {
 <Route path="generatedcf" element={<GenerateDCFReport />} />
 <Route path="dcfreport" element={<DCFReport />} />
 <Route path="assetsetup" element={<AssetTypeSetup />} />            
-         
+       <Route path="cockpitsetup" element={<CockpitAllocation />} />  
+       <Route path="viewcockpit" element={<CockpitAllocationByRefNo />} />  
           <Route
         path="/inspection/:formId?"
         element={<InspectionProcess/>}

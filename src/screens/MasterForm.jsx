@@ -186,6 +186,16 @@ export default function MasterForm() {
                       DCF Setup/Generation
                     </Link>
                   </li>
+                   <li>
+                    <Link to="/master/cockpitsetup" onClick={handleLinkClick}>
+                      Cockpit Allocation
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/master/viewcockpit" onClick={handleLinkClick}>
+                      Cockpit Maintenance
+                    </Link>
+                  </li>
                   <li>
                     <Link to="/master/usercreation" onClick={handleLinkClick}>
                       User Creation
