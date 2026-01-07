@@ -43,7 +43,7 @@ export default function CockpitAllocationByRefNo() {
     const deleteByRefNo = async (refNo) => {
         if (!window.confirm(`Delete allocation ${refNo}?`)) return;
 
-        await axios.delete(`cockpit-allocation/by-refno/${refNo}`);
+        await axios.get(`cockpit-allocation/by-refno/${refNo}`);
         loadData();
     };
 

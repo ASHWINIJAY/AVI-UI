@@ -187,6 +187,11 @@ export default function MasterForm() {
                     </Link>
                   </li>
                    <li>
+                    <Link to="/master/enablecockpit" onClick={handleLinkClick}>
+                     Cockpit Setting
+                    </Link>
+                  </li>
+                   <li>
                     <Link to="/master/cockpitsetup" onClick={handleLinkClick}>
                       Cockpit Allocation
                     </Link>

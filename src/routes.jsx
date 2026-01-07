@@ -33,6 +33,7 @@ import UploadedLocoDashboard from './screens/UploadedLocoDashboard.jsx';
 import MapView from "./screens/MapView";
 import InspectionProcess from './screens/InspectionProcess.jsx';
 import CreateTeam from "./screens/CreateTeam.jsx";
+import CockpitGlobalSettings from "./screens/CockpitGlobalSettings.jsx";
 import TeamMaintenance from "./screens/TeamMaintenance.jsx";
 import WagonInfo from './screens/WagonInfo.jsx';
 import WAWagonInspect from './screens/WAWagonInspect.jsx';
@@ -237,7 +238,8 @@ export default function AppRoutes() {
 <Route path="dcfreport" element={<DCFReport />} />
 <Route path="assetsetup" element={<AssetTypeSetup />} />            
        <Route path="cockpitsetup" element={<CockpitAllocation />} />  
-       <Route path="viewcockpit" element={<CockpitAllocationByRefNo />} />  
+       <Route path="viewcockpit" element={<CockpitAllocationByRefNo />} /> 
+       <Route path="enablecockpit" element={<CockpitGlobalSettings />} />  
           <Route
         path="/inspection/:formId?"
         element={<InspectionProcess/>}

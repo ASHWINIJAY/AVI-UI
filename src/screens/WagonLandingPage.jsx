@@ -1,25 +1,68 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
-import { Container, Row, Col, Form, Button, Alert, Card, Spinner, Modal } from "react-bootstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Form,
+  Button,
+  Alert,
+  Card,
+  Spinner,
+  Modal
+} from "react-bootstrap";
 
 const WagonLandingPage = () => {
   const [wagonNumber, setWagonNumber] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // 🧹 Cleanup
   const [showCleanupModal, setShowCleanupModal] = useState(false);
   const [incompleteWagons, setIncompleteWagons] = useState([]);
   const [cleanupMessage, setCleanupMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+
+  // 🚦 Cockpit pending inspection
+  const [isCockpitEnabled, setIsCockpitEnabled] = useState(false);
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [pendingAssets, setPendingAssets] = useState([]);
+  const [pendingMessage, setPendingMessage] = useState("");
+
   const navigate = useNavigate();
 
-  // 🔹 Fetch incomplete wagons on page load
+  // =========================================================
+  // 1️⃣ LOAD GLOBAL COCKPIT STATUS
+  // =========================================================
+  useEffect(() => {
+    const loadCockpitStatus = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await api.get(
+          "cockpit-allocation/enable-cockpit",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setIsCockpitEnabled(res.data.isEnabled);
+      } catch (err) {
+        console.error("Failed to load cockpit status", err);
+        setIsCockpitEnabled(false); // fail-safe
+      }
+    };
+
+    loadCockpitStatus();
+  }, []);
+
+  // =========================================================
+  // 2️⃣ FETCH INCOMPLETE WAGONS (CLEANUP)
+  // =========================================================
   useEffect(() => {
     const fetchIncompleteWagons = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await api.get("WagonInfo/CleanLocoInfoCaptures", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get(
+          "WagonInfo/CleanLocoInfoCaptures",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
         if (res?.data?.incompleteWagons?.length > 0) {
           setCleanupMessage(
@@ -37,39 +80,78 @@ const WagonLandingPage = () => {
     fetchIncompleteWagons();
   }, []);
 
-  // 🔹 Delete wagon → fill textbox → auto-submit
+  // =========================================================
+  // 3️⃣ FETCH PENDING INSPECTION ASSETS (ONLY IF COCKPIT ENABLED)
+  // =========================================================
+  useEffect(() => {
+    if (!isCockpitEnabled) return;
+
+    const fetchPendingAssets = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await api.get(
+          "cockpit-allocation/pending-assets-wagon",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        // 🔹 Filter only Wagon assets
+        const wagonAssets =
+          res?.data?.assets?.filter(a => a.assetType === "Wagon") || [];
+
+        if (wagonAssets.length > 0) {
+          setPendingAssets(wagonAssets);
+          setPendingMessage(
+            res.data.message || "Pending wagon inspections"
+          );
+          setShowPendingModal(true);
+        }
+      } catch (err) {
+        console.error("Error fetching pending wagon assets:", err);
+      }
+    };
+
+    fetchPendingAssets();
+  }, [isCockpitEnabled]);
+
+  // =========================================================
+  // 4️⃣ DELETE INCOMPLETE WAGON → AUTO CONTINUE
+  // =========================================================
   const handleDeleteSingle = async (wagonNum) => {
     try {
       const token = localStorage.getItem("token");
       setLoading(true);
 
-      const res = await api.post(
+      await api.post(
         "WagonInfo/DeleteSelectedWagons",
         { wagonNumbers: [wagonNum] },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-     // alert(res.data.message || `Wagon ${wagonNum} deleted successfully.`);
-
-      // ✅ Set wagon number to input
       setWagonNumber(wagonNum.toString());
-
-      // ✅ Close modal
       setShowCleanupModal(false);
 
-      // ✅ Trigger validation automatically
       setTimeout(() => {
         handleSubmit({ preventDefault: () => {} }, wagonNum);
       }, 400);
     } catch (err) {
-      console.error("Error deleting wagon:", err);
       alert("Failed to delete selected wagon.");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Submit validation
+  // =========================================================
+  // 5️⃣ CONTINUE INSPECTION FROM COCKPIT POPUP
+  // =========================================================
+  const handleContinueInspection = (asset) => {
+    localStorage.setItem("wagonNumber", asset.assetNumber.toString());
+    setShowPendingModal(false);
+    navigate("/wagoninfo");
+  };
+
+  // =========================================================
+  // 6️⃣ SUBMIT / VALIDATE WAGON
+  // =========================================================
   const handleSubmit = async (e, overrideWagonNumber) => {
     if (e?.preventDefault) e.preventDefault();
     setError("");
@@ -99,13 +181,15 @@ const WagonLandingPage = () => {
         setError(response.data.message || "Invalid wagon number.");
       }
     } catch (err) {
-      console.error(err);
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  // =========================================================
+  // RENDER
+  // =========================================================
   return (
     <>
       {loading && (
@@ -120,51 +204,40 @@ const WagonLandingPage = () => {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            zIndex: 9999,
+            zIndex: 9999
           }}
         >
-          <Spinner animation="border" variant="light" role="status" style={{ width: "4rem", height: "4rem" }}>
-            <span className="visually-hidden">Loading...</span>
-          </Spinner>
+          <Spinner animation="border" variant="light" />
         </div>
       )}
 
       <Container
         fluid
         className="d-flex justify-content-center align-items-center"
-        style={{ backgroundColor: "#025373", height: "82.5vh", maxWidth: "100%" }}
+        style={{ backgroundColor: "#025373", height: "82.5vh" }}
       >
         <Row>
           <Col>
-            <Card className="p-4 shadow-sm" style={{ minWidth: "350px", maxWidth: "400px" }}>
+            <Card className="p-4 shadow-sm" style={{ minWidth: 350 }}>
               <Card.Body>
-                <h2
-                  className="text-center mb-4"
-                  style={{ fontFamily: "Poppins, sans-serif", fontWeight: "bold" }}
-                >
+                <h2 className="text-center mb-4">
                   Wagon Info Capture
                 </h2>
+
                 {error && <Alert variant="danger">{error}</Alert>}
 
                 <Form onSubmit={handleSubmit}>
-                  <Form.Group controlId="wagonNumber" className="mb-4">
+                  <Form.Group className="mb-4">
                     <Form.Label>Wagon Number</Form.Label>
                     <Form.Control
                       type="number"
-                      placeholder="Enter Wagon Number"
-                      autoComplete="off"
                       value={wagonNumber}
                       onChange={(e) => setWagonNumber(e.target.value)}
                     />
                   </Form.Group>
 
-                  <Button
-                    variant="primary"
-                    type="submit"
-                    className="w-100"
-                    disabled={loading}
-                  >
-                    {loading ? "Loading..." : "Continue"}
+                  <Button type="submit" className="w-100">
+                    Continue
                   </Button>
                 </Form>
               </Card.Body>
@@ -173,40 +246,53 @@ const WagonLandingPage = () => {
         </Row>
       </Container>
 
+      {/* 🚦 Pending Wagon Inspections Modal */}
+      {isCockpitEnabled && (
+        <Modal
+          show={showPendingModal}
+          onHide={() => setShowPendingModal(false)}
+          centered
+        >
+          <Modal.Header closeButton>
+            <Modal.Title>Pending Wagon Inspections</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>{pendingMessage}</p>
+            <div className="d-grid gap-2">
+              {pendingAssets.map((asset, idx) => (
+                <Button
+                  key={idx}
+                  variant="outline-warning"
+                  size="lg"
+                  onClick={() => handleContinueInspection(asset)}
+                >
+                  🚃 Wagon {asset.assetNumber}
+                </Button>
+              ))}
+            </div>
+          </Modal.Body>
+        </Modal>
+      )}
+
       {/* 🧹 Cleanup Modal */}
       <Modal show={showCleanupModal} onHide={() => setShowCleanupModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Incomplete Wagon Records</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p className="mb-3" style={{ fontWeight: 500 }}>
-            {cleanupMessage}
-          </p>
-          {incompleteWagons.length > 0 ? (
-            <div className="d-grid gap-2">
-              {incompleteWagons.map((num, idx) => (
-                <Button
-                  key={idx}
-                  variant="outline-primary"
-                  className="mb-2"
-                  size="lg"
-                  style={{
-                    fontSize: "1rem",
-                    fontWeight: 600,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "10px",
-                  }}
-                  onClick={() => handleDeleteSingle(num)}
-                >
-                  🚃 Wagon {num}
-                </Button>
-              ))}
-            </div>
-          ) : (
-            <p>No incomplete wagons found.</p>
-          )}
+          <p>{cleanupMessage}</p>
+          <div className="d-grid gap-2">
+            {incompleteWagons.map((num, idx) => (
+              <Button
+                key={idx}
+                variant="outline-primary"
+                size="lg"
+                onClick={() => handleDeleteSingle(num)}
+              >
+                🚃 Wagon {num}
+              </Button>
+            ))}
+          </div>
         </Modal.Body>
       </Modal>
     </>
