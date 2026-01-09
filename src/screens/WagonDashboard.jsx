@@ -10,8 +10,8 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; // assume your existing css; you can add the small .selected-row rule if needed
 
 export default function WagonDashboard() {
-    const BACKEND_URL = "http://41.87.206.94/AVIapi"; 
-    //const BACKEND_URL = "http://41.87.206.94/AVIapi";
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; 
+    //const BACKEND_URL = "https://avi-app.co.za/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 const [score, setScore] = useState([]);
     const [allRows, setAllRows] = useState([]);
@@ -908,7 +908,7 @@ const renderRowCheckbox = (row) => {
                                    header="Recalculate Values"
                                    body={(row) => {
                                        const isInsCompleted =
-                                           row.uploadStatus === STATUS.INSPECTION_DONE;
+                                           row.wagonStatus === STATUS.INSPECTION_DONE;
                            
                                        // ✅ Assessor → always allowed
                                        // ✅ Admin → only when inspection is completed
