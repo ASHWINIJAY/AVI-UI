@@ -17,7 +17,8 @@ const WagonLandingPage = () => {
   const [wagonNumber, setWagonNumber] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+   const [showErrorModal, setShowErrorModal] = useState(false); //(← add)
+    const [modalMessage, setModalMessage] = useState(""); //(← add)
   // 🧹 Cleanup
   const [showCleanupModal, setShowCleanupModal] = useState(false);
   const [incompleteWagons, setIncompleteWagons] = useState([]);
@@ -167,26 +168,34 @@ const WagonLandingPage = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await api.get(
+      const validateResp = await api.get(
         `/WagonLanding/validateWagon/${wagonNumberInt}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      if (response.data.isValid) {
+ if (!validateResp.data.isValid) {
+                setLoading(false);
+                showError(validateResp.data.message || "Invalid entry.");
+                return;
+            }
+      
         localStorage.setItem("wagonNumber", wagonNumberInt.toString());
-        localStorage.setItem("wagonGroup", response.data.wagonGroup);
-        localStorage.setItem("wagonType", response.data.wagonType);
+        localStorage.setItem("wagonGroup", validateResp.data.wagonGroup);
+        localStorage.setItem("wagonType", validateResp.data.wagonType);
         navigate("/wagoninfo");
-      } else {
-        setError(response.data.message || "Invalid wagon number.");
-      }
+     
     } catch (err) {
-      setError("Something went wrong. Please try again.");
+       setLoading(false);
+            console.error(err);
+            showError("Unable to validate Wagon/Asset number. Please try again.");
+            return;
     } finally {
       setLoading(false);
     }
   };
-
+ const showError = (message) => {
+        setModalMessage(message);
+        setShowErrorModal(true);
+    };
   // =========================================================
   // RENDER
   // =========================================================
@@ -295,6 +304,19 @@ const WagonLandingPage = () => {
           </div>
         </Modal.Body>
       </Modal>
+       <Modal show={showErrorModal} onHide={() => setShowErrorModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Validation Error</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {modalMessage}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={() => setShowErrorModal(false)}>
+                        OK
+                    </Button>
+                </Modal.Footer>
+            </Modal>
     </>
   );
 };

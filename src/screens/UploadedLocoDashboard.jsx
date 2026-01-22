@@ -10,7 +10,7 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; 
 
 function UploadedLocoDashboard() {
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
+    const BACKEND_URL = "http://41.87.206.94/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 
     const [allRows, setAllRows] = useState([]);
@@ -56,6 +56,14 @@ function UploadedLocoDashboard() {
 
     const isAdmin = userRole === "Super User";
     const isAssessorModerator = userRole === "Asset Monitor";
+const [showManualConfirm, setShowManualConfirm] = useState(false);
+const [showManualInputModal, setShowManualInputModal] = useState(false);
+
+const [manualValues, setManualValues] = useState({
+    scrapValue: "",
+    refurbishValue: "",
+    transferValue: ""
+});
 
     const saveScroll = useCallback(() => {
         const viewport = gridContainerRef.current?.querySelector(".p-datatable-wrapper");
@@ -92,6 +100,7 @@ function UploadedLocoDashboard() {
 
             const rowsWithId = result.data.map(row => ({
                 ...row,
+                conditionScore: row.conditionScore?.toString() ?? "",
                 id:
                     row.id ??
                     `${row.locoNumber}-${row.inspectorId}-${row.dateAssessed}-${row.timeAssessed}`
@@ -157,7 +166,7 @@ function UploadedLocoDashboard() {
             const formatted = (data || []).map(s => ({
                 ...s,
                 label: ` - ${mapOperationalStatus(s.conditionScore)}`,
-                value: s.conditionScore,
+                value: s.conditionScore.toString(),
                 color: getScoreColor(s.conditionScore)
             }));
 
@@ -255,9 +264,9 @@ function UploadedLocoDashboard() {
             "Refurbish Value",
             "Missing Value",
             "Replace Value",
-            "Asset Value",
             "Market Value",
-            "Total Value",
+            "Benchmarking Value",
+            "Return to Service Cost",
             "Condition Score",
             "Operational Status",
             "Loco Status",
@@ -367,7 +376,8 @@ const fetchAllForExport = async () => {
         const resMessage = await resp.json();
         if (resMessage.message === "No") {
             setShowGeneratePdfModal(false);
-            setShowNoInput(true);
+            //setShowNoInput(true);
+            setShowManualConfirm(true); 
             return;
         }
 
@@ -503,6 +513,45 @@ const fetchAllForExport = async () => {
         e.stopPropagation();
         handleRecalculateClick(row);
     }, [handleRecalculateClick]);
+const handleSaveManualValues = async () => {
+    if (
+        !manualValues.scrapValue ||
+        !manualValues.refurbishValue ||
+        !manualValues.transferValue
+    ) {
+        alert("Please enter all values");
+        return;
+    }
+
+    try {
+        await fetch(`${BACKEND_URL}/api/CertPDF/saveManualDcfValues`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                assetNumber: generatePdfTarget.locoNumber,
+                scrapValue: manualValues.scrapValue,
+                refurbishValue: manualValues.refurbishValue,
+                transferValue: manualValues.transferValue
+            })
+        });
+
+        setShowManualInputModal(false);
+
+        // reset values
+        setManualValues({
+            scrapValue: "",
+            refurbishValue: "",
+            transferValue: ""
+        });
+
+        // Continue PDF generation
+        confirmGeneratePdfs();
+
+    } catch (err) {
+        console.error(err);
+        alert("Failed to save manual values");
+    }
+};
 
     if (loading) return (
         <Container className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
@@ -519,16 +568,25 @@ const fetchAllForExport = async () => {
                         <Button variant="success" size="sm" onClick={handleExportToExcel} className="me-2">Export to Excel</Button>
                     </div>
 
-                    <div className="d-flex justify-content-end mb-2">
-                        <span className="p-input-icon-left">
-                            <InputText
-                                value={globalFilterValue}
-                                onChange={onGlobalFilterChange}
-                                placeholder="Search Loco Number, Class, Inspector"
-                                style={{ width: "300px" }}
-                            />
-                        </span>
-                    </div>
+                   <div className="d-flex justify-content-between align-items-center mb-3">
+    <span className="p-input-icon-left">
+        <InputText
+            value={globalFilterValue}
+            onChange={onGlobalFilterChange}
+            placeholder="Search Loco Number, Class, Inspector"
+            style={{ width: "300px" }}
+        />
+    </span>
+
+    <Button
+        variant="success"
+        size="sm"
+        onClick={handleExportToExcel}
+    >
+        Export to Excel
+    </Button>
+</div>
+
 
                     <div style={{ position: "relative" }} ref={gridContainerRef}>
 
@@ -610,9 +668,9 @@ const fetchAllForExport = async () => {
                             <Column field="replaceValue" header="Replace Value" style={{ minWidth: 120 }} />
                             <Column field="totalLaborValue" header="Labor Value" style={{ minWidth: 120 }} />
                            
-                            <Column field="totalValue" header="Total Value" style={{ minWidth: 120 }} />
-                            <Column field="marketValue" header="Market Value" style={{ minWidth: 140 }} />
-                            <Column field="assetValue" header="Asset Value" style={{ minWidth: 120 }} />
+                            <Column field="totalValue" header="Return to Service Cost" style={{ minWidth: 120 }} />
+                            <Column field="marketValue" header="Benchmarking Value" style={{ minWidth: 140 }} />
+                            <Column field="assetValue" header="Market Value" style={{ minWidth: 120 }} />
                             <Column header="Assessment Quote" body={(row) => row.assessmentQuote && row.assessmentQuote !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentQuote, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 160 }} />
                             <Column header="Assessment Cert" body={(row) => row.assessmentCert && row.assessmentCert !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentCert, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />
                             <Column header="Assessment SOW" body={(row) => row.assessmentSow && row.assessmentSow !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentSow, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />
@@ -737,6 +795,91 @@ const fetchAllForExport = async () => {
                 <Modal.Body>No PDF file is available for this loco.</Modal.Body>
                 <Modal.Footer><Button variant="secondary" onClick={() => setShowNoPdf(false)}>Close</Button></Modal.Footer>
             </Modal>
+            <Modal show={showManualConfirm} onHide={() => setShowManualConfirm(false)}>
+    <Modal.Header closeButton>
+        <Modal.Title>No DCF Data</Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+        No DCF data captured for this Loco.
+        <br />
+        <b>Do you want to enter manually now and proceed?</b>
+    </Modal.Body>
+    <Modal.Footer>
+        <Button
+            variant="secondary"
+            onClick={() => setShowManualConfirm(false)}
+        >
+            Cancel
+        </Button>
+        <Button
+            variant="primary"
+            onClick={() => {
+                setShowManualConfirm(false);
+                setShowManualInputModal(true);
+            }}
+        >
+            OK
+        </Button>
+    </Modal.Footer>
+</Modal>
+<Modal show={showManualInputModal} onHide={() => setShowManualInputModal(false)}>
+    <Modal.Header closeButton>
+        <Modal.Title>Enter DCF Values</Modal.Title>
+    </Modal.Header>
+
+    <Modal.Body>
+        <Form>
+            <Form.Group className="mb-2">
+                <Form.Label>Scrap Value</Form.Label>
+                <Form.Control
+                    type="number"
+                    value={manualValues.scrapValue}
+                    onChange={(e) =>
+                        setManualValues({ ...manualValues, scrapValue: e.target.value })
+                    }
+                />
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+                <Form.Label>Refurbish Value</Form.Label>
+                <Form.Control
+                    type="number"
+                    value={manualValues.refurbishValue}
+                    onChange={(e) =>
+                        setManualValues({ ...manualValues, refurbishValue: e.target.value })
+                    }
+                />
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+                <Form.Label>Transfer Value</Form.Label>
+                <Form.Control
+                    type="number"
+                    value={manualValues.transferValue}
+                    onChange={(e) =>
+                        setManualValues({ ...manualValues, transferValue: e.target.value })
+                    }
+                />
+            </Form.Group>
+        </Form>
+    </Modal.Body>
+
+    <Modal.Footer>
+        <Button
+            variant="secondary"
+            onClick={() => setShowManualInputModal(false)}
+        >
+            Cancel
+        </Button>
+        <Button
+            variant="primary"
+            onClick={handleSaveManualValues}
+        >
+            Save & Proceed
+        </Button>
+    </Modal.Footer>
+</Modal>
+
         </Container>
     );
 }

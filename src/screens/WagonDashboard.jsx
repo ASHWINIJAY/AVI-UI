@@ -10,8 +10,8 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; // assume your existing css; you can add the small .selected-row rule if needed
 
 export default function WagonDashboard() {
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; 
-    //const BACKEND_URL = "https://avi-app.co.za/AVIapi";
+    const BACKEND_URL = "http://41.87.206.94/AVIapi"; 
+    //const BACKEND_URL = "http://41.87.206.94/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 const [score, setScore] = useState([]);
     const [allRows, setAllRows] = useState([]);
@@ -393,7 +393,7 @@ const handleRecalculateClick = async (row) => {
             "Wagon Number", "Wagon Group", "Wagon Type", "Inspector", "Date Completed", "Time Completed",
             "Time Started", "Gps Latitude", "Gps Longitude","City", "Lift Date", "Lift Lapsed", "Barrel Test Date",
             "Barrel Lapsed", "Brake Test Date", "Brake Lapsed", "Refurbish Value", "Missing Value",
-            "Replace Value", "Labor Value", "LiftValue", "BarrelValue", "TotalValue", "Market Value", "Asset Value", "Wagon Status", "Upload Date",
+            "Replace Value", "Labor Value", "LiftValue", "BarrelValue", "Return to Service Cost", "Benchmarking  Value", "Market Value", "Wagon Status", "Upload Date",
             "ConditionScore", "OperationalStatus", //PLEASE ADD (NEW)
         ];
         worksheet.addRow(headers).font = { bold: true };
@@ -989,9 +989,9 @@ const renderRowCheckbox = (row) => {
                             <Column field="totalLaborValue" header="Labor Value" style={{ minWidth: 120 }} />
                             <Column field="liftValue" header="Lift Value" style={{ minWidth: 120 }} />
                             <Column field="barrelValue" header="Barrel Value" style={{ minWidth: 120 }} />
-                            <Column field="totalValue" header="Total Value" style={{ minWidth: 120 }} />
-                            <Column field="marketValue" header="Market Value" style={{ minWidth: 140 }} />
-                            <Column field="assetValue" header="Asset Value" style={{ minWidth: 120 }} />
+                            <Column field="totalValue" header="Return to Service Cost" style={{ minWidth: 120 }} />
+                            <Column field="marketValue" header="Benchmarking Value" style={{ minWidth: 140 }} />
+                            <Column field="assetValue" header="Market Value" style={{ minWidth: 120 }} />
                             <Column header="Assessment Quote" body={(row) => row.assessmentQuote && row.assessmentQuote !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentQuote, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 160 }} />
                             <Column header="Assessment Cert" body={(row) => row.assessmentCert && row.assessmentCert !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentCert, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />
                             <Column header="Assessment SOW" body={(row) => row.assessmentSow && row.assessmentSow !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentSow, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />

@@ -19,7 +19,8 @@ const LandingPage = () => {
   const [error, setError] = useState("");
   const [locoList, setLocoList] = useState([]);
   const [loading, setLoading] = useState(false);
-
+    const [showErrorModal, setShowErrorModal] = useState(false); //(← add)
+    const [modalMessage, setModalMessage] = useState(""); //(← add)
   // 🧹 Incomplete cleanup
   const [showCleanupModal, setShowCleanupModal] = useState(false);
   const [incompleteLocos, setIncompleteLocos] = useState([]);
@@ -166,34 +167,33 @@ const LandingPage = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await api.get(
-        `Landing/validateLoco/${locoNumberInt}`,
+        `LocoLanding/validateLoco/${locoNumberInt}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      if (response.data.isValid) {
+ if (!response.data.isValid) {
+                setLoading(false);
+                showError(response.data.message || "Invalid entry.");
+                return;
+            }
+      
         localStorage.setItem("locoNumber", locoNumberInt.toString());
         localStorage.setItem("locoClass", response.data.locoClass);
         localStorage.setItem("locoModel", response.data.locoModel);
         navigate("/locoinfo");
-      } else if (response.data.message) {
-        alert(response.data.message);
-      }
+      
     } catch (err) {
-      const cachedData = getCachedDataWhenOffline(
-        "locoMasterList",
-        locoNumberInt
-      );
-      if (cachedData) {
-        localStorage.setItem("locoNumber", locoNumberInt.toString());
-        localStorage.setItem("locoClass", cachedData.locoClass);
-        localStorage.setItem("locoModel", cachedData.locoModel);
-        navigate("/locoinfo");
-      }
+      setLoading(false);
+            console.error(err);
+            showError("Unable to validate Loco/Asset number. Please try again.");
+            return;
     } finally {
       setLoading(false);
     }
   };
-
+ const showError = (message) => {
+        setModalMessage(message);
+        setShowErrorModal(true);
+    };
   // =========================================================
   // RENDER
   // =========================================================
@@ -278,6 +278,19 @@ const LandingPage = () => {
           </div>
         </Modal.Body>
       </Modal>
+       <Modal show={showErrorModal} onHide={() => setShowErrorModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Validation Error</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {modalMessage}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="primary" onClick={() => setShowErrorModal(false)}>
+                        OK
+                    </Button>
+                </Modal.Footer>
+            </Modal>
     </>
   );
 };
