@@ -10,7 +10,7 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; 
 
 function WagonDashboardUploaded() {
-    const BACKEND_URL = "http://41.87.206.94/AVIapi";
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 
     const [allRows, setAllRows] = useState([]);
@@ -56,7 +56,14 @@ function WagonDashboardUploaded() {
 
     const isAdmin = userRole === "Super User";
     const isAssessorModerator = userRole === "Asset Monitor";
+const [showManualConfirm, setShowManualConfirm] = useState(false);
+const [showManualInputModal, setShowManualInputModal] = useState(false);
 
+const [manualValues, setManualValues] = useState({
+    scrapValue: "",
+    refurbishValue: "",
+    transferValue: ""
+});
     const saveScroll = useCallback(() => {
         const viewport = gridContainerRef.current?.querySelector(".p-datatable-wrapper");
         if (viewport) {
@@ -336,7 +343,8 @@ const fetchAllForExport = async () => {
         const resMessage = await resp.json();
         if (resMessage.message === "No") {
             setShowGeneratePdfModal(false);
-            setShowNoInput(true);
+           // setShowNoInput(true);
+           setShowManualConfirm(true); 
             return;
         }
 
@@ -432,7 +440,45 @@ const fetchAllForExport = async () => {
             requestAnimationFrame(() => restoreScroll());
         }
     };
+const handleSaveManualValues = async () => {
+    if (
+        !manualValues.scrapValue ||
+        !manualValues.refurbishValue ||
+        !manualValues.transferValue
+    ) {
+        alert("Please enter all values");
+        return;
+    }
 
+    try {
+        await fetch(`${BACKEND_URL}/api/CertPDF/saveManualDcfValues`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                assetNumber: generatePdfTarget.wagonNumber.toString(),
+                scrapValue: manualValues.scrapValue,
+                refurbishValue: manualValues.refurbishValue,
+                transferValue: manualValues.transferValue
+            })
+        });
+
+        setShowManualInputModal(false);
+
+        // reset values
+        setManualValues({
+            scrapValue: "",
+            refurbishValue: "",
+            transferValue: ""
+        });
+
+        // Continue PDF generation
+        confirmGeneratePdfs();
+
+    } catch (err) {
+        console.error(err);
+        alert("Failed to save manual values");
+    }
+};
     const handleRecalculateClick = useCallback(async (row) => {
         if (!row?.wagonNumber) return;
 
@@ -488,7 +534,8 @@ const fetchAllForExport = async () => {
                         <Button variant="success" size="sm" onClick={handleExportToExcel} className="me-2">Export to Excel</Button>
                     </div>
 
-                    <div className="d-flex justify-content-end mb-2">
+                     <div className="d-flex justify-content-between align-items-center mb-3">
+  
                         <span className="p-input-icon-left">
                             <InputText
                                 value={globalFilterValue}
@@ -715,6 +762,90 @@ const fetchAllForExport = async () => {
                 <Modal.Body>No PDF file is available for this wagon.</Modal.Body>
                 <Modal.Footer><Button variant="secondary" onClick={() => setShowNoPdf(false)}>Close</Button></Modal.Footer>
             </Modal>
+            <Modal show={showManualConfirm} onHide={() => setShowManualConfirm(false)}>
+    <Modal.Header closeButton>
+        <Modal.Title>No DCF Data</Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+        No DCF data captured for this wagon.
+        <br />
+        <b>Do you want to enter manually now and proceed?</b>
+    </Modal.Body>
+    <Modal.Footer>
+        <Button
+            variant="secondary"
+            onClick={() => setShowManualConfirm(false)}
+        >
+            Cancel
+        </Button>
+        <Button
+            variant="primary"
+            onClick={() => {
+                setShowManualConfirm(false);
+                setShowManualInputModal(true);
+            }}
+        >
+            OK
+        </Button>
+    </Modal.Footer>
+</Modal>
+<Modal show={showManualInputModal} onHide={() => setShowManualInputModal(false)}>
+    <Modal.Header closeButton>
+        <Modal.Title>Enter DCF Values</Modal.Title>
+    </Modal.Header>
+
+    <Modal.Body>
+        <Form>
+            <Form.Group className="mb-2">
+                <Form.Label>Scrap Value (Pre-Tax)</Form.Label>
+                <Form.Control
+                    type="number"
+                    value={manualValues.scrapValue}
+                    onChange={(e) =>
+                        setManualValues({ ...manualValues, scrapValue: e.target.value })
+                    }
+                />
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+                <Form.Label>Refurbish Value (Pre-Tax)</Form.Label>
+                <Form.Control
+                    type="number"
+                    value={manualValues.refurbishValue}
+                    onChange={(e) =>
+                        setManualValues({ ...manualValues, refurbishValue: e.target.value })
+                    }
+                />
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+                <Form.Label>Transfer Value (Pre-Tax)</Form.Label>
+                <Form.Control
+                    type="number"
+                    value={manualValues.transferValue}
+                    onChange={(e) =>
+                        setManualValues({ ...manualValues, transferValue: e.target.value })
+                    }
+                />
+            </Form.Group>
+        </Form>
+    </Modal.Body>
+
+    <Modal.Footer>
+        <Button
+            variant="secondary"
+            onClick={() => setShowManualInputModal(false)}
+        >
+            Cancel
+        </Button>
+        <Button
+            variant="primary"
+            onClick={handleSaveManualValues}
+        >
+            Save & Proceed
+        </Button>
+    </Modal.Footer>
+</Modal>
         </Container>
     );
 }

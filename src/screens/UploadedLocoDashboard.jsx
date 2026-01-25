@@ -10,7 +10,7 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; 
 
 function UploadedLocoDashboard() {
-    const BACKEND_URL = "http://41.87.206.94/AVIapi";
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 
     const [allRows, setAllRows] = useState([]);
@@ -528,7 +528,7 @@ const handleSaveManualValues = async () => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                assetNumber: generatePdfTarget.locoNumber,
+                assetNumber: generatePdfTarget.locoNumber.toString(),
                 scrapValue: manualValues.scrapValue,
                 refurbishValue: manualValues.refurbishValue,
                 transferValue: manualValues.transferValue
@@ -830,7 +830,7 @@ const handleSaveManualValues = async () => {
     <Modal.Body>
         <Form>
             <Form.Group className="mb-2">
-                <Form.Label>Scrap Value</Form.Label>
+                <Form.Label>Scrap Value (Pre-Tax) </Form.Label>
                 <Form.Control
                     type="number"
                     value={manualValues.scrapValue}
@@ -841,7 +841,7 @@ const handleSaveManualValues = async () => {
             </Form.Group>
 
             <Form.Group className="mb-2">
-                <Form.Label>Refurbish Value</Form.Label>
+                <Form.Label>Refurbish Value (Pre-Tax) </Form.Label>
                 <Form.Control
                     type="number"
                     value={manualValues.refurbishValue}
@@ -852,7 +852,7 @@ const handleSaveManualValues = async () => {
             </Form.Group>
 
             <Form.Group className="mb-2">
-                <Form.Label>Transfer Value</Form.Label>
+                <Form.Label>Transfer Value (Pre-Tax) </Form.Label>
                 <Form.Control
                     type="number"
                     value={manualValues.transferValue}
