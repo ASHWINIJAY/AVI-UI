@@ -13,6 +13,7 @@ function WagonDashboardUploaded() {
     const BACKEND_URL = "https://avi-app.co.za/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 
+    const [selectedRowIds, setSelectedRowIds] = useState(new Set());
     const [allRows, setAllRows] = useState([]);
     const [totalRecords, setTotalRecords] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -41,7 +42,9 @@ function WagonDashboardUploaded() {
 
     const [showGeneratePdfModal, setShowGeneratePdfModal] = useState(false);
     const [generatePdfTarget, setGeneratePdfTarget] = useState(null);
-
+const [showNoSelectModal, setShowNoSelectModal] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [pdfUrl, setPdfUrl] = useState(null);
     const [showPdfModal, setShowPdfModal] = useState(false);
     const [showNoPdf, setShowNoPdf] = useState(false);
@@ -268,7 +271,7 @@ const fetchAllForExport = async () => {
             "Time Started", "Gps Latitude", "Gps Longitude","City", "Lift Date", "Lift Lapsed", "Barrel Test Date",
             "Barrel Lapsed", "Brake Test Date", "Brake Lapsed", "Refurbish Value", "Missing Value",
             "Replace Value", "Labor Value", "LiftValue", "BarrelValue", "Return to Service Cost", "Benchmarking Value", "Market Value", "Wagon Status", "Upload Date",
-            "ConditionScore", "OperationalStatus"
+            "ConditionScore", "OperationalStatus", "Calculated Score", "Calculated Status", "Calculated Condition"
         ];
         worksheet.addRow(headers).font = { bold: true };
 
@@ -277,7 +280,7 @@ const fetchAllForExport = async () => {
             row.startTimeInspect, row.gpsLatitude, row.gpsLongitude,row.city, row.liftDate, row.liftLapsed, row.barrelDate,
             row.barrelLapsed, row.brakeDate, row.brakeLapsed, row.refurbishValue, row.missingValue, row.replaceValue,
             row.totalLaborValue, row.liftValue, row.BarrelValue, row.totalValue, row.marketValue, row.assetValue, row.wagonStatus, row.uploadDate,
-            row.conditionScore, row.operationalStatus
+            row.conditionScore, row.operationalStatus, row.calScore, row.calOperateStatus, row.calCondition
         ]));
 
         const buffer = await workbook.xlsx.writeBuffer();
@@ -440,6 +443,53 @@ const fetchAllForExport = async () => {
             requestAnimationFrame(() => restoreScroll());
         }
     };
+      const buildUploadPayload = () => {
+        if (selectedRowIds.size === 0) return [];
+        const selectedRows = allRows.filter(row => selectedRowIds.has(row.id));
+
+        return selectedRows.map(r => ({
+            wagonNumber: r.wagonNumber,
+            bodyPhotos: r.bodyPhotos,
+            liftPhoto: r.liftPhoto,
+            barrelPhoto: r.barrelPhoto,
+            brakePhoto: r.brakePhoto,
+            assessmentQuote: r.assessmentQuote,
+            assessmentCert: r.assessmentCert,
+            assessmentSow: r.assessmentSow,
+            wagonPhoto: r.wagonPhoto,
+            missingPhotos: r.missingPhotos,
+            replacePhotos: r.replacePhotos,
+        }));
+    };
+const handleUploadConfirmed = async () => {
+        const payload = buildUploadPayload();
+
+        saveScroll();
+        setShowConfirmModal(false);
+        setTableLoading(true);
+
+        try {
+            const resp = await fetch(`${BACKEND_URL}/api/DashBoard/reUploadWagons`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
+            await resp.json();
+
+            setShowSuccessModal(true);
+            await fetchData();
+
+            // Clear selection after upload
+            setSelectedRowIds(new Set());
+        } catch (err) {
+            alert("Re-upload failed: " + err.message);
+        } finally {
+            setTableLoading(false);
+            requestAnimationFrame(() => restoreScroll());
+        }
+    };
 const handleSaveManualValues = async () => {
     if (
         !manualValues.scrapValue ||
@@ -532,6 +582,9 @@ const handleSaveManualValues = async () => {
                 <Card.Body style={{ height: 680, width: "100%" }}>
                     <div className="d-flex justify-content-start mb-3">
                         <Button variant="success" size="sm" onClick={handleExportToExcel} className="me-2">Export to Excel</Button>
+                    
+                            <Button variant="primary" size="sm" onClick={() => selectedRowIds.size > 0 ? setShowConfirmModal(true) : setShowNoSelectModal(true)}>Re-upload</Button>
+                        
                     </div>
 
                      <div className="d-flex justify-content-between align-items-center mb-3">
@@ -574,7 +627,23 @@ const handleSaveManualValues = async () => {
                             scrollable
                             scrollHeight="510px"
                             dataKey="id"
+                            selectionMode="checkbox"
+                            selection={allRows.filter(row => selectedRowIds.has(row.id))}
+                            onSelectionChange={(e) => {
+                                setSelectedRowIds(prev => {
+                                    const next = new Set(prev);
+                                    e.value.forEach(row => next.add(row.id)); // add currently selected
+                                    // remove rows that are currently visible but not selected
+                                    allRows.forEach(row => {
+                                        if (!e.value.some(r => r.id === row.id)) next.delete(row.id);
+                                    });
+                                    return next;
+                                });
+                            }}
                         >
+                            <Column
+                                    selectionMode="multiple" headerStyle={{ width: '3em' }}
+                                />
                             {(isAssessorModerator || isAdmin) && (
                                 <Column
                                     header="Recalculate Values"
@@ -677,6 +746,21 @@ const handleSaveManualValues = async () => {
                                     body={(row) => row?.operationalStatus ?? ""}
                                 />
                             )}
+                             <Column
+                                header="Calculated Score"
+                                field="calScore"
+                                style={{ minWidth: 140 }}
+                            />
+                            <Column
+                                header="Calculated Status"
+                                field="calOperateStatus"
+                                style={{ minWidth: 140 }}
+                            />
+                            <Column
+                                header="Calculated Condition"
+                                field="calCondition"
+                                style={{ minWidth: 140 }}
+                            />
                         </DataTable>
                     </div>
                 </Card.Body>
@@ -846,6 +930,30 @@ const handleSaveManualValues = async () => {
         </Button>
     </Modal.Footer>
 </Modal>
+ {/* No Selection Modal */}
+            <Modal show={showNoSelectModal} onHide={() => setShowNoSelectModal(false)}>
+                <Modal.Header closeButton><Modal.Title>No Selection</Modal.Title></Modal.Header>
+                <Modal.Body>Please select at least one row to perform this action.</Modal.Body>
+                <Modal.Footer><Button variant="secondary" onClick={() => setShowNoSelectModal(false)}>Close</Button></Modal.Footer>
+            </Modal>
+
+            {/* Upload Confirmation Modal */}
+            <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
+                <Modal.Header closeButton><Modal.Title>Confirm Re-upload</Modal.Title></Modal.Header>
+                <Modal.Body>Are you sure you want to re-upload the selected wagons?</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>Cancel</Button>
+                    <Button variant="primary" onClick={handleUploadConfirmed}>Re-upload</Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Upload Success Modal */}
+            <Modal show={showSuccessModal} onHide={() => setShowSuccessModal(false)}>
+                <Modal.Header closeButton><Modal.Title>Re-upload Successful</Modal.Title></Modal.Header>
+                <Modal.Body>Wagons have been successfully re-uploaded.</Modal.Body>
+                <Modal.Footer><Button variant="primary" onClick={() => setShowSuccessModal(false)}>OK</Button></Modal.Footer>
+            </Modal>
+
         </Container>
     );
 }

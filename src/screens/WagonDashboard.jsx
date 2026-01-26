@@ -394,7 +394,7 @@ const handleRecalculateClick = async (row) => {
             "Time Started", "Gps Latitude", "Gps Longitude","City", "Lift Date", "Lift Lapsed", "Barrel Test Date",
             "Barrel Lapsed", "Brake Test Date", "Brake Lapsed", "Refurbish Value", "Missing Value",
             "Replace Value", "Labor Value", "LiftValue", "BarrelValue", "Return to Service Cost", "Benchmarking  Value", "Market Value", "Wagon Status", "Upload Date",
-            "ConditionScore", "OperationalStatus", //PLEASE ADD (NEW)
+            "ConditionScore", "OperationalStatus", "Calculated Score", "Calculated Status", "Calculated Condition" //PLEASE ADD (NEW)
         ];
         worksheet.addRow(headers).font = { bold: true };
 
@@ -403,7 +403,7 @@ const handleRecalculateClick = async (row) => {
             row.startTimeInspect, row.gpsLatitude, row.gpsLongitude,row.city, row.liftDate, row.liftLapsed, row.barrelDate,
             row.barrelLapsed, row.brakeDate, row.brakeLapsed, row.refurbishValue, row.missingValue, row.replaceValue,
             row.totalLaborValue, row.liftValue, row.BarrelValue, row.totalValue, row.marketValue, row.assetValue, row.wagonStatus, row.uploadDate,
-            row.conditionScore, row.operationalStatus, //PLEASE ADD (NEW)
+            row.conditionScore, row.operationalStatus, row.calScore, row.calOperateStatus, row.calCondition //PLEASE ADD (NEW)
         ]));
 
         const buffer = await workbook.xlsx.writeBuffer();
@@ -1036,7 +1036,21 @@ const renderRowCheckbox = (row) => {
                                     body={(row) => row?.operationalStatus ?? ""}
                                 />
                           
-                       
+                        <Column
+                                header="Calculated Score"
+                                field="calScore"
+                                style={{ minWidth: 140 }}
+                            />
+                            <Column
+                                header="Calculated Status"
+                                field="calOperateStatus"
+                                style={{ minWidth: 140 }}
+                            />
+                            <Column
+                                header="Calculated Condition"
+                                field="calCondition"
+                                style={{ minWidth: 140 }}
+                            />
                         </DataTable>
                     </div>
                 </Card.Body>
