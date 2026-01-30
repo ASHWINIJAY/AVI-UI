@@ -1,25 +1,25 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Container, Form, Row, Col, Button, Modal, Spinner } from "react-bootstrap";
 import { Dropdown } from 'primereact/dropdown';
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { AutoComplete } from "primereact/autocomplete";
-//const API = "https://localhost:7066";
-const API = "https://avi-app.co.za/AVIapi";
+
+const API = "http://41.87.206.94/AVIapi";
+
 function WagonInputs() {
     const [wagonList, setWagonList] = useState([]);
-const [filteredWagons, setFilteredWagons] = useState([]);
-const [wagonSearch, setWagonSearch] = useState(""); // typed text
 
+    // ADJUST ↓
     const [formData, setFormData] = useState({
         WagonNumber: "",
         WagonType: "",
         NetBookValue: "",
         ScrapValue: "",
         ScrappingCost: "",
-        RefurbishmentCost: "",
+        NewScrapValue: "",
+        TotalCost: "",
         LeaseTerm: "",
         LeaseIncome: "",
         EscalationRate: "",
@@ -58,52 +58,6 @@ const [wagonSearch, setWagonSearch] = useState(""); // typed text
             setLoading(false);
         }
     };
-let searchTimeout;
-
-const searchWagons = (e) => {
-    const query = e.query.toLowerCase();
-
-    if (searchTimeout) clearTimeout(searchTimeout);
-
-    searchTimeout = setTimeout(() => {
-        if (!query) {
-            setFilteredWagons(wagonList);
-            return;
-        }
-
-        // FASTEST filter for 20k rows
-        const results = wagonList.filter(w =>
-            w.wagonNumber.toString().toLowerCase().includes(query)
-        );
-
-        setFilteredWagons(results);
-    }, 120);
-};
-
-const highlightMatch = (text, query) => {
-    if (!query) return text;
-
-    const regex = new RegExp(`(${query})`, "gi");
-    return text.toString().replace(regex, "<strong>$1</strong>");
-};
-const wagonTemplate = (item, { query }) => {
-    return (
-        <div style={{ padding: "6px 10px" }}>
-            <span
-                dangerouslySetInnerHTML={{
-                    __html: highlightMatch(item.wagonNumber, query)
-                }}
-            />
-        </div>
-    );
-};
-const searchIcon = (
-    <i
-        className="pi pi-search"
-        style={{ position: "absolute", right: 10, top: 10, color: "#888" }}
-    ></i>
-);
-
 
     useEffect(() => {
         fetchData();
@@ -113,57 +67,66 @@ const searchIcon = (
         navigate("/master/adminoptions");
     };
 
+    // ADJUST ↓
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+
+        setFormData(prev => {
+            const updated = { ...prev, [name]: value };
+
+            if (name === "ScrapValue" || name === "ScrappingCost") {
+                calculateNewScrapValue(
+                    name === "ScrapValue" ? value : updated.ScrapValue,
+                    name === "ScrappingCost" ? value : updated.ScrappingCost
+                );
+            }
+
+            return updated;
+        });
     };
 
+    // ADJUST ↓
+    const handleWagonChange = async (e) => {
+        setLoading(true);
 
-const handleWagonChange = (e) => {
-    const selected = e.value;
+        const wagonNumber = e.value;  // PrimeReact uses e.value, not e.target.value
 
-    if (!selected) return;
-
-    setWagonSearch(selected.wagonNumber); // SET text input to selected value
-
-    setFormData(prev => ({
-        ...prev,
-        WagonNumber: selected.wagonNumber
-    }));
-
-    fetchWagonDetails(selected.wagonNumber);
-};
-const fetchWagonDetails = async (wagonNumber) => {
-    try {
-        const res = await axios.get(`${API}/api/DCF/getInfo/${wagonNumber}`);
-        const d = res.data;
-
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
-            WagonType: d.wagonType,
-            NetBookValue: d.netBookValue,
-            ScrapValue: d.scrapValue,
-            ScrappingCost: d.scrappingCost,
-            RefurbishmentCost: d.refurbishmentCost,
-            LeaseTerm: d.leaseTerm,
-            LeaseIncome: d.leaseIncome,
-            EscalationRate: d.escalationRate,
-            UseAfterRefurbish: d.useAfterRefurbish,
-            ResidualValue: d.residualValue,
-            PostTax: d.postTax,
-            WearTearPeriod: d.wearTearPeriod,
-            OperatingCosts: d.operatingCosts,
-            OperatingCostsEscalation: d.operatingCostsEscalation,
-            CorporateTaxRate: d.corporateTaxRate,
-            PreTax: d.preTax
+            WagonNumber: wagonNumber,
         }));
-    } catch (err) {
-        console.error("API Error:", err);
-    }
-};
 
+        try {
+            const res = await axios.get(`${API}/api/DCF/getInfo/${parseInt(wagonNumber)}`);
 
-
+            setFormData(prev => ({
+                ...prev,
+                WagonType: res.data.wagonType,
+                NetBookValue: res.data.netBookValue,
+                ScrapValue: res.data.scrapValue,
+                ScrappingCost: res.data.scrappingCost || "",
+                NewScrapValue: res.data.newScrapValue || "",
+                TotalCost: res.data.totalCost || "",
+                LeaseTerm: res.data.leaseTerm || "",
+                LeaseIncome: res.data.leaseIncome || "",
+                EscalationRate: res.data.escalationRate || "",
+                UseAfterRefurbish: res.data.useAfterRefurbish || "",
+                ResidualValue: res.data.residualValue || "",
+                PostTax: res.data.postTax,
+                WearTearPeriod: res.data.wearTearPeriod || "",
+                OperatingCosts: res.data.operatingCosts || "",
+                OperatingCostsEscalation: res.data.operatingCostsEscalation || "",
+                CorporateTaxRate: res.data.corporateTaxRate || "",
+                PreTax: res.data.preTax,
+            }));
+        }
+        catch (err) {
+            console.error("Auto-populate error:", err);
+        }
+        finally {
+            setLoading(false);
+        }
+    };
 
     const preventInvalidBeforeInput = (e, currentValue) => {
 
@@ -232,15 +195,46 @@ const fetchWagonDetails = async (wagonNumber) => {
         }
     };
 
+    // ADD ENTIRE FUNCTION ↓
+    const calculateNewScrapValue = async (scrapValue, scrappingCost) => {
+
+        try {
+            const res = await axios.post(`${API}/api/DCF/calNewScrapVal`, {
+                scrapValue: scrapValue,
+                scrappingCost: scrappingCost
+            });
+
+            setFormData(prev => ({
+                ...prev,
+                NewScrapValue: res.data.newScrapValue
+            }));
+        } catch (err) {
+            console.error("Calculation error:", err);
+        }
+    };
+
+    // ADJUST ↓
     const validateBeforeSubmit = () => {
         const errors = [];
+
+        if (!formData.NetBookValue) {
+            errors.push("Net Book Value is required.")
+        }
+
+        if (!formData.ScrapValue) {
+            errors.push("Scrap Value is required.")
+        }
 
         if (!formData.ScrappingCost) {
             errors.push("Scrapping Cost is required.")
         }
 
-        if (!formData.RefurbishmentCost) {
-            errors.push("Refurbishment Cost is required.");
+        if (!formData.NewScrapValue) {
+            errors.push("New Scrap Value is required.")
+        }
+
+        if (!formData.TotalCost) {
+            errors.push("Total Cost is required.")
         }
 
         if (!formData.LeaseTerm) {
@@ -282,6 +276,7 @@ const fetchWagonDetails = async (wagonNumber) => {
         return errors;
     };
 
+    // ADJUST ↓
     const handleUpdateInsert = async () => {
 
         setShowConfirm(false);
@@ -305,12 +300,13 @@ const fetchWagonDetails = async (wagonNumber) => {
         data.append("NetBookValue", formData.NetBookValue);
         data.append("ScrapValue", formData.ScrapValue);
         data.append("ScrappingCost", formData.ScrappingCost);
-        data.append("RefurbishmentCost", formData.RefurbishmentCost);
+        data.append("NewScrapValue", formData.NewScrapValue);
+        data.append("TotalCost", formData.TotalCost);
         data.append("LeaseTerm", parseInt(formData.LeaseTerm));
         data.append("LeaseIncome", formData.LeaseIncome);
         data.append("EscalationRate", formData.EscalationRate);
-        data.append("UseAfterRefurbish", formData.UseAfterRefurbish);
-        data.append("ResidualValue", parseInt(formData.ResidualValue));
+        data.append("UseAfterRefurbish", parseInt(formData.UseAfterRefurbish));
+        data.append("ResidualValue", formData.ResidualValue);
         data.append("PostTax", formData.PostTax);
         data.append("WearTearPeriod", parseInt(formData.WearTearPeriod));
         data.append("OperatingCosts", formData.OperatingCosts);
@@ -333,7 +329,8 @@ const fetchWagonDetails = async (wagonNumber) => {
                 NetBookValue: "",
                 ScrapValue: "",
                 ScrappingCost: "",
-                RefurbishmentCost: "",
+                NewScrapValue: "",
+                TotalCost: "",
                 LeaseTerm: "",
                 LeaseIncome: "",
                 EscalationRate: "",
@@ -344,8 +341,7 @@ const fetchWagonDetails = async (wagonNumber) => {
                 OperatingCosts: "",
                 OperatingCostsEscalation: "",
                 CorporateTaxRate: "",
-                PreTax: "",
-                UserId: "",
+                PreTax: ""
             }));
         }
         catch (err) {
@@ -362,78 +358,16 @@ const fetchWagonDetails = async (wagonNumber) => {
         setShowSuccess(false);
     };
 
+    // ADJUST ENTIRE FORM ↓
     return (
         <Container className="mt-5 d-flex justify-content-center" style={{ minHeight: "82.5vh" }}>
-            <Form
-    className="p-4 border rounded shadow-sm"
-    style={{
-        maxHeight: "80vh",        // Limit full height
-        overflowY: "auto",        // Scrollbar appears when needed
-        maxWidth: "450px",
-        width: "100%",
-        backgroundColor: "white",
-        marginBottom: "3rem",
-        borderRadius: "12px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
-    }}
->
-
-               <h3 className="text-center mb-4" style={{ fontWeight: "bold", fontFamily: "Poppins, sans-serif" }}>Wagon Inputs</h3>
+            <Form className="p-4 border rounded shadow-sm" style={{ minHeight: "200px", maxWidth: "450px", width: "100%", backgroundColor: "white", marginBottom: "3rem" }}>
+                <h3 className="text-center mb-4" style={{ fontWeight: "bold", fontFamily: "Poppins, sans-serif" }}>Wagon Inputs</h3>
                 <Form.Group className="mb-3">
                     <Form.Label>Asset Number</Form.Label>
-                 <div style={{ position: "relative" }}>
-    
-
-<AutoComplete
-    value={wagonSearch}
-    suggestions={filteredWagons}
-    completeMethod={searchWagons}
-    field="wagonNumber"
-    placeholder="Search Asset Number"
-    dropdown
-    appendTo={document.body}
-    virtualScrollerOptions={{
-        itemSize: 38,
-        lazy: true,
-        showLoader: true
-    }}
-    onDropdownClick={() =>
-        setFilteredWagons(wagonList.slice(0, 300))
-    }
-    onChange={(e) => {
-        const val = e.value;
-
-        // 👇 CASE 1: USER TYPING
-        if (typeof val === "string") {
-            setWagonSearch(val);
-            return;
-        }
-
-        // 👇 CASE 2: USER SELECTED A WAGON (object)
-        if (val && typeof val === "object") {
-            setWagonSearch(val.wagonNumber);
-
-            setFormData(prev => ({
-                ...prev,
-                WagonNumber: val.wagonNumber
-            }));
-
-            console.log("🚀 Selected Wagon:", val.wagonNumber);
-
-            fetchWagonDetails(val.wagonNumber);  // 🔥 API MUST FIRE HERE
-        }
-    }}
-    itemTemplate={wagonTemplate}
-    style={{ width: "100%" }}
-/>
-
-
-
-</div>
-
-
-
-    </Form.Group>
+                    <Dropdown name="WagonNumber" value={formData.WagonNumber} onChange={handleWagonChange} options={wagonList} optionLabel="wagonNumber"
+                        optionValue="wagonNumber" filter placeholder="Select Asset" style={{ width: "100%" }} />
+                </Form.Group>
                 {formData.WagonNumber !== "" && (
                     <>
                         <Form.Group className="mb-3">
@@ -453,19 +387,33 @@ const fetchWagonDetails = async (wagonNumber) => {
                                 type="text"
                                 name="NetBookValue"
                                 value={formData.NetBookValue}
+                                placeholder="Enter Net Book Value"
+                                autoComplete="off"
+                                inputMode="decimal"
+                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.NetBookValue)}
+                                onPaste={(e) => preventInvalidPaste(e, formData.NetBookValue)}
+                                onDrop={(e) => {
+                                    preventInvalidDrop(e, formData.NetBookValue);
+                                }}
                                 onChange={handleChange}
-                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Scrap Value @ t0</Form.Label>
+                            <Form.Label>Scrap Value (ZAR)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="ScrapValue"
                                 value={formData.ScrapValue}
+                                placeholder="Enter Scrap Value"
+                                autoComplete="off"
+                                inputMode="decimal"
+                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.ScrapValue)}
+                                onPaste={(e) => preventInvalidPaste(e, formData.ScrapValue)}
+                                onDrop={(e) => {
+                                    preventInvalidDrop(e, formData.ScrapValue);
+                                }}
                                 onChange={handleChange}
-                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
@@ -487,55 +435,58 @@ const fetchWagonDetails = async (wagonNumber) => {
                             >
                             </Form.Control>
                         </Form.Group>
-                         <Form.Group className="mb-3">
-                                                    <Form.Label>Refurbishment Cost (ZAR)</Form.Label>
-                                                    <Form.Control
-                                                        type="text"
-                                                        name="RefurbishmentCost"
-                                                        value={formData.RefurbishmentCost}
-                                                        onChange={handleChange}
-                                                        readOnly
-                                                    >
-                                                    </Form.Control>
-                                                </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>New Scrap Value (ZAR)</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="NewScrapValue"
+                                value={formData.NewScrapValue}
+                                onChange={handleChange}
+                                readOnly
+                            >
+                            </Form.Control>
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Total Cost (ZAR)</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="TotalCost"
+                                value={formData.TotalCost}
+                                onChange={handleChange}
+                                readOnly
+                            >
+                            </Form.Control>
+                        </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Lease Term (Years)</Form.Label>
                             <Form.Control
                                 type="number"
                                 name="LeaseTerm"
                                 value={formData.LeaseTerm}
-                                placeholder="Enter Lease Term"
-                                autoComplete="off"
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                                                    <Form.Label>Lease Income/Revenue (ZAR)</Form.Label>
-                                                    <Form.Control
-                                                        type="text"
-                                                        name="LeaseIncome"
-                                                        value={formData.LeaseIncome}
-                                                        onChange={handleChange}
-                                                        readOnly
-                                                    >
-                                                    </Form.Control>
-                                                </Form.Group>
+                            <Form.Label>Lease Income/Revenue (ZAR)</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="LeaseIncome"
+                                value={formData.LeaseIncome}
+                                onChange={handleChange}
+                                readOnly
+                            >
+                            </Form.Control>
+                        </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Escalation Rate (%)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="EscalationRate"
                                 value={formData.EscalationRate}
-                                placeholder="Enter Escalation Rate"
-                                autoComplete="off"
-                                inputMode="decimal"
-                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.EscalationRate)}
-                                onPaste={(e) => preventInvalidPaste(e, formData.EscalationRate)}
-                                onDrop={(e) => {
-                                    preventInvalidDrop(e, formData.EscalationRate);
-                                }}
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
@@ -545,9 +496,8 @@ const fetchWagonDetails = async (wagonNumber) => {
                                 type="number"
                                 name="UseAfterRefurbish"
                                 value={formData.UseAfterRefurbish}
-                                placeholder="Enter Use After Refurbish"
-                                autoComplete="off"
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
@@ -581,73 +531,51 @@ const fetchWagonDetails = async (wagonNumber) => {
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Wear & Tear Period (Years)</Form.Label>
+                            <Form.Label>Wear & Tear Period (Years) (Auto-Populated)</Form.Label>
                             <Form.Control
                                 type="number"
                                 name="WearTearPeriod"
                                 value={formData.WearTearPeriod}
-                                placeholder="Enter Wear & Tear Period"
-                                autoComplete="off"
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Operating Costs (ZAR per year)</Form.Label>
+                            <Form.Label>Operating Costs (ZAR) (Auto-Populated)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="OperatingCosts"
                                 value={formData.OperatingCosts}
-                                placeholder="Enter Operating Costs"
-                                autoComplete="off"
-                                inputMode="decimal"
-                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.OperatingCosts)}
-                                onPaste={(e) => preventInvalidPaste(e, formData.OperatingCosts)}
-                                onDrop={(e) => {
-                                    preventInvalidDrop(e, formData.OperatingCosts);
-                                }}
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Operating Costs Escalation (%)</Form.Label>
+                            <Form.Label>Operating Costs Escalation (%) (Auto-Populated)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="OperatingCostsEscalation"
                                 value={formData.OperatingCostsEscalation}
-                                placeholder="Enter Operating Costs Escalation"
-                                autoComplete="off"
-                                inputMode="decimal"
-                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.OperatingCostsEscalation)}
-                                onPaste={(e) => preventInvalidPaste(e, formData.OperatingCostsEscalation)}
-                                onDrop={(e) => {
-                                    preventInvalidDrop(e, formData.OperatingCostsEscalation);
-                                }}
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Corporate Tax Rate (%)</Form.Label>
+                            <Form.Label>Corporate Tax Rate (%) (Auto-Populated)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="CorporateTaxRate"
                                 value={formData.CorporateTaxRate}
-                                placeholder="Enter Corporate Tax Rate"
-                                autoComplete="off"
-                                inputMode="decimal"
-                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.CorporateTaxRate)}
-                                onPaste={(e) => preventInvalidPaste(e, formData.CorporateTaxRate)}
-                                onDrop={(e) => {
-                                    preventInvalidDrop(e, formData.CorporateTaxRate);
-                                }}
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>WACC (Pre-Tax) (%)</Form.Label>
+                            <Form.Label>WACC (Pre-Tax) (%) (Auto-Populated)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="PreTax"

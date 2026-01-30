@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef } from "react";
+﻿import React, { useEffect, useState, useRef } from "react";
 import { Container, Card, Spinner, Button, Modal } from "react-bootstrap";
 import { ExcelRenderer } from "react-excel-renderer";
 import { useNavigate } from "react-router-dom";
 
-const API = "https://avi-app.co.za/AVIapi";
+const API = "http://41.87.206.94/AVIapi";
 
 export default function DCFReport() {
     const storedLocoNumber = localStorage.getItem("locoNumber");
@@ -17,6 +17,10 @@ export default function DCFReport() {
     const [excelBlob, setExcelBlob] = useState(null);
     const [excelFileName, setExcelFileName] = useState("");
 
+    // ADD ↓
+    const [formulas, setFormulas] = useState({});
+
+    // ADJUST ENTIRE FUNCTION ↓
     useEffect(() => {
         if (hasLoaded.current) return;
         hasLoaded.current = true;
@@ -38,17 +42,25 @@ export default function DCFReport() {
                 const res = await fetch(url);
                 if (!res.ok) throw new Error(`Server returned ${res.status}`);
 
-                const blob = await res.blob();
-                setExcelBlob(blob);
+                const data = await res.json(); 
 
-                const contentDisposition = res.headers.get("content-disposition");
-                if (contentDisposition) {
-                    const match = contentDisposition.match(/filename="?([^"]+)"?/);
-                    if (match && match[1]) {
-                        setExcelFileName(match[1]);
-                    }
+                const byteCharacters = atob(data.fileBytes);
+                const byteNumbers = new Array(byteCharacters.length);
 
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
                 }
+
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob(
+                    [byteArray],
+                    { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }
+                );
+
+                setExcelBlob(blob);
+                setExcelFileName(data.fileName);
+
+                setFormulas(data.formulas || {});
 
                 const file = new File([blob], "report.xlsx");
 
@@ -62,6 +74,7 @@ export default function DCFReport() {
                         setLoading(false);
                     }
                 });
+
             } catch (err) {
                 console.error("Failed to load DCF file:", err);
                 setLoading(false);
@@ -92,6 +105,20 @@ export default function DCFReport() {
         navigate("/master/generatedcf");  
     };
 
+    // ADD ENTIRE FUNCTION ↓
+    function getExcelColumnLetter(colIndex) {
+        let letter = "";
+        let temp = colIndex + 1;
+
+        while (temp > 0) {
+            const mod = (temp - 1) % 26;
+            letter = String.fromCharCode(65 + mod) + letter;
+            temp = Math.floor((temp - mod) / 26);
+        }
+
+        return letter;
+    }
+
     if (loading) {
         return (
             <Container className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
@@ -100,6 +127,7 @@ export default function DCFReport() {
         );
     }
 
+    // ADJUST ENTIRE TABLE ↓
     return (
         <Container fluid style={{ backgroundColor: "#025373", height: "85.5vh", maxWidth: "100%" }}>
             <Card className="mt-3 mb-3">
@@ -115,6 +143,17 @@ export default function DCFReport() {
                     <table style={{ borderCollapse: "collapse", width: "100%", height: "auto" }}>
                         <thead>
                             <tr>
+                                <th
+                                    style={{
+                                        border: "1px solid #999",
+                                        padding: "6px 8px",
+                                        background: "#e0e0e0",
+                                        textAlign: "center",
+                                        minWidth: "50px"
+                                    }}
+                                >
+                                    #
+                                </th>
                                 {cols.map((col, idx) => (
                                     <th
                                         key={idx}
@@ -137,6 +176,18 @@ export default function DCFReport() {
                                     key={rowIdx}
                                     style={{ background: rowIdx % 2 === 0 ? "#fff" : "#fafafa" }}
                                 >
+                                    <td
+                                        style={{
+                                            border: "1px solid #ddd",
+                                            padding: "4px 8px",
+                                            textAlign: "center",
+                                            fontWeight: "bold",
+                                            background: "#f7f7f7"
+                                        }}
+                                    >
+                                        {rowIdx + 1}
+                                    </td>
+
                                     {row.map((cell, cellIdx) => {
                                         const colName = (cols[cellIdx]?.name || "").toLowerCase();
                                         let displayValue;
@@ -157,15 +208,21 @@ export default function DCFReport() {
                                             displayValue = cell;
                                         }
 
+                                        const excelRef = `${getExcelColumnLetter(cellIdx)}${rowIdx + 1}`;
+                                        const formula = formulas[excelRef];
+
                                         return (
                                             <td
                                                 key={cellIdx}
+                                                title={formula || ""}
                                                 style={{
                                                     border: "1px solid #ddd",
                                                     padding: "4px 8px",
                                                     textAlign: typeof cell === "number" ? "right" : "left",
                                                     fontFamily: "Arial, sans-serif",
-                                                    whiteSpace: "nowrap"
+                                                    whiteSpace: "nowrap",
+                                                    backgroundColor: formula ? "#fff8e1" : undefined,
+                                                    cursor: formula ? "help" : "default"
                                                 }}
                                             >
                                                 {displayValue}

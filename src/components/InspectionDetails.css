@@ -1,0 +1,89 @@
+/* Page */
+.inspection-page {
+  padding: 20px;
+  background: #f4f6f8; /* light neutral */
+  min-height: 100vh;
+}
+
+/* Title bar */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.page-header h2 {
+  margin: 0;
+  color: #0b2e3c;
+}
+
+/* Export button */
+.export-btn {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.export-btn:hover {
+  background: #0056b3;
+}
+
+/* Inspection section */
+.inspect-card {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.inspect-title {
+  margin-bottom: 10px;
+  font-size: 18px;
+  color: #0b2e3c;
+  border-bottom: 2px solid #0aa2c0;
+  padding-bottom: 5px;
+}
+.table-scroll {
+  max-height: 350px;      /* vertical scroll */
+  overflow-y: auto;
+  overflow-x: auto;      /* horizontal scroll */
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.inspection-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px; /* forces horizontal scroll */
+}
+
+.inspection-table th {
+  background: #0aa2c0;   /* AVI teal */
+  color: #ffffff;
+  padding: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.inspection-table td {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  color: #333;
+  font-size: 14px;
+}
+
+.inspection-table tbody tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+/* Total row */
+.inspection-table tfoot td {
+  font-weight: bold;
+  background: #e6f6fa;
+  border-top: 2px solid #0aa2c0;
+}

@@ -10,7 +10,7 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; 
 
 function WagonDashboardUploaded() {
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
+    const BACKEND_URL = "http://41.87.206.94/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 
     const [selectedRowIds, setSelectedRowIds] = useState(new Set());
@@ -279,7 +279,7 @@ const fetchAllForExport = async () => {
             row.wagonNumber, row.wagonGroup, row.wagonType, row.inspectorName, row.dateAssessed, row.timeAssessed,
             row.startTimeInspect, row.gpsLatitude, row.gpsLongitude,row.city, row.liftDate, row.liftLapsed, row.barrelDate,
             row.barrelLapsed, row.brakeDate, row.brakeLapsed, row.refurbishValue, row.missingValue, row.replaceValue,
-            row.totalLaborValue, row.liftValue, row.BarrelValue, row.totalValue, row.marketValue, row.assetValue, row.wagonStatus, row.uploadDate,
+            row.totalLaborValue, row.liftValue, row.barrelValue, row.totalValue, row.marketValue, row.assetValue, row.wagonStatus, row.uploadDate,
             row.conditionScore, row.operationalStatus, row.calScore, row.calOperateStatus, row.calCondition
         ]));
 

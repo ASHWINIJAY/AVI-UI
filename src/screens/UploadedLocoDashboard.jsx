@@ -10,7 +10,7 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; 
 
 function UploadedLocoDashboard() {
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
+    const BACKEND_URL = "http://41.87.206.94/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 
     const [allRows, setAllRows] = useState([]);

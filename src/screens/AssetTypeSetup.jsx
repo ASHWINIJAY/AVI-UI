@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef } from "react";
+﻿import React, { useEffect, useState, useRef } from "react";
 import { Container, Card, Spinner, Button, Modal, Row, Col, Form } from "react-bootstrap";
 import { Dropdown } from 'primereact/dropdown';
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-//const API = "https://localhost:7066";
-const API = "https://avi-app.co.za/AVIapi";
+const API = "http://41.87.206.94/AVIapi";
+
 function AssetTypeSetup() {
     const locoType = [
         "18E",
@@ -421,12 +421,19 @@ function AssetTypeSetup() {
         "Wagon"
     ]
 
+    // ADJUST ↓
     const [formData, setFormData] = useState({
         TypeAsset: "",
         LocoType: "",
         WagonType: "",
-        RefurbishmentCost: "",
+        LeaseTerm: "",
         LeaseIncome: "",
+        EscalationRate: "",
+        UseAfterRefurbish: "",
+        WearTearPeriod: "",
+        OperatingCosts: "",
+        OperatingCostsEscalation: "",
+        CorporateTaxRate: "",
         UserId: "",
     });
         
@@ -442,6 +449,7 @@ function AssetTypeSetup() {
         navigate("/master/adminoptions");
     };
 
+    // ADJUST ↓
     const handleAssetChange = async (e) => {
         setLoading(true);
 
@@ -452,13 +460,20 @@ function AssetTypeSetup() {
             TypeAsset: typeAsset,
             LocoType: "",
             WagonType: "",
-            RefurbishmentCost: "",
+            LeaseTerm: "",
             LeaseIncome: "",
+            EscalationRate: "",
+            UseAfterRefurbish: "",
+            WearTearPeriod: "",
+            OperatingCosts: "",
+            OperatingCostsEscalation: "",
+            CorporateTaxRate: "",
         }));
 
         setLoading(false);
     };
 
+    // ADJUST ↓
     const handleLocoChange = async (e) => {
 
         setLoading(true);
@@ -475,8 +490,14 @@ function AssetTypeSetup() {
 
             setFormData(prev => ({
                 ...prev,
-                RefurbishmentCost: res.data.refurbishmentCost || "",
+                LeaseTerm: res.data.leaseTerm || "",
                 LeaseIncome: res.data.leaseIncome || "",
+                EscalationRate: res.data.escalationRate || "",
+                UseAfterRefurbish: res.data.useAfterRefurbish || "",
+                WearTearPeriod: res.data.wearTearPeriod || "",
+                OperatingCosts: res.data.operatingCosts || "",
+                OperatingCostsEscalation: res.data.operatingCostsEscalation || "",
+                CorporateTaxRate: res.data.corporateTaxRate || ""
             }));
         }
         catch (err) {
@@ -487,6 +508,7 @@ function AssetTypeSetup() {
         }
     };
 
+    // ADJUST ↓
     const handleWagonChange = async (e) => {
 
         setLoading(true);
@@ -503,8 +525,14 @@ function AssetTypeSetup() {
 
             setFormData(prev => ({
                 ...prev,
-                RefurbishmentCost: res.data.refurbishmentCost || "",
+                LeaseTerm: res.data.leaseTerm || "",
                 LeaseIncome: res.data.leaseIncome || "",
+                EscalationRate: res.data.escalationRate || "",
+                UseAfterRefurbish: res.data.useAfterRefurbish || "",
+                WearTearPeriod: res.data.wearTearPeriod || "",
+                OperatingCosts: res.data.operatingCosts || "",
+                OperatingCostsEscalation: res.data.operatingCostsEscalation || "",
+                CorporateTaxRate: res.data.corporateTaxRate || ""
             }));
         }
         catch (err) {
@@ -587,20 +615,46 @@ function AssetTypeSetup() {
         }
     };
 
+    // ADJUST ↓
     const validateBeforeSubmit = () => {
         const errors = [];
 
-        if (!formData.RefurbishmentCost) {
-            errors.push("Refurbishment Cost is required.")
+        if (!formData.LeaseTerm) {
+            errors.push("Lease Term is required.");
         }
 
         if (!formData.LeaseIncome) {
             errors.push("Lease Income/Revenue is required.");
         }
 
+        if (!formData.EscalationRate) {
+            errors.push("Escalation Rate is required.");
+        }
+
+        if (!formData.UseAfterRefurbish) {
+            errors.push("Useful Years After Refurbishment is required.");
+        }
+
+        if (!formData.WearTearPeriod) {
+            errors.push("Wear & Tear Period is required.");
+        }
+
+        if (!formData.OperatingCosts) {
+            errors.push("Operating Costs is required.");
+        }
+
+        if (!formData.OperatingCostsEscalation) {
+            errors.push("Operating Costs Escalation is required.");
+        }
+
+        if (!formData.CorporateTaxRate) {
+            errors.push("Corporate Tax Rate is required.");
+        }
+
         return errors;
     };
 
+    // ADJUST ↓
     const handleSave = async () => {
         setShowConfirm(false);
 
@@ -624,8 +678,15 @@ function AssetTypeSetup() {
         else if (formData.TypeAsset === "Wagon") {
             data.append("AssetType", formData.WagonType);
         }
-        data.append("RefurbishmentCost", formData.RefurbishmentCost);
+
+        data.append("LeaseTerm", formData.LeaseTerm);
         data.append("LeaseIncome", formData.LeaseIncome);
+        data.append("EscalationRate", formData.EscalationRate);
+        data.append("UseAfterRefurbish", formData.UseAfterRefurbish);
+        data.append("WearTearPeriod", formData.WearTearPeriod);
+        data.append("OperatingCosts", formData.OperatingCosts);
+        data.append("OperatingCostsEscalation", formData.OperatingCostsEscalation);
+        data.append("CorporateTaxRate", formData.CorporateTaxRate);
         data.append("UserId", formData.UserId);
 
         try {
@@ -640,9 +701,14 @@ function AssetTypeSetup() {
                 TypeAsset: "",
                 LocoType: "",
                 WagonType: "",
-                RefurbishmentCost: "",
+                LeaseTerm: "",
                 LeaseIncome: "",
-                UserId: "",
+                EscalationRate: "",
+                UseAfterRefurbish: "",
+                WearTearPeriod: "",
+                OperatingCosts: "",
+                OperatingCostsEscalation: "",
+                CorporateTaxRate: ""
             }));
         }
         catch (err) {
@@ -660,11 +726,12 @@ function AssetTypeSetup() {
         setShowSuccess(false);
     };
 
+    // ADJUST ENTIRE FORM ↓
     return (
-        <Container fluid className="d-flex justify-content-center align-items-center" style={{ backgroundColor: "#025373", height: "82.5vh", maxWidth: "100%" }}>
+        <Container fluid className="d-flex justify-content-center align-items-center" style={{ backgroundColor: "#025373", minHeight: "82.5vh", maxWidth: "100%" }}>
             <Row>
                 <Col>
-                    <Card className="p-4 shadow-sm" style={{ minWidth: "350px", maxWidth: "400px" }}>
+                    <Card className="p-4 shadow-sm" style={{ minWidth: "350px", maxWidth: "400px", marginTop: "20px", marginBottom: "20px" }}>
                         <Card.Body>
                             <h2 className="text-center mb-4" style={{ fontFamily: "Poppins, sans-serif", fontWeight: "bold" }}>
                                 Asset Type Setup
@@ -692,24 +759,6 @@ function AssetTypeSetup() {
                                 {(formData.LocoType !== "" || formData.WagonType !== "") && (
                                     <>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Refurbishment Cost (ZAR)</Form.Label>
-                                            <Form.Control
-                                                type="text"
-                                                name="RefurbishmentCost"
-                                                value={formData.RefurbishmentCost}
-                                                placeholder="Enter Refurbishment Cost"
-                                                autoComplete="off"
-                                                inputMode="decimal"
-                                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.ScrappingCost)}
-                                                onPaste={(e) => preventInvalidPaste(e, formData.ScrappingCost)}
-                                                onDrop={(e) => {
-                                                    preventInvalidDrop(e, formData.ScrappingCost);
-                                                }}
-                                                onChange={handleChange}
-                                            >
-                                            </Form.Control>
-                                        </Form.Group>
-                                        <Form.Group className="mb-3">
                                             <Form.Label>Lease Income/Revenue (ZAR)</Form.Label>
                                             <Form.Control
                                                 type="text"
@@ -718,10 +767,118 @@ function AssetTypeSetup() {
                                                 placeholder="Enter Lease Income/Revenue"
                                                 autoComplete="off"
                                                 inputMode="decimal"
-                                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.ScrappingCost)}
-                                                onPaste={(e) => preventInvalidPaste(e, formData.ScrappingCost)}
+                                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.LeaseIncome)}
+                                                onPaste={(e) => preventInvalidPaste(e, formData.LeaseIncome)}
                                                 onDrop={(e) => {
-                                                    preventInvalidDrop(e, formData.ScrappingCost);
+                                                    preventInvalidDrop(e, formData.LeaseIncome);
+                                                }}
+                                                onChange={handleChange}
+                                            >
+                                            </Form.Control>
+                                        </Form.Group>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label>Lease Term (Years)</Form.Label>
+                                            <Form.Control
+                                                type="number"
+                                                name="LeaseTerm"
+                                                value={formData.LeaseTerm}
+                                                placeholder="Enter Lease Term"
+                                                autoComplete="off"
+                                                onChange={handleChange}
+                                            >
+                                            </Form.Control>
+                                        </Form.Group>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label>Escalation Rate (%)</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                name="EscalationRate"
+                                                value={formData.EscalationRate}
+                                                placeholder="Enter Escalation Rate"
+                                                autoComplete="off"
+                                                inputMode="decimal"
+                                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.EscalationRate)}
+                                                onPaste={(e) => preventInvalidPaste(e, formData.EscalationRate)}
+                                                onDrop={(e) => {
+                                                    preventInvalidDrop(e, formData.EscalationRate);
+                                                }}
+                                                onChange={handleChange}
+                                            >
+                                            </Form.Control>
+                                        </Form.Group>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label>Useful Life After Refurbishment (Years)</Form.Label>
+                                            <Form.Control
+                                                type="number"
+                                                name="UseAfterRefurbish"
+                                                value={formData.UseAfterRefurbish}
+                                                placeholder="Enter Use After Refurbish"
+                                                autoComplete="off"
+                                                onChange={handleChange}
+                                            >
+                                            </Form.Control>
+                                        </Form.Group>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label>Wear & Tear Period (Years)</Form.Label>
+                                            <Form.Control
+                                                type="number"
+                                                name="WearTearPeriod"
+                                                value={formData.WearTearPeriod}
+                                                placeholder="Enter Wear Tear Period"
+                                                autoComplete="off"
+                                                onChange={handleChange}
+                                            >
+                                            </Form.Control>
+                                        </Form.Group>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label>Operating Costs (ZAR)</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                name="OperatingCosts"
+                                                value={formData.OperatingCosts}
+                                                placeholder="Enter Operating Costs"
+                                                autoComplete="off"
+                                                inputMode="decimal"
+                                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.OperatingCosts)}
+                                                onPaste={(e) => preventInvalidPaste(e, formData.OperatingCosts)}
+                                                onDrop={(e) => {
+                                                    preventInvalidDrop(e, formData.OperatingCosts);
+                                                }}
+                                                onChange={handleChange}
+                                            >
+                                            </Form.Control>
+                                        </Form.Group>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label>Operating Costs Escalation (%)</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                name="OperatingCostsEscalation"
+                                                value={formData.OperatingCostsEscalation}
+                                                placeholder="Enter Operating Costs Escalation"
+                                                autoComplete="off"
+                                                inputMode="decimal"
+                                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.OperatingCostsEscalation)}
+                                                onPaste={(e) => preventInvalidPaste(e, formData.OperatingCostsEscalation)}
+                                                onDrop={(e) => {
+                                                    preventInvalidDrop(e, formData.OperatingCostsEscalation);
+                                                }}
+                                                onChange={handleChange}
+                                            >
+                                            </Form.Control>
+                                        </Form.Group>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label>Coporate Tax Rate (%)</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                name="CorporateTaxRate"
+                                                value={formData.CorporateTaxRate}
+                                                placeholder="Enter Corporate Tax Rate"
+                                                autoComplete="off"
+                                                inputMode="decimal"
+                                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.CorporateTaxRate)}
+                                                onPaste={(e) => preventInvalidPaste(e, formData.CorporateTaxRate)}
+                                                onDrop={(e) => {
+                                                    preventInvalidDrop(e, formData.CorporateTaxRate);
                                                 }}
                                                 onChange={handleChange}
                                             >
@@ -744,6 +901,7 @@ function AssetTypeSetup() {
                     </Card>
                 </Col>
             </Row>
+
             <Modal show={showConfirm} onHide={() => !loading && setShowConfirm(false)}>
                 <Modal.Header closeButton={!loading}>
                     <Modal.Title>Confirm Save</Modal.Title>
@@ -758,7 +916,7 @@ function AssetTypeSetup() {
                 <Modal.Header closeButton={!loading}>
                     <Modal.Title>Confirm Back</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>Do you want to go back?</Modal.Body>
+                <Modal.Body>Warning: Progress will be lost. Do you want to go back?</Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowConfirmBack(false)} disabled={loading}>Cancel</Button>
                     <Button variant="primary" onClick={handleBack} disabled={loading}>Confirm</Button>
@@ -781,7 +939,7 @@ function AssetTypeSetup() {
                 <Modal.Header closeButton>
                     <Modal.Title>Success</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>Input has been saved/updated successfully.</Modal.Body>
+                <Modal.Body>Asset type setup has been saved/updated successfully.</Modal.Body>
                 <Modal.Footer>
                     <Button variant="success" onClick={handleSuccessClose}>
                         OK

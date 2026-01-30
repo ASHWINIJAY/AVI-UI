@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Container, Form, Row, Col, Button, Modal, Spinner } from "react-bootstrap";
 import { Dropdown } from 'primereact/dropdown';
 import { useNavigate } from "react-router-dom";
@@ -6,18 +6,20 @@ import axios from "axios";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
-const API = "https://avi-app.co.za/AVIapi";
+const API = "http://41.87.206.94/AVIapi";
 
 function LocoInputs() {
     const [locoList, setLocoList] = useState([]);
 
+    // ADJUST ↓
     const [formData, setFormData] = useState({
         LocoNumber: "",
         LocoType: "",
         NetBookValue: "",
         ScrapValue: "",
         ScrappingCost: "",
-        RefurbishmentCost: "",
+        NewScrapValue: "",
+        TotalCost: "",
         LeaseTerm: "",
         LeaseIncome: "",
         EscalationRate: "",
@@ -65,11 +67,25 @@ function LocoInputs() {
         navigate("/master/adminoptions");
     };
 
+    // ADJUST ↓
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+
+        setFormData(prev => {
+            const updated = { ...prev, [name]: value };
+
+            if (name === "ScrapValue" || name === "ScrappingCost") {
+                calculateNewScrapValue(
+                    name === "ScrapValue" ? value : updated.ScrapValue,
+                    name === "ScrappingCost" ? value : updated.ScrappingCost
+                );
+            }
+
+            return updated;
+        });
     };
 
+    // ADJUST ↓
     const handleLocoChange = async (e) => {
         setLoading(true);
 
@@ -89,7 +105,8 @@ function LocoInputs() {
                 NetBookValue: res.data.netBookValue,
                 ScrapValue: res.data.scrapValue,
                 ScrappingCost: res.data.scrappingCost || "",
-                RefurbishmentCost: res.data.refurbishmentCost || "",
+                NewScrapValue: res.data.newScrapValue || "",
+                TotalCost: res.data.totalCost || "",
                 LeaseTerm: res.data.leaseTerm || "",
                 LeaseIncome: res.data.leaseIncome || "",
                 EscalationRate: res.data.escalationRate || "",
@@ -178,15 +195,46 @@ function LocoInputs() {
         }
     };
 
+    // ADD ENTIRE FUNCTION ↓
+    const calculateNewScrapValue = async (scrapValue, scrappingCost) => {
+
+        try {
+            const res = await axios.post(`${API}/api/DCF/calNewScrapVal`, {
+                scrapValue: scrapValue,
+                scrappingCost: scrappingCost
+            });
+
+            setFormData(prev => ({
+                ...prev,
+                NewScrapValue: res.data.newScrapValue
+            }));
+        } catch (err) {
+            console.error("Calculation error:", err);
+        }
+    };
+
+    // ADJUST ↓
     const validateBeforeSubmit = () => {
         const errors = [];
+
+        if (!formData.NetBookValue) {
+            errors.push("Net Book Value is required.")
+        }
+
+        if (!formData.ScrapValue) {
+            errors.push("Scrap Value is required.")
+        }
 
         if (!formData.ScrappingCost) {
             errors.push("Scrapping Cost is required.")
         }
 
-        if (!formData.RefurbishmentCost) {
-            errors.push("Refurbishment Cost is required.");
+        if (!formData.NewScrapValue) {
+            errors.push("New Scrap Value is required.")
+        }
+
+        if (!formData.TotalCost) {
+            errors.push("Total Cost is required.")
         }
 
         if (!formData.LeaseTerm) {
@@ -228,6 +276,7 @@ function LocoInputs() {
         return errors;
     };
 
+    // ADJUST ↓
     const handleUpdateInsert = async () => {
 
         setShowConfirm(false);
@@ -251,12 +300,13 @@ function LocoInputs() {
         data.append("NetBookValue", formData.NetBookValue);
         data.append("ScrapValue", formData.ScrapValue);
         data.append("ScrappingCost", formData.ScrappingCost);
-        data.append("RefurbishmentCost", formData.RefurbishmentCost);
+        data.append("NewScrapValue", formData.NewScrapValue);
+        data.append("TotalCost", formData.TotalCost);
         data.append("LeaseTerm", parseInt(formData.LeaseTerm));
         data.append("LeaseIncome", formData.LeaseIncome);
         data.append("EscalationRate", formData.EscalationRate);
-        data.append("UseAfterRefurbish", formData.UseAfterRefurbish);
-        data.append("ResidualValue", parseInt(formData.ResidualValue));
+        data.append("UseAfterRefurbish", parseInt(formData.UseAfterRefurbish));
+        data.append("ResidualValue", formData.ResidualValue);
         data.append("PostTax", formData.PostTax);
         data.append("WearTearPeriod", parseInt(formData.WearTearPeriod));
         data.append("OperatingCosts", formData.OperatingCosts);
@@ -279,7 +329,8 @@ function LocoInputs() {
                 NetBookValue: "",
                 ScrapValue: "",
                 ScrappingCost: "",
-                RefurbishmentCost: "",
+                NewScrapValue: "",
+                TotalCost: "",
                 LeaseTerm: "",
                 LeaseIncome: "",
                 EscalationRate: "",
@@ -291,7 +342,6 @@ function LocoInputs() {
                 OperatingCostsEscalation: "",
                 CorporateTaxRate: "",
                 PreTax: "",
-                UserId: "",
             }));
         }
         catch (err) {
@@ -308,21 +358,11 @@ function LocoInputs() {
         setShowSuccess(false);
     };
 
+    // ADJUST ENTIRE FORM ↓
     return (
         <Container className="mt-5 d-flex justify-content-center" style={{ minHeight: "82.5vh" }}>
-           <Form
-               className="p-4 border rounded shadow-sm"
-               style={{
-                   maxHeight: "80vh",        // Limit full height
-                   overflowY: "auto",        // Scrollbar appears when needed
-                   maxWidth: "450px",
-                   width: "100%",
-                   backgroundColor: "white",
-                   marginBottom: "3rem",
-                   borderRadius: "12px",
-                   boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
-               }}
-           >  <h3 className="text-center mb-4" style={{ fontWeight: "bold", fontFamily: "Poppins, sans-serif" }}>Locomotive Inputs</h3>
+            <Form className="p-4 border rounded shadow-sm" style={{ minHeight: "200px", maxWidth: "450px", width: "100%", backgroundColor: "white", marginBottom: "3rem" }}>
+                <h3 className="text-center mb-4" style={{ fontWeight: "bold", fontFamily: "Poppins, sans-serif" }}>Locomotive Inputs</h3>
                 <Form.Group className="mb-3">
                     <Form.Label>Asset Number</Form.Label>
                     <Dropdown name="LocoNumber" value={formData.LocoNumber} onChange={handleLocoChange} options={locoList} optionLabel="locoNumber"
@@ -347,19 +387,33 @@ function LocoInputs() {
                                 type="text"
                                 name="NetBookValue"
                                 value={formData.NetBookValue}
+                                placeholder="Enter Net Book Value"
+                                autoComplete="off"
+                                inputMode="decimal"
+                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.NetBookValue)}
+                                onPaste={(e) => preventInvalidPaste(e, formData.NetBookValue)}
+                                onDrop={(e) => {
+                                    preventInvalidDrop(e, formData.NetBookValue);
+                                }}
                                 onChange={handleChange}
-                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Scrap Value @ t0</Form.Label>
+                            <Form.Label>Scrap Value (ZAR)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="ScrapValue"
                                 value={formData.ScrapValue}
+                                placeholder="Enter Scrap Value"
+                                autoComplete="off"
+                                inputMode="decimal"
+                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.ScrapValue)}
+                                onPaste={(e) => preventInvalidPaste(e, formData.ScrapValue)}
+                                onDrop={(e) => {
+                                    preventInvalidDrop(e, formData.ScrapValue);
+                                }}
                                 onChange={handleChange}
-                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
@@ -381,12 +435,23 @@ function LocoInputs() {
                             >
                             </Form.Control>
                         </Form.Group>
-                       <Form.Group className="mb-3">
-                            <Form.Label>Refurbishment Cost (ZAR)</Form.Label>
+                        <Form.Group className="mb-3">
+                            <Form.Label>New Scrap Value (ZAR)</Form.Label>
                             <Form.Control
                                 type="text"
-                                name="RefurbishmentCost"
-                                value={formData.RefurbishmentCost}
+                                name="NewScrapValue"
+                                value={formData.NewScrapValue}
+                                onChange={handleChange}
+                                readOnly
+                            >
+                            </Form.Control>
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Total Cost (ZAR)</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="TotalCost"
+                                value={formData.TotalCost}
                                 onChange={handleChange}
                                 readOnly
                             >
@@ -398,13 +463,12 @@ function LocoInputs() {
                                 type="number"
                                 name="LeaseTerm"
                                 value={formData.LeaseTerm}
-                                placeholder="Enter Lease Term"
-                                autoComplete="off"
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
-<Form.Group className="mb-3">
+                        <Form.Group className="mb-3">
                             <Form.Label>Lease Income/Revenue (ZAR)</Form.Label>
                             <Form.Control
                                 type="text"
@@ -421,15 +485,8 @@ function LocoInputs() {
                                 type="text"
                                 name="EscalationRate"
                                 value={formData.EscalationRate}
-                                placeholder="Enter Escalation Rate"
-                                autoComplete="off"
-                                inputMode="decimal"
-                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.EscalationRate)}
-                                onPaste={(e) => preventInvalidPaste(e, formData.EscalationRate)}
-                                onDrop={(e) => {
-                                    preventInvalidDrop(e, formData.EscalationRate);
-                                }}
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
@@ -439,9 +496,8 @@ function LocoInputs() {
                                 type="number"
                                 name="UseAfterRefurbish"
                                 value={formData.UseAfterRefurbish}
-                                placeholder="Enter Use After Refurbish"
-                                autoComplete="off"
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
@@ -475,73 +531,51 @@ function LocoInputs() {
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Wear & Tear Period (Years)</Form.Label>
+                            <Form.Label>Wear & Tear Period (Years) (Auto-Populated)</Form.Label>
                             <Form.Control
                                 type="number"
                                 name="WearTearPeriod"
                                 value={formData.WearTearPeriod}
-                                placeholder="Enter Wear & Tear Period"
-                                autoComplete="off"
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Operating Costs (ZAR per year)</Form.Label>
+                            <Form.Label>Operating Costs (ZAR) (Auto-Populated)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="OperatingCosts"
                                 value={formData.OperatingCosts}
-                                placeholder="Enter Operating Costs"
-                                autoComplete="off"
-                                inputMode="decimal"
-                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.OperatingCosts)}
-                                onPaste={(e) => preventInvalidPaste(e, formData.OperatingCosts)}
-                                onDrop={(e) => {
-                                    preventInvalidDrop(e, formData.OperatingCosts);
-                                }}
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Operating Costs Escalation (%)</Form.Label>
+                            <Form.Label>Operating Costs Escalation (%) (Auto-Populated)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="OperatingCostsEscalation"
                                 value={formData.OperatingCostsEscalation}
-                                placeholder="Enter Operating Costs Escalation"
-                                autoComplete="off"
-                                inputMode="decimal"
-                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.OperatingCostsEscalation)}
-                                onPaste={(e) => preventInvalidPaste(e, formData.OperatingCostsEscalation)}
-                                onDrop={(e) => {
-                                    preventInvalidDrop(e, formData.OperatingCostsEscalation);
-                                }}
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Corporate Tax Rate (%)</Form.Label>
+                            <Form.Label>Corporate Tax Rate (%) (Auto-Populated)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="CorporateTaxRate"
                                 value={formData.CorporateTaxRate}
-                                placeholder="Enter Corporate Tax Rate"
-                                autoComplete="off"
-                                inputMode="decimal"
-                                onBeforeInput={(e) => preventInvalidBeforeInput(e, formData.CorporateTaxRate)}
-                                onPaste={(e) => preventInvalidPaste(e, formData.CorporateTaxRate)}
-                                onDrop={(e) => {
-                                    preventInvalidDrop(e, formData.CorporateTaxRate);
-                                }}
                                 onChange={handleChange}
+                                readOnly
                             >
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>WACC (Pre-Tax) (%)</Form.Label>
+                            <Form.Label>WACC (Pre-Tax) (%) (Auto-Populated)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="PreTax"
