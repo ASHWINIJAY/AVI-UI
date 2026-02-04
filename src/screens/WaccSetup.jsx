@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Container, Row, Col, Form, Button, Card, Spinner, Modal } from "react-bootstrap";
 
-const API = "http://41.87.206.94/AVIapi";
+const API = "https://avi-app.co.za/AVIapi";
 
 function WaccSetup() {
 

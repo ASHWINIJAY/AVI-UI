@@ -33,6 +33,8 @@ import UploadedLocoDashboard from './screens/UploadedLocoDashboard.jsx';
 import MapView from "./screens/MapView";
 import LocoDetails from './screens/LocoDetails.jsx';
 import InspectionDetails from './screens/InspectionDetails.jsx';
+import WagonDetails from './screens/WagonDetails.jsx';
+import WagonInspectionDetails from './screens/WagonInspectionDetails.jsx';
 import InspectionProcess from './screens/InspectionProcess.jsx';
 import CreateTeam from "./screens/CreateTeam.jsx";
 import CockpitGlobalSettings from "./screens/CockpitGlobalSettings.jsx";
@@ -225,6 +227,8 @@ export default function AppRoutes() {
           <Route path="map" element={<MapView />} />
           <Route path="inspection-details/:locoNumber" element={<InspectionDetails />} />
           <Route path="locodetails" element={<LocoDetails />} />
+           <Route path="wagoninspection-details/:wagonNumber" element={<WagonInspectionDetails />} />
+          <Route path="wagondetails" element={<WagonDetails />} />
           <Route path="dashboard1" element={<DashBoardItems />} />
           <Route path="wagondashboard" element={<WagonDashboard />} />
           <Route path="dashboard" element={<LocoDashboard />} />

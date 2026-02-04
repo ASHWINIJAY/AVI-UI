@@ -7,7 +7,7 @@ export function getLocationConnection() {
   if (connection) return startPromise;
 
   connection = new HubConnectionBuilder()
-    .withUrl("http://41.87.206.94/AVIapi/hubs/location", {
+    .withUrl("https://avi-app.co.za/AVIapi/hubs/location", {
       withCredentials: true,
       accessTokenFactory: () => localStorage.getItem("token"),
     })

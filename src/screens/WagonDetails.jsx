@@ -21,7 +21,7 @@ const WagonDetails = () => {
 
   const handleView = () => {
     if (!selectedLoco) return;
-    navigate(`/master/inspection-wagondetails/${selectedLoco.value}`);
+    navigate(`/master/wagoninspection-details/${selectedLoco.value}`);
   };
 
   return (

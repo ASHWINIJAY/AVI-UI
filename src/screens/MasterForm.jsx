@@ -148,6 +148,11 @@ export default function MasterForm() {
       </Link>
     </li>
     <li>
+      <Link to="/master/wagondetails" onClick={handleLinkClick}>
+        Wagon Details
+      </Link>
+    </li>
+    <li>
       <Link to="/master/generatedcf" onClick={handleLinkClick}>
        Generate DCF Report
       </Link>

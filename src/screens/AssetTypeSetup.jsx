@@ -4,7 +4,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const API = "http://41.87.206.94/AVIapi";
+const API = "https://avi-app.co.za/AVIapi";
 
 function AssetTypeSetup() {
     const locoType = [
