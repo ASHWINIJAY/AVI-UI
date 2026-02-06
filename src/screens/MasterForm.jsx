@@ -196,6 +196,7 @@ export default function MasterForm() {
                       DCF Setup/Generation
                     </Link>
                   </li>
+                  
                    <li>
                     <Link to="/master/enablecockpit" onClick={handleLinkClick}>
                      Cockpit Setting

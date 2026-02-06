@@ -10,9 +10,9 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; 
 
 function WagonDashboardUploaded() {
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
+    const BACKEND_URL = "http://41.87.206.94/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
-
+const token = localStorage.getItem("token");
     const [selectedRowIds, setSelectedRowIds] = useState(new Set());
     const [allRows, setAllRows] = useState([]);
     const [totalRecords, setTotalRecords] = useState(0);
@@ -36,7 +36,8 @@ function WagonDashboardUploaded() {
     const [showNoValues, setShowNoValues] = useState(false);
 
     const [showRecalSuccess, setShowRecalSuccess] = useState(false);
-
+const [showGenerateAllConfirm, setShowGenerateAllConfirm] = useState(false);
+const [showGenerateAllUpload, setShowGenerateAllUploadConfirm] = useState(false);
     const [modalPhotos, setModalPhotos] = useState([]);
     const [showModal, setShowModal] = useState(false);
 
@@ -102,6 +103,7 @@ const [manualValues, setManualValues] = useState({
 
             const rowsWithId = result.data.map(row => ({
                 ...row,
+                conditionScore: row.conditionScore?.toString() ?? "",
                 id:
                     row.id ??
                     `${row.wagonNumber}-${row.inspectorId}-${row.dateAssessed}-${row.timeAssessed}`
@@ -173,7 +175,78 @@ const fetchAllForExport = async () => {
             default: return "#6c757d"; // grey
         }
     };
+ const handlereGenerateAll = async () =>{
+         try {
+            setTableLoading(true);
+            const endpoints = [
+                { url: `${BACKEND_URL}/api/CertPdf/GenerateAndSaveCertPdfForAllWagonn` },
+                { url: `${BACKEND_URL}/api/QuotePdf/GenerateAndSaveSOWPdfForAllWagon` },
+                { url: `${BACKEND_URL}/api/QuotePdf/ReGenerateAndSaveQuotePdfForAllWagon` }
+            ];
 
+            for (const ep of endpoints) {
+                const res = await fetch(ep.url, {
+                    method: "GET",
+                    headers: {
+            "Authorization": `Bearer ${token}`
+        }
+                });
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(`Failed at ${ep.url}: ${res.status} ${errText}`);
+                }
+                // wait a tick so UI updates; ensures strict ordering
+                await new Promise(r => setTimeout(r, 250));
+            }
+alert("All PDF's Successfully Generated");
+            // success
+            
+        } catch (err) {
+            console.error("Error generating PDFs:", err);
+            alert("Error generating PDFs: " + (err.message || err));
+        } finally {
+            setTableLoading(false);
+        }
+    }
+    const handlereUploadAll = async () => {       
+
+        try {
+            setTableLoading(true);
+            const resp = await fetch(`${BACKEND_URL}/api/DashBoard/ReuploadAllWagons`, {
+                method: "GET",
+            });
+
+            if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
+            await resp.json();
+
+          alert("Re-upload successfully completed");
+           
+        } catch (err) {
+            alert("Re-upload failed: " + err.message);
+        } finally {
+          setTableLoading(false);
+        }
+    };
+    const handlereCalculateAll = async () => {       
+
+        try {
+            setTableLoading(true);
+            const resp = await fetch(`${BACKEND_URL}/api/DashBoard/RecalculateUploadWagonAll`, {
+                method: "GET",
+                
+            });
+
+            if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
+            await resp.json();
+
+          alert("Re-calculate successfully completed");
+           
+        } catch (err) {
+            alert("Re-calculate failed: " + err.message);
+        } finally {
+          setTableLoading(false);
+        }
+    };
     const fetchScore = useCallback(async () => {
         try {
             const res = await fetch(`${BACKEND_URL}/api/Dashboard/getScoreList`);
@@ -182,7 +255,7 @@ const fetchAllForExport = async () => {
             const formatted = (data || []).map(s => ({
                 ...s,
                 label: ` - ${mapOperationalStatus(s.conditionScore)}`,
-                value: s.conditionScore,
+                value: s.conditionScore.toString(),
                 color: getScoreColor(s.conditionScore)
             }));
 
@@ -584,7 +657,16 @@ const handleSaveManualValues = async () => {
                         <Button variant="success" size="sm" onClick={handleExportToExcel} className="me-2">Export to Excel</Button>
                     
                             <Button variant="primary" size="sm" onClick={() => selectedRowIds.size > 0 ? setShowConfirmModal(true) : setShowNoSelectModal(true)}>Re-upload</Button>
-                        
+                         <Button variant="success" size="sm" onClick={handlereUploadAll} className="me-2">Re-Upload All Lines</Button>
+                                           <Button variant="success" size="sm" onClick={handlereCalculateAll} className="me-2">Re-Calculate All Lines</Button>
+                                           <Button
+                            variant="success"
+                            size="sm"
+                            className="me-2"
+                            onClick={() => setShowGenerateAllConfirm(true)}
+                        >
+                            Re-Generate All PDF's
+                        </Button>
                     </div>
 
                      <div className="d-flex justify-content-between align-items-center mb-3">
@@ -602,9 +684,34 @@ const handleSaveManualValues = async () => {
                     <div style={{ position: "relative" }} ref={gridContainerRef}>
 
                         {(generatingPdf || recalculating || tableLoading) && (
-                            <div style={{ position: "absolute", zIndex: 10, top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(255,255,255,0.6)", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                <Spinner animation="border" />
-                            </div>
+                             <div
+                                   style={{
+                                       position: "absolute",
+                                       zIndex: 10,
+                                       top: 0,
+                                       left: 400,
+                                       right: 0,
+                                       bottom: 0,
+                                       backgroundColor: "rgba(255,255,255,0.6)",
+                                       display: "flex",
+                                       flexDirection: "column",
+                                       justifyContent: "left",
+                                       alignItems: "left",
+                                       gap: "10px"
+                                   }}
+                               >
+                                   <Spinner animation="border" />
+                                   <div
+                               style={{
+                                   fontWeight: 500,
+                                   fontSize: "14px",
+                                   color: "#fda10dff" // Bootstrap primary blue
+                               }}
+                           >
+                               Please wait…
+                           </div>
+                           
+                               </div>
                         )}
 
                         <DataTable
@@ -870,6 +977,46 @@ const handleSaveManualValues = async () => {
             }}
         >
             OK
+        </Button>
+    </Modal.Footer>
+</Modal>
+<Modal
+    show={showGenerateAllConfirm}
+    onHide={() => setShowGenerateAllConfirm(false)}
+    backdrop="static"
+    centered
+>
+    <Modal.Header closeButton>
+        <Modal.Title>Confirm Re-Generate</Modal.Title>
+    </Modal.Header>
+
+    <Modal.Body>
+        <p>
+            Are you sure you want to <b>Re-Generate all PDFs</b>?
+        </p>
+        <p className="text-danger mb-0">
+            ⚠️ This process may take a long time to complete.
+            <br />
+            Your screen cannot be used until the process finishes.
+        </p>
+    </Modal.Body>
+
+    <Modal.Footer>
+        <Button
+            variant="secondary"
+            onClick={() => setShowGenerateAllConfirm(false)}
+        >
+            Cancel
+        </Button>
+
+        <Button
+            variant="danger"
+            onClick={() => {
+                setShowGenerateAllConfirm(false);
+                handlereGenerateAll();
+            }}
+        >
+            Yes, Re-Generate All
         </Button>
     </Modal.Footer>
 </Modal>

@@ -5,9 +5,8 @@ import { useNavigate } from "react-router-dom";
 
 const API = "http://41.87.206.94/AVIapi";
 
-export default function DCFReport() {
-    const storedLocoNumber = localStorage.getItem("locoNumber");
-    const storedWagonNumber = localStorage.getItem("wagonNumber");
+export default function DCFConReportSingle() {
+    const storedAssetType = localStorage.getItem("assetType");
     const [showConfirmBack, setShowConfirmBack] = useState(false);
     const [loading, setLoading] = useState(true);
     const [rows, setRows] = useState([]);
@@ -17,10 +16,8 @@ export default function DCFReport() {
     const [excelBlob, setExcelBlob] = useState(null);
     const [excelFileName, setExcelFileName] = useState("");
 
-    // ADD ↓
     const [formulas, setFormulas] = useState({});
 
-    // ADJUST ENTIRE FUNCTION ↓
     useEffect(() => {
         if (hasLoaded.current) return;
         hasLoaded.current = true;
@@ -28,12 +25,9 @@ export default function DCFReport() {
         async function loadWorkbook() {
             try {
                 let url = null;
-                if (storedWagonNumber !== null && storedLocoNumber === null) {
-                    url = `${API}/api/DCF/generateDcfWagon/${parseInt(storedWagonNumber, 10)}`;
-                    setExcelFileName(`${storedWagonNumber}_DCF_Report.xlsx`);
-                } else if (storedLocoNumber !== null && storedWagonNumber === null) {
-                    url = `${API}/api/DCF/generateDcfLoco/${parseInt(storedLocoNumber, 10)}`;
-                    setExcelFileName(`${storedLocoNumber}_DCF_Report.xlsx`);
+                if (storedAssetType !== null) {
+                    url = `${API}/api/DCFCon/generateSingle/${storedAssetType}`;
+                    setExcelFileName(`${storedAssetType}_DCF_Report.xlsx`);
                 } else {
                     setLoading(false);
                     return;
@@ -42,7 +36,7 @@ export default function DCFReport() {
                 const res = await fetch(url);
                 if (!res.ok) throw new Error(`Server returned ${res.status}`);
 
-                const data = await res.json(); 
+                const data = await res.json();
 
                 const byteCharacters = atob(data.fileBytes);
                 const byteNumbers = new Array(byteCharacters.length);
@@ -82,7 +76,7 @@ export default function DCFReport() {
         }
 
         loadWorkbook();
-    }, [storedLocoNumber, storedWagonNumber]);
+    }, [storedAssetType]);
 
     const handleDownload = () => {
         if (!excelBlob) return;
@@ -100,12 +94,10 @@ export default function DCFReport() {
     };
 
     const handleBack = async () => {
-        localStorage.removeItem("locoNumber");
-        localStorage.removeItem("wagonNumber");
-        navigate("/master/generatedcf");  
+        localStorage.removeItem("assetType");
+        navigate("/master/generatedcfcon");
     };
 
-    // ADD ENTIRE FUNCTION ↓
     function getExcelColumnLetter(colIndex) {
         let letter = "";
         let temp = colIndex + 1;
@@ -127,11 +119,10 @@ export default function DCFReport() {
         );
     }
 
-    // ADJUST ENTIRE TABLE ↓
     return (
         <Container fluid style={{ backgroundColor: "#025373", height: "85.5vh", maxWidth: "100%" }}>
             <Card className="mt-3 mb-3">
-                <Card.Header>DCF Report</Card.Header>
+                <Card.Header>DCF Consolidated Report (Single Asset Type)</Card.Header>
                 <Card.Body
                     style={{
                         maxHeight: "525px",

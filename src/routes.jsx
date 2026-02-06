@@ -133,6 +133,9 @@ import AdminOptions from './screens/AdminOptions.jsx'; //PLEASE ADD (NEW)
 import GenerateDCFReport from './screens/GenerateDCFReport.jsx'; //PLEASE ADD (NEW)
 import DCFReport from './screens/DCFReport.jsx'; //PLEASE ADD (NEW)
 import AssetTypeSetup from './screens/AssetTypeSetup.jsx';
+import GenerateDCFConsolidated from './screens/GenerateDCFConsolidated.jsx'; 
+import DCFConReportAll from './screens/DCFConReportAll.jsx';
+import DCFConReportSingle from './screens/DCFConReportSingle.jsx';
 import { hasOfflineData, syncOfflineData } from "./utils/offlineSync";
 import api from "./api/axios";
 // ✅ Auth guard
@@ -244,7 +247,10 @@ export default function AppRoutes() {
 <Route path="locoinputs" element={<LocoInputs />} />
 <Route path="generatedcf" element={<GenerateDCFReport />} />
 <Route path="dcfreport" element={<DCFReport />} />
-<Route path="assetsetup" element={<AssetTypeSetup />} />            
+<Route path="assetsetup" element={<AssetTypeSetup />} />      
+<Route path="generatedcfcon" element={<GenerateDCFConsolidated />} /> 
+<Route path="dcfconreportall" element={<DCFConReportAll />} /> 
+<Route path="dcfconreportsingle" element={<DCFConReportSingle />} />       
        <Route path="cockpitsetup" element={<CockpitAllocation />} />  
        <Route path="viewcockpit" element={<CockpitAllocationByRefNo />} /> 
        <Route path="enablecockpit" element={<CockpitGlobalSettings />} />  

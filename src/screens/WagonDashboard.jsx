@@ -10,8 +10,9 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; // assume your existing css; you can add the small .selected-row rule if needed
 
 export default function WagonDashboard() {
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi"; 
-    //const BACKEND_URL = "https://avi-app.co.za/AVIapi";
+    const BACKEND_URL = "http://41.87.206.94/AVIapi"; 
+    //const BACKEND_URL = "http://41.87.206.94/AVIapi";
+    const token = localStorage.getItem("token");
     const [userRole] = useState(localStorage.getItem("userRole"));
 const [score, setScore] = useState([]);
     const [allRows, setAllRows] = useState([]);
@@ -26,7 +27,8 @@ const [score, setScore] = useState([]);
 
     const [showTickConfirmModal, setShowTickConfirmModal] = useState(false);
     const [tickTargetRow, setTickTargetRow] = useState(null);
-
+const [showGenerateAllConfirm, setShowGenerateAllConfirm] = useState(false);
+const [showGenerateAllUpload, setShowGenerateAllUploadConfirm] = useState(false);
     const [pdfUrl, setPdfUrl] = useState(null);
     const [showPdfModal, setShowPdfModal] = useState(false);
     const [showNoPdf, setShowNoPdf] = useState(false);
@@ -165,7 +167,78 @@ const getBackgroundColor = (score) => {
         default: return "#6c757d"; // grey
     }
 };
+  const handlereGenerateAll = async () =>{
+         try {
+            setUploading(true);
+            const endpoints = [
+                { url: `${BACKEND_URL}/api/CertPdf/GenerateAndSaveCertPdfForAllWagonNU` },
+                { url: `${BACKEND_URL}/api/QuotePdf/GenerateAndSaveSOWPdfForAllWagonNU` },
+                { url: `${BACKEND_URL}/api/QuotePdf/ReGenerateAndSaveQuotePdfForAllWagonNU` }
+            ];
 
+            for (const ep of endpoints) {
+                const res = await fetch(ep.url, {
+                    method: "GET",
+                    headers: {
+            "Authorization": `Bearer ${token}`
+        }
+                });
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(`Failed at ${ep.url}: ${res.status} ${errText}`);
+                }
+                // wait a tick so UI updates; ensures strict ordering
+                await new Promise(r => setTimeout(r, 250));
+            }
+alert("All PDF's Successfully Generated");
+            // success
+            
+        } catch (err) {
+            console.error("Error generating PDFs:", err);
+            alert("Error generating PDFs: " + (err.message || err));
+        } finally {
+            setUploading(false);
+        }
+    }
+    const handlereUploadAll = async () => {       
+
+        try {
+            setUploading(true);
+            const resp = await fetch(`${BACKEND_URL}/api/DashBoard/ReuploadAllWagonsNU`, {
+                method: "GET",
+            });
+
+            if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
+            await resp.json();
+
+          alert("Re-upload successfully completed");
+           
+        } catch (err) {
+            alert("Re-upload failed: " + err.message);
+        } finally {
+          setUploading(false);
+        }
+    };
+    const handlereCalculateAll = async () => {       
+
+        try {
+            setUploading(true);
+            const resp = await fetch(`${BACKEND_URL}/api/DashBoard/RecalculateUploadWagonAllNU`, {
+                method: "GET",
+                
+            });
+
+            if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
+            await resp.json();
+
+          alert("Re-calculate successfully completed");
+           
+        } catch (err) {
+            alert("Re-calculate failed: " + err.message);
+        } finally {
+          setUploading(false);
+        }
+    };
 const scoreTemplate = (option, props) => {
 
     // 🔥 When no option selected → show placeholder text
@@ -815,6 +888,17 @@ const renderRowCheckbox = (row) => {
     Upload
 </Button>
    )}
+   <Button variant="success" size="sm" onClick={handlereUploadAll} className="me-2">Upload All Lines</Button>
+                                             <Button variant="success" size="sm" onClick={handlereCalculateAll} className="me-2">Re-Calculate All Lines</Button>
+                                             <Button
+                              variant="success"
+                              size="sm"
+                              className="me-2"
+                              onClick={() => setShowGenerateAllConfirm(true)}
+                          >
+                              Re-Generate All PDF's
+                          </Button>
+                          <br></br>
    
                        {isAdmin && (
                       <div className="d-flex align-items-center mb-2">
@@ -871,9 +955,34 @@ const renderRowCheckbox = (row) => {
                     <div style={{ position: "relative" }} ref={gridContainerRef}>
                         {/* overlay spinners */}
                         {(uploading || generatingPdf) && (
-                            <div style={{ position: "absolute", zIndex: 10, top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(255,255,255,0.6)", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                <Spinner animation="border" />
-                            </div>
+                            <div
+                                                               style={{
+                                                                   position: "absolute",
+                                                                   zIndex: 10,
+                                                                   top: 0,
+                                                                   left: 400,
+                                                                   right: 0,
+                                                                   bottom: 0,
+                                                                   backgroundColor: "rgba(255,255,255,0.6)",
+                                                                   display: "flex",
+                                                                   flexDirection: "column",
+                                                                   justifyContent: "left",
+                                                                   alignItems: "left",
+                                                                   gap: "10px"
+                                                               }}
+                                                           >
+                                                               <Spinner animation="border" />
+                                                               <div
+                                                           style={{
+                                                               fontWeight: 500,
+                                                               fontSize: "14px",
+                                                               color: "#fda10dff" // Bootstrap primary blue
+                                                           }}
+                                                       >
+                                                           Please wait…
+                                                       </div>
+                                                       
+                                                           </div>
                         )}
 
                         <DataTable
@@ -1132,7 +1241,46 @@ const renderRowCheckbox = (row) => {
                     <Button variant="primary" onClick={() => setShowTickSuccessModal(false)}>OK</Button>
                 </Modal.Footer>
             </Modal>
+<Modal
+    show={showGenerateAllConfirm}
+    onHide={() => setShowGenerateAllConfirm(false)}
+    backdrop="static"
+    centered
+>
+    <Modal.Header closeButton>
+        <Modal.Title>Confirm Re-Generate</Modal.Title>
+    </Modal.Header>
 
+    <Modal.Body>
+        <p>
+            Are you sure you want to <b>Re-Generate all PDFs</b>?
+        </p>
+        <p className="text-danger mb-0">
+            ⚠️ This process may take a long time to complete.
+            <br />
+            Your screen cannot be used until the process finishes.
+        </p>
+    </Modal.Body>
+
+    <Modal.Footer>
+        <Button
+            variant="secondary"
+            onClick={() => setShowGenerateAllConfirm(false)}
+        >
+            Cancel
+        </Button>
+
+        <Button
+            variant="danger"
+            onClick={() => {
+                setShowGenerateAllConfirm(false);
+                handlereGenerateAll();
+            }}
+        >
+            Yes, Re-Generate All
+        </Button>
+    </Modal.Footer>
+</Modal>
             {/* PDF Viewer Modal */}
             <Modal show={showPdfModal} onHide={() => setShowPdfModal(false)} size="xl">
                 <Modal.Header closeButton><Modal.Title>PDF Viewer</Modal.Title></Modal.Header>
@@ -1141,7 +1289,46 @@ const renderRowCheckbox = (row) => {
                 </Modal.Body>
                 <Modal.Footer><Button variant="secondary" onClick={() => setShowPdfModal(false)}>Close</Button></Modal.Footer>
             </Modal>
+<Modal
+    show={showGenerateAllConfirm}
+    onHide={() => setShowGenerateAllConfirm(false)}
+    backdrop="static"
+    centered
+>
+    <Modal.Header closeButton>
+        <Modal.Title>Confirm Re-Generate</Modal.Title>
+    </Modal.Header>
 
+    <Modal.Body>
+        <p>
+            Are you sure you want to <b>Re-Generate all PDFs</b>?
+        </p>
+        <p className="text-danger mb-0">
+            ⚠️ This process may take a long time to complete.
+            <br />
+            Your screen cannot be used until the process finishes.
+        </p>
+    </Modal.Body>
+
+    <Modal.Footer>
+        <Button
+            variant="secondary"
+            onClick={() => setShowGenerateAllConfirm(false)}
+        >
+            Cancel
+        </Button>
+
+        <Button
+            variant="danger"
+            onClick={() => {
+                setShowGenerateAllConfirm(false);
+                handlereGenerateAll();
+            }}
+        >
+            Yes, Re-Generate All
+        </Button>
+    </Modal.Footer>
+</Modal>
             {/* No PDF Modal */}
             <Modal show={showNoPdf} onHide={() => setShowNoPdf(false)}>
                 <Modal.Header closeButton><Modal.Title>No PDF</Modal.Title></Modal.Header>

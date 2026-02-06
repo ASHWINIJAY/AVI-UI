@@ -1,30 +1,29 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Container, Form, Row, Col, Button, Modal, Spinner, Card } from "react-bootstrap";
 import { Dropdown } from 'primereact/dropdown';
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+//import axios from "axios";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
 const API = "http://41.87.206.94/AVIapi";
 
-function GenerateDCFReport() {
-    const [wagonList, setWagonList] = useState([]);
-    const [locoList, setLocoList] = useState([]);
+function GenerateDCFConsolidated() {
+    const [assetList, setAssetList] = useState([]);
 
     const optionList = [
-        "Locomotive",
-        "Wagon",
+        "Generate For All Asset Types",
+        "Generate For Single Asset Type",
     ]
 
     const [formData, setFormData] = useState({
-        GenerateType: "",
-        WagonNumber: "",
-        LocoNumber: "",
+        AssetTypeOption: "",
+        AssetType: "",
     });
 
     const [showConfirmBack, setShowConfirmBack] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [showConfirm2, setShowConfirm2] = useState(false);
     const [showError, setShowError] = useState(false);
     const [errorMessages, setErrorMessages] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -33,23 +32,16 @@ function GenerateDCFReport() {
     const fetchData = async (type) => {
         setLoading(true);
         try {
-            if (type === "Wagon") {
+            if (type === "Generate For Single Asset Type") {
                 let res;
-                res = await fetch(`${API}/api/DCF/getInputWagons`);
+                res = await fetch(`${API}/api/DCFCon/getAssetType`);
                 const data = await res.json();
-                setWagonList(data || []);
-            }
-            else if (type === "Locomotive") {
-                let res;
-                res = await fetch(`${API}/api/DCF/getInputLocos`);
-                const data = await res.json();
-                setLocoList(data || []);
+                setAssetList(data || []);
             }
         }
         catch (err) {
             console.error("Error fetching data:", err);
-            setWagonList([]);
-            setLocoList([]);
+            setAssetList([]);
         }
         finally {
             setLoading(false);
@@ -57,23 +49,22 @@ function GenerateDCFReport() {
     };
 
     const handleBack = async () => {
-        localStorage.removeItem("locoNumber");
-        localStorage.removeItem("wagonNumber");
-        navigate("/master/adminoptions");
+        localStorage.removeItem("assetType");
+        navigate("/adminoptions");
     };
 
     const handleTypeChange = async (e) => {
         setLoading(true);
 
-        const generateType = e.value;
+        const assetTypeOption = e.value;
 
         setFormData((prev) => ({
             ...prev,
-            GenerateType: generateType,
+            AssetTypeOption: assetTypeOption,
         }));
 
         try {
-            await fetchData(generateType);
+            await fetchData(assetTypeOption);
         }
         catch (err) {
             console.error("Data collection error:", err);
@@ -83,34 +74,20 @@ function GenerateDCFReport() {
         }
     };
 
-    const handleLocoChange = async (e) => {
-        const locoNumber = e.value;
+    const handleAssetTypeChange = async (e) => {
+        const assetType = e.value;
         setFormData((prev) => ({
             ...prev,
-            LocoNumber: locoNumber,
-        }));
-    };
-
-    const handleWagonChange = async (e) => {
-        const wagonNumber = e.value;
-        setFormData((prev) => ({
-            ...prev,
-            WagonNumber: wagonNumber,
+            AssetType: assetType,
         }));
     };
 
     const validateBeforeSubmit = () => {
         const errors = [];
 
-        if (formData.GenerateType === "Locomotive") {
-            if (!formData.LocoNumber) {
-                errors.push("Asset number is required.")
-            }
-        }
-
-        if (formData.GenerateType === "Wagon") {
-            if (!formData.WagonNumber) {
-                errors.push("Asset number is required.")
+        if (formData.AssetTypeOption === "Generate For Single Asset Type") {
+            if (!formData.AssetType) {
+                errors.push("Asset Type is required.")
             }
         }
 
@@ -119,6 +96,7 @@ function GenerateDCFReport() {
 
     const handleGenerate = async () => {
         setShowConfirm(false);
+        setShowConfirm2(false);
 
         const errors = validateBeforeSubmit();
 
@@ -131,15 +109,13 @@ function GenerateDCFReport() {
         setLoading(true);
 
         try {
-            if (formData.GenerateType === "Locomotive") {
-                const locoNumber = formData.LocoNumber.toString();
-                localStorage.setItem("locoNumber", locoNumber);
-                navigate("/master/dcfreport");
+            if (formData.AssetTypeOption === "Generate For Single Asset Type") {
+                const assetType = formData.AssetType;
+                localStorage.setItem("assetType", assetType);
+                navigate("/master/dcfconreportsingle");
             }
-            else if (formData.GenerateType === "Wagon") {
-                const wagonNumber = formData.WagonNumber.toString();
-                localStorage.setItem("wagonNumber", wagonNumber);
-                navigate("/master/dcfreport");
+            else if (formData.AssetTypeOption === "Generate For All Asset Types") {
+                navigate("/master/dcfconreportall");
             }
         }
         catch (err) {
@@ -157,33 +133,33 @@ function GenerateDCFReport() {
                     <Card className="p-4 shadow-sm" style={{ minWidth: "350px", maxWidth: "400px" }}>
                         <Card.Body>
                             <h2 className="text-center mb-4" style={{ fontFamily: "Poppins, sans-serif", fontWeight: "bold" }}>
-                                Generate DCF Report
+                                Generate DCF Consolidated Report
                             </h2>
                             <Form>
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Type</Form.Label>
-                                    <Dropdown name="GenerateType" value={formData.GenerateType} onChange={handleTypeChange} options={optionList}
-                                        placeholder="Select Type" style={{ width: "100%" }} />
+                                    <Form.Label>Option</Form.Label>
+                                    <Dropdown name="AssetTypeOption" value={formData.AssetTypeOption} onChange={handleTypeChange} options={optionList}
+                                        placeholder="Select Option" style={{ width: "100%" }} />
                                 </Form.Group>
-                                {(formData.GenerateType !== "" && formData.GenerateType === "Locomotive") && (
+                                {(formData.AssetTypeOption !== "" && formData.AssetTypeOption === "Generate For Single Asset Type") && (
                                     <Form.Group className="mb-3">
-                                        <Form.Label>Asset Number</Form.Label>
-                                        <Dropdown name="LocoNumber" value={formData.LocoNumber} onChange={handleLocoChange} options={locoList} optionLabel="locoNumber"
-                                            optionValue="locoNumber" filter placeholder="Select Asset" style={{ width: "100%" }} />
-                                    </Form.Group>
-                                )}
-                                {(formData.GenerateType !== "" && formData.GenerateType === "Wagon") && (
-                                    <Form.Group className="mb-3">
-                                        <Form.Label>Asset Number</Form.Label>
-                                        <Dropdown name="WagonNumber" value={formData.WagonNumber} onChange={handleWagonChange} options={wagonList} optionLabel="wagonNumber"
-                                            optionValue="wagonNumber" filter placeholder="Select Asset" style={{ width: "100%" }} />
+                                        <Form.Label>Asset Type</Form.Label>
+                                        <Dropdown name="AssetType" value={formData.AssetType} onChange={handleAssetTypeChange} options={assetList} optionLabel="assetType"
+                                            optionValue="assetType" filter placeholder="Select Asset Type" style={{ width: "100%" }} />
                                     </Form.Group>
                                 )}
                                 <Row className="mt-4">
-                                    
-                                    {formData.GenerateType !== "" && (
+                                    <Col>
+                                        <Button variant="secondary" onClick={() => setShowConfirmBack(true)} disabled={loading}>Back</Button>
+                                    </Col>
+                                    {formData.AssetTypeOption === "Generate For Single Asset Type" && (
                                         <Col className="text-end">
                                             <Button variant="primary" onClick={() => setShowConfirm(true)} disabled={loading}>{loading ? "Loading.." : "Generate"}</Button>
+                                        </Col>
+                                    )}
+                                    {formData.AssetTypeOption === "Generate For All Asset Types" && (
+                                        <Col className="text-end">
+                                            <Button variant="primary" onClick={() => setShowConfirm2(true)} disabled={loading}>{loading ? "Loading.." : "Generate"}</Button>
                                         </Col>
                                     )}
                                 </Row>
@@ -194,11 +170,21 @@ function GenerateDCFReport() {
             </Row>
             <Modal show={showConfirm} onHide={() => !loading && setShowConfirm(false)}>
                 <Modal.Header closeButton={!loading}>
-                    <Modal.Title>Confirm Generate</Modal.Title>
+                    <Modal.Title>Confirm Single Generate</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>Do you want to generate a DCF report for this asset?</Modal.Body>
+                <Modal.Body>Do you want to generate a DCF consolidated report for this asset type?</Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowConfirm(false)} disabled={loading}>No</Button>
+                    <Button variant="primary" onClick={handleGenerate} disabled={loading}>{loading ? "Loading..." : "Yes"}</Button>
+                </Modal.Footer>
+            </Modal>
+            <Modal show={showConfirm2} onHide={() => !loading && setShowConfirm2(false)}>
+                <Modal.Header closeButton={!loading}>
+                    <Modal.Title>Confirm All Generate</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>Warning: this process may take a while (5 minutes). Do you want to generate DCF consolidated reports for all asset types?</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConfirm2(false)} disabled={loading}>No</Button>
                     <Button variant="primary" onClick={handleGenerate} disabled={loading}>{loading ? "Loading..." : "Yes"}</Button>
                 </Modal.Footer>
             </Modal>
@@ -235,4 +221,4 @@ function GenerateDCFReport() {
 
 }
 
-export default GenerateDCFReport;
+export default GenerateDCFConsolidated;

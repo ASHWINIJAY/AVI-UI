@@ -20,6 +20,9 @@ const AdminOptions = () => {
     const dcfNavigate = () => {
         navigate("/master/generatedcf")
     }
+    const consdcfNavigate = () => {
+        navigate("/master/generatedcfcon")
+    }
  const assetNavigate = () => {
         navigate("/master/assetsetup")
     }
@@ -41,6 +44,11 @@ const AdminOptions = () => {
                                 <div style={{ display: "flex", height: "55px", width: "100%", marginBottom: "16px", alignItems: "center", justifyContent: "center" }}>
                                     <Button variant="primary" onClick={assetNavigate} style={{ fontFamily: "Poppins, sans-serif", width: "225px", height: "50px" }}>
                                         Asset Type Setup
+                                    </Button>
+                                </div>
+                                 <div style={{ display: "flex", height: "55px", width: "100%", marginBottom: "16px", alignItems: "center", justifyContent: "center" }}>
+                                    <Button variant="primary" onClick={consdcfNavigate} style={{ fontFamily: "Poppins, sans-serif", width: "225px", height: "50px" }}>
+                                        Generate DCF Consolidated Report
                                     </Button>
                                 </div>
                                 <div style={{ display: "flex", height: "55px", width: "100%", marginBottom: "16px", alignItems: "center", justifyContent: "center" }}>
