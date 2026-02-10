@@ -17,6 +17,23 @@
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
+/* Header height & alignment */
+.p-datatable .p-datatable-thead > tr > th {
+    padding: 8px 10px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Body cells */
+.p-datatable .p-datatable-tbody > tr > td {
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+/* Filter menu icon spacing */
+.p-column-filter {
+    margin-left: 6px;
+}
 
 @keyframes logo-spin {
   from {

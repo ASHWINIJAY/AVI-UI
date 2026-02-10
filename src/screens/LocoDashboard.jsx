@@ -45,8 +45,39 @@ const [showGenerateAllUpload, setShowGenerateAllUploadConfirm] = useState(false)
  const [filters, setFilters] = useState({
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
         locoNumber: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        locoModel: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        inspectorName: { value: null, matchMode: FilterMatchMode.CONTAINS }
+  locoClass: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  locoModel: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  inspectorName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  city: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+  uploadStatus: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  operationalStatus: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+  calOperateStatus: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  calCondition: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+  /* ===== DATE / TIME (TEXT MATCH) ===== */
+  dateAssessed: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  timeAssessed: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  startTimeInspect: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+  uploadDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+  /* ===== LOCATION ===== */
+  gpsLatitude: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  gpsLongitude: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+  /* ===== NUMERIC FIELDS ===== */
+  refurbishValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+  missingValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+  replaceValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+  totalLaborValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+
+  totalValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+  marketValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+  assetValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+
+  calScore: { value: null, matchMode: FilterMatchMode.EQUALS }
     });
 const STATUS = {
     INSPECTION_DONE: "Inspection Complete",
@@ -975,13 +1006,14 @@ const renderRowCheckbox = (row) => {
                                                         setDtRows(e.rows);
                                                         saveScroll();
                                                     }}
-                                                    className="p-datatable-sm"
+                                                    className="p-datatable-sm p-datatable-striped"
                                                     scrollable
                                                     scrollHeight="510px"
                                                     dataKey="id"
                                                     rowClassName={rowClassName}
                                                     onRowClick={onRowClick}
                                                     filters={filters} 
+                                                    filterDisplay="menu"
                             globalFilterFields={["locoNumber", "locoModel", "inspectorName"]} 
                                                 >
                             {/* Checkbox column (custom checkbox) */}
@@ -1051,82 +1083,190 @@ const renderRowCheckbox = (row) => {
                                />
                            )}
                             {/* All other columns are kept intact */}
-                            <Column field="locoNumber" header="Loco Number" style={{ minWidth: 120 }} />
-                            <Column field="locoClass" header="Loco Class" style={{ minWidth: 120 }} />
-                            <Column field="locoModel" header="Loco Model" style={{ minWidth: 140 }} />
-                            <Column field="inspectorName" header="Inspector" style={{ minWidth: 140 }} />
-                            <Column field="dateAssessed" header="Date Completed" style={{ minWidth: 110 }} />
-                            <Column field="timeAssessed" header="Time Completed" style={{ minWidth: 110 }} />
-                            <Column field="startTimeInspect" header="Time Started" style={{ minWidth: 110 }} />
-                            <Column field="gpsLatitude" header="Gps Latitude" style={{ minWidth: 120 }} />
-                            <Column field="gpsLongitude" header="Gps Longitude" style={{ minWidth: 120 }} />
-                            <Column field="city" header="City" style={{ minWidth: 120 }} />
-                            <Column header="Body Photos" body={(row) => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.bodyPhotos, e); }}>View</Button>} style={{ minWidth: 120 }} />
-                            <Column header="Loco Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'locoPhoto')}</div>} style={{ minWidth: 140 }} />
-                          
-         <Column field="refurbishValue" header="Refurbish Value" style={{ minWidth: 120 }} />
-          <Column field="missingValue" header="Missing Value" style={{ minWidth: 120 }} />
-           <Column field="replaceValue" header="Replace Value" style={{ minWidth: 120 }} />
-                           <Column field="totalLaborValue" header="Labor Value" style={{ minWidth: 120 }} />
-                            <Column field="totalValue" header="Return to Service Cost" style={{ minWidth: 120 }} />
-                            <Column field="marketValue" header="Benchmarking Value" style={{ minWidth: 140 }} />
-                            <Column field="assetValue" header="Market Value" style={{ minWidth: 120 }} />
-                            <Column header="Assessment Quote" body={(row) => row.assessmentQuote && row.assessmentQuote !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentQuote, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 160 }} />
-                            <Column header="Assessment Cert" body={(row) => row.assessmentCert && row.assessmentCert !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentCert, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />
-                            <Column header="Assessment SOW" body={(row) => row.assessmentSow && row.assessmentSow !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentSow, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />
-                            <Column field="uploadStatus" header="Loco Status" style={{ minWidth: 120 }} />
-                            <Column field="uploadDate" header="Upload Date" style={{ minWidth: 120 }} />
-                             <Column header="Missing Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.missingPhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
-                            <Column header="Replace Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.replacePhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
-                                                    {/*PLEASE ADJUST (NEW)*/}
-                        <Column
-                           header="Condition Score"
-                           style={{ minWidth: 140 }}
-                           body={(row) => (
-                               <Dropdown
-                                   value={row.conditionScore}
-                                   options={score}
-                                   optionLabel="label"
-                                   optionValue="value"
-                                   itemTemplate={scoreTemplate}
-                                   valueTemplate={scoreTemplate}
-                                   placeholder="Select Score"
-                                   disabled={effectiveRole === "Assessor"}   // ✅ KEY LINE
-                                   onClick={(e) => e.stopPropagation()}
-                                   onChange={(e) => {
-                                       onConditionScoreChange(row, e.value);
-                                       updateConditionScore(row.locoNumber, e.value);
-                                       onConditionStatusInstantUpdate(row, e.value);
-                                   }}
-                                   className="w-100"
-                               />
-                           )}
-                       />
-                       
-                                                   
-                       
-                                                  
-                                                       <Column
-                                                           header="Operational Status"
-                                                           field="operationalStatus"
-                                                           style={{ minWidth: 140 }}
-                                                           body={(row) => row?.operationalStatus ?? ""}
-                                                       />
-                                                        <Column
-                                header="Calculated Score"
-                                field="calScore"
-                                style={{ minWidth: 140 }}
-                            />
-                            <Column
-                                header="Calculated Status"
-                                field="calOperateStatus"
-                                style={{ minWidth: 140 }}
-                            />
-                            <Column
-                                header="Calculated Condition"
-                                field="calCondition"
-                                style={{ minWidth: 140 }}
-                            />
+                            {/* === Loco Details === */}
+<Column field="locoNumber" header="Loco Number" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 180 }} />
+<Column field="locoClass" header="Loco Class" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+<Column field="locoModel" header="Loco Model" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+<Column field="inspectorName" header="Inspector" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+
+{/* === Date & Time === */}
+<Column field="dateAssessed" header="Date Completed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+<Column field="timeAssessed" header="Time Completed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+<Column field="startTimeInspect" header="Time Started" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+
+{/* === Location === */}
+<Column field="gpsLatitude" header="GPS Latitude" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+<Column field="gpsLongitude" header="GPS Longitude" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+<Column field="city" header="City" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+
+{/* === Media / Actions (NO FILTER) === */}
+<Column
+    header="Body Photos"
+    style={{ minWidth: 120 }}
+    body={(row) => (
+        <Button
+            size="sm"
+            onClick={(e) => {
+                e.stopPropagation();
+                handleOpenModal(row.bodyPhotos, e);
+            }}
+        >
+            View
+        </Button>
+    )}
+/>
+
+<Column
+    header="Loco Photo"
+    style={{ minWidth: 140 }}
+    body={(row) => (
+        <div onClick={(e) => e.stopPropagation()}>
+            {renderImageCell(row, "locoPhoto")}
+        </div>
+    )}
+/>
+
+{/* === Value Columns (Right Aligned) === */}
+<Column field="refurbishValue" header="Refurbish Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+<Column field="missingValue" header="Missing Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+<Column field="replaceValue" header="Replace Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+<Column field="totalLaborValue" header="Labor Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+<Column field="totalValue" header="Return to Service Cost" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+<Column field="marketValue" header="Benchmarking Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 140 }} />
+<Column field="assetValue" header="Market Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+
+{/* === PDF Columns (NO FILTER) === */}
+<Column
+    header="Assessment Quote"
+    style={{ minWidth: 160 }}
+    body={(row) =>
+        row.assessmentQuote && row.assessmentQuote !== "N/A" ? (
+            <Button
+                size="sm"
+                variant="outline-primary"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenPdf(row.assessmentQuote, e);
+                }}
+            >
+                View PDF
+            </Button>
+        ) : (
+            <span>N/A</span>
+        )
+    }
+/>
+
+<Column
+    header="Assessment Cert"
+    style={{ minWidth: 140 }}
+    body={(row) =>
+        row.assessmentCert && row.assessmentCert !== "N/A" ? (
+            <Button
+                size="sm"
+                variant="outline-primary"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenPdf(row.assessmentCert, e);
+                }}
+            >
+                View PDF
+            </Button>
+        ) : (
+            <span>N/A</span>
+        )
+    }
+/>
+
+<Column
+    header="Assessment SOW"
+    style={{ minWidth: 140 }}
+    body={(row) =>
+        row.assessmentSow && row.assessmentSow !== "N/A" ? (
+            <Button
+                size="sm"
+                variant="outline-primary"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenPdf(row.assessmentSow, e);
+                }}
+            >
+                View PDF
+            </Button>
+        ) : (
+            <span>N/A</span>
+        )
+    }
+/>
+
+{/* === Status & Upload === */}
+<Column field="uploadStatus" header="Loco Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+<Column field="uploadDate" header="Upload Date" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+
+{/* === Missing / Replace Photos === */}
+<Column
+    header="Missing Photos"
+    style={{ minWidth: 140 }}
+    body={(row) => (
+        <Button
+            size="sm"
+            onClick={(e) => {
+                e.stopPropagation();
+                handleOpenModal(row.missingPhotos, e);
+            }}
+        >
+            View
+        </Button>
+    )}
+/>
+
+<Column
+    header="Replace Photos"
+    style={{ minWidth: 140 }}
+    body={(row) => (
+        <Button
+            size="sm"
+            onClick={(e) => {
+                e.stopPropagation();
+                handleOpenModal(row.replacePhotos, e);
+            }}
+        >
+            View
+        </Button>
+    )}
+/>
+
+{/* === Condition Score (Editable Dropdown – NO FILTER) === */}
+<Column
+    header="Condition Score"
+    style={{ minWidth: 140 }}
+    body={(row) => (
+        <Dropdown
+            value={row.conditionScore}
+            options={score}
+            optionLabel="label"
+            optionValue="value"
+            itemTemplate={scoreTemplate}
+            valueTemplate={scoreTemplate}
+            placeholder="Select Score"
+            disabled={effectiveRole === "Assessor"}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => {
+                onConditionScoreChange(row, e.value);
+                updateConditionScore(row.locoNumber, e.value);
+                onConditionStatusInstantUpdate(row, e.value);
+            }}
+            className="w-100"
+        />
+    )}
+/>
+
+{/* === Calculated Fields === */}
+<Column field="operationalStatus" header="Operational Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+<Column field="calScore" header="Calculated Score" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+<Column field="calOperateStatus" header="Calculated Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+<Column field="calCondition" header="Calculated Condition" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+
                         </DataTable>
                     </div>
                 </Card.Body>

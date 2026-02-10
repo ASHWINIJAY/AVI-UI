@@ -55,10 +55,52 @@ const [showNoInput, setShowNoInput] = useState(false); //PLEASE ADD (NEW)
     const gridContainerRef = useRef(null);
         const [filters, setFilters] = useState({
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        wagonNumber: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        wagonGroup: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        inspectorName: { value: null, matchMode: FilterMatchMode.CONTAINS }
-    });
+wagonNumber: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  wagonGroup: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  wagonType: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  inspectorName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  city: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+  wagonStatus: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  operationalStatus: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+  calOperateStatus: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  calCondition: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+  /* ===== DATE / TIME (TEXT MATCH) ===== */
+  dateAssessed: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  timeAssessed: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  startTimeInspect: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+  liftDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  barrelDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  brakeDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  uploadDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+  liftLapsed: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  barrelLapsed: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  brakeLapsed: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+  /* ===== LOCATION ===== */
+  gpsLatitude: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  gpsLongitude: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+  /* ===== NUMERIC FIELDS ===== */
+  refurbishValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+  missingValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+  replaceValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+  totalLaborValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+
+  liftValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+  barrelValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+
+  totalValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+  marketValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+  assetValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+
+  calScore: { value: null, matchMode: FilterMatchMode.EQUALS }
+});
+
 
     // Status filter (Asset Monitor only)
 
@@ -985,182 +1027,270 @@ const renderRowCheckbox = (row) => {
                                                            </div>
                         )}
 
-                        <DataTable
-                            value={rowsWithId}
-                            paginator
-                            first={dtFirst}
-                            rows={dtRows}
-                            rowsPerPageOptions={[25, 50, 100, 200]}
-                            onPage={(e) => {
-                                setDtFirst(e.first);
-                                setDtRows(e.rows);
-                                saveScroll();
+                       <DataTable
+    value={rowsWithId}
+    paginator
+    first={dtFirst}
+    rows={dtRows}
+    rowsPerPageOptions={[25, 50, 100, 200]}
+    onPage={(e) => {
+        setDtFirst(e.first);
+        setDtRows(e.rows);
+        saveScroll();
+    }}
+    className="p-datatable-sm p-datatable-striped"
+    scrollable
+    scrollHeight="510px"
+    dataKey="id"
+    rowClassName={rowClassName}
+    onRowClick={onRowClick}
+    filters={filters}
+    globalFilterFields={["wagonNumber", "wagonGroup", "inspectorName"]}
+    filterDisplay="menu"
+>
+    {/* ================= CHECKBOX ================= */}
+    <Column
+        header={isAssessor || isAdmin ? "" : renderHeaderSelectAll()}
+        headerStyle={{ width: "3rem" }}
+        body={(row) => renderRowCheckbox(row)}
+        style={{ width: "3rem" }}
+    />
+
+    {/* ================= ACTIONS ================= */}
+    {effectiveRole === "Asset Monitor" && (
+        <Column
+            header="Recalculate Values"
+            style={{ minWidth: 150 }}
+            body={(row) => {
+                const isInsCompleted =
+                    row.wagonStatus === STATUS.INSPECTION_DONE;
+
+                if (isInsCompleted) {
+                    return (
+                        <Button
+                            size="sm"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleRecalculateClick(row);
                             }}
-                            className="p-datatable-sm"
-                            scrollable
-                            scrollHeight="510px"
-                            dataKey="id"
-                            rowClassName={rowClassName}
-                            onRowClick={onRowClick}
-                            filters={filters} 
-                            globalFilterFields={["wagonNumber", "wagonGroup", "inspectorName"]} 
                         >
-                            {/* Checkbox column (custom checkbox) */}
-                            <Column
-                                header={isAssessor || isAdmin ? "" : renderHeaderSelectAll()} //PLEASE ADJUST (NEW)
-                                headerStyle={{ width: '3rem' }}
-                                body={(row) => renderRowCheckbox(row)}
-                                style={{ width: '3rem' }}
-                            />
-                           {(effectiveRole === "Asset Monitor") && (
-                               <Column
-                                   header="Recalculate Values"
-                                   body={(row) => {
-                                       const isInsCompleted =
-                                           row.wagonStatus === STATUS.INSPECTION_DONE;
-                           
-                                       // ✅ Assessor → always allowed
-                                       // ✅ Admin → only when inspection is completed
-                                       if (effectiveRole === "Asset Monitor"  && isInsCompleted) {
+                            Recalculate
+                        </Button>
+                    );
+                }
+                return null;
+            }}
+        />
+    )}
+
+    {effectiveRole === "Asset Monitor" && (
+        <Column
+            header="Generate PDFs"
+            style={{ minWidth: 150 }}
+            body={(row) => {
+                const isReadyForAssessment =
+                    row.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD;
+                const disabled =
+                    !isReadyForAssessment || hasAllPdfs(row);
+
                 return (
                     <Button
                         size="sm"
+                        disabled={disabled}
                         onClick={(e) => {
                             e.stopPropagation();
-                            handleRecalculateClick(row);
+                            handleGeneratePdfClick(row);
                         }}
                     >
-                        Recalculate
+                        Generate
                     </Button>
                 );
-            }
-
-            return null; // hide button
-        }}
-        style={{ minWidth: 150 }}
-    />
-)}
-
-                         {effectiveRole === "Asset Monitor" && (
-    <Column
-        header="Generate PDFs"
-        body={(row) => {
-            const isReadyForAssessment =
-                row.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD;
-
-            const alreadyGenerated = hasAllPdfs(row);
-
-            const disabled =
-                !isReadyForAssessment || alreadyGenerated;
-
-            return (
-                <Button
-                    size="sm"
-                    disabled={disabled}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        handleGeneratePdfClick(row);
-                    }}
-                >
-                    Generate
-                </Button>
-            );
-        }}
-        style={{ minWidth: 150 }}
-    />
-)}
-
-
-                            {/* All other columns are kept intact */}
-                            <Column field="wagonNumber" header="Wagon Number" style={{ minWidth: 120 }} />
-                            <Column field="wagonGroup" header="Wagon Group" style={{ minWidth: 120 }} />
-                            <Column field="wagonType" header="Wagon Type" style={{ minWidth: 140 }} />
-                            <Column field="inspectorName" header="Inspector" style={{ minWidth: 140 }} />
-                            <Column field="dateAssessed" header="Date Completed" style={{ minWidth: 110 }} />
-                            <Column field="timeAssessed" header="Time Completed" style={{ minWidth: 110 }} />
-                            <Column field="startTimeInspect" header="Time Started" style={{ minWidth: 110 }} />
-                            <Column field="gpsLatitude" header="Gps Latitude" style={{ minWidth: 120 }} />
-                            <Column field="gpsLongitude" header="Gps Longitude" style={{ minWidth: 120 }} />
-                            <Column field="city" header="City" style={{ minWidth: 120 }} />
-                            <Column header="Body Photos" body={(row) => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.bodyPhotos, e); }}>View</Button>} style={{ minWidth: 120 }} />
-                            <Column header="Lift Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'liftPhoto')}</div>} style={{ minWidth: 140 }} />
-                            <Column field="liftDate" header="Lift Date" style={{ minWidth: 110 }} />
-                            <Column field="liftLapsed" header="Lift Lapsed" style={{ minWidth: 110 }} />
-                            <Column header="Barrel Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'barrelPhoto')}</div>} style={{ minWidth: 140 }} />
-                            <Column field="barrelDate" header="Barrel Test Date" style={{ minWidth: 110 }} />
-                            <Column field="barrelLapsed" header="Barrel Lapsed" style={{ minWidth: 110 }} />
-                            <Column header="Brake Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'brakePhoto')}</div>} style={{ minWidth: 140 }} />
-                            <Column field="brakeDate" header="Brake Test Date" style={{ minWidth: 110 }} />
-                            <Column field="brakeLapsed" header="Brake Lapsed" style={{ minWidth: 110 }} />
-                            <Column field="refurbishValue" header="Refurbish Value" style={{ minWidth: 120 }} />
-                            <Column field="missingValue" header="Missing Value" style={{ minWidth: 120 }} />
-                            <Column field="replaceValue" header="Replace Value" style={{ minWidth: 120 }} />
-                            <Column field="totalLaborValue" header="Labor Value" style={{ minWidth: 120 }} />
-                            <Column field="liftValue" header="Lift Value" style={{ minWidth: 120 }} />
-                            <Column field="barrelValue" header="Barrel Value" style={{ minWidth: 120 }} />
-                            <Column field="totalValue" header="Return to Service Cost" style={{ minWidth: 120 }} />
-                            <Column field="marketValue" header="Benchmarking Value" style={{ minWidth: 140 }} />
-                            <Column field="assetValue" header="Market Value" style={{ minWidth: 120 }} />
-                            <Column header="Assessment Quote" body={(row) => row.assessmentQuote && row.assessmentQuote !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentQuote, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 160 }} />
-                            <Column header="Assessment Cert" body={(row) => row.assessmentCert && row.assessmentCert !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentCert, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />
-                            <Column header="Assessment SOW" body={(row) => row.assessmentSow && row.assessmentSow !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentSow, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />
-                            <Column field="wagonStatus" header="Wagon Status" style={{ minWidth: 120 }} />
-                            <Column field="uploadDate" header="Upload Date" style={{ minWidth: 120 }} />
-                            <Column header="Wagon Photo" body={row => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'wagonPhoto')}</div>} style={{ minWidth: 140 }} />
-                            <Column header="Missing Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.missingPhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
-                            <Column header="Replace Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.replacePhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
-                             {/*PLEASE ADJUST (NEW)*/}
-                           
-                                <Column
-    header="Condition Score"
-    style={{ minWidth: 140 }}
-    body={(row) => (
-        <Dropdown
-            value={row.conditionScore}
-            options={score}
-            optionLabel="label"
-            optionValue="value"
-            itemTemplate={scoreTemplate}
-            valueTemplate={scoreTemplate}
-            placeholder="Select Score"
-            disabled={effectiveRole === "Assessor"}   // ✅ KEY LINE
-            onClick={(e) => e.stopPropagation()}
-            onChange={(e) => {
-                onConditionScoreChange(row, e.value);
-                updateConditionScore(row.wagonNumber, e.value);
-                onConditionStatusInstantUpdate(row, e.value);
             }}
-            className="w-100"
         />
     )}
-/>
 
-                            
+    {/* ================= WAGON DETAILS ================= */}
+    <Column field="wagonNumber" header="Wagon Number" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="wagonGroup" header="Wagon Group" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="wagonType" header="Wagon Type" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+    <Column field="inspectorName" header="Inspector" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
 
-                           
-                                <Column
-                                    header="Operational Status"
-                                    field="operationalStatus"
-                                    style={{ minWidth: 140 }}
-                                    body={(row) => row?.operationalStatus ?? ""}
-                                />
-                          
-                        <Column
-                                header="Calculated Score"
-                                field="calScore"
-                                style={{ minWidth: 140 }}
-                            />
-                            <Column
-                                header="Calculated Status"
-                                field="calOperateStatus"
-                                style={{ minWidth: 140 }}
-                            />
-                            <Column
-                                header="Calculated Condition"
-                                field="calCondition"
-                                style={{ minWidth: 140 }}
-                            />
-                        </DataTable>
+    {/* ================= DATE / TIME ================= */}
+    <Column field="dateAssessed" header="Date Completed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+    <Column field="timeAssessed" header="Time Completed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+    <Column field="startTimeInspect" header="Time Started" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+
+    {/* ================= LOCATION ================= */}
+    <Column field="gpsLatitude" header="GPS Latitude" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="gpsLongitude" header="GPS Longitude" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="city" header="City" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+
+    {/* ================= PHOTOS ================= */}
+    <Column
+        header="Body Photos"
+        style={{ minWidth: 120 }}
+        body={(row) => (
+            <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.bodyPhotos, e); }}>
+                View
+            </Button>
+        )}
+    />
+
+    <Column
+        header="Lift Photo"
+        style={{ minWidth: 140 }}
+        body={(row) => (
+            <div onClick={(e) => e.stopPropagation()}>
+                {renderImageCell(row, "liftPhoto")}
+            </div>
+        )}
+    />
+
+    <Column field="liftDate" header="Lift Date" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+    <Column field="liftLapsed" header="Lift Lapsed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+
+    <Column
+        header="Barrel Photo"
+        style={{ minWidth: 140 }}
+        body={(row) => (
+            <div onClick={(e) => e.stopPropagation()}>
+                {renderImageCell(row, "barrelPhoto")}
+            </div>
+        )}
+    />
+
+    <Column field="barrelDate" header="Barrel Test Date" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+    <Column field="barrelLapsed" header="Barrel Lapsed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+
+    <Column
+        header="Brake Photo"
+        style={{ minWidth: 140 }}
+        body={(row) => (
+            <div onClick={(e) => e.stopPropagation()}>
+                {renderImageCell(row, "brakePhoto")}
+            </div>
+        )}
+    />
+
+    <Column field="brakeDate" header="Brake Test Date" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+    <Column field="brakeLapsed" header="Brake Lapsed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+
+    {/* ================= VALUES ================= */}
+    <Column field="refurbishValue" header="Refurbish Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+    <Column field="missingValue" header="Missing Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+    <Column field="replaceValue" header="Replace Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+    <Column field="totalLaborValue" header="Labor Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+    <Column field="liftValue" header="Lift Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+    <Column field="barrelValue" header="Barrel Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+    <Column field="totalValue" header="Return to Service Cost" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+    <Column field="marketValue" header="Benchmarking Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 140 }} />
+    <Column field="assetValue" header="Market Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
+
+    {/* ================= PDFs ================= */}
+    <Column
+        header="Assessment Quote"
+        style={{ minWidth: 160 }}
+        body={(row) =>
+            row.assessmentQuote && row.assessmentQuote !== "N/A" ? (
+                <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentQuote, e); }}>
+                    View PDF
+                </Button>
+            ) : <span>N/A</span>
+        }
+    />
+
+    <Column
+        header="Assessment Cert"
+        style={{ minWidth: 140 }}
+        body={(row) =>
+            row.assessmentCert && row.assessmentCert !== "N/A" ? (
+                <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentCert, e); }}>
+                    View PDF
+                </Button>
+            ) : <span>N/A</span>
+        }
+    />
+
+    <Column
+        header="Assessment SOW"
+        style={{ minWidth: 140 }}
+        body={(row) =>
+            row.assessmentSow && row.assessmentSow !== "N/A" ? (
+                <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentSow, e); }}>
+                    View PDF
+                </Button>
+            ) : <span>N/A</span>
+        }
+    />
+
+    {/* ================= STATUS ================= */}
+    <Column field="wagonStatus" header="Wagon Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="uploadDate" header="Upload Date" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+
+    {/* ================= MORE PHOTOS ================= */}
+    <Column
+        header="Wagon Photo"
+        style={{ minWidth: 140 }}
+        body={(row) => (
+            <div onClick={(e) => e.stopPropagation()}>
+                {renderImageCell(row, "wagonPhoto")}
+            </div>
+        )}
+    />
+
+    <Column
+        header="Missing Photos"
+        style={{ minWidth: 140 }}
+        body={(row) => (
+            <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.missingPhotos, e); }}>
+                View
+            </Button>
+        )}
+    />
+
+    <Column
+        header="Replace Photos"
+        style={{ minWidth: 140 }}
+        body={(row) => (
+            <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.replacePhotos, e); }}>
+                View
+            </Button>
+        )}
+    />
+
+    {/* ================= CONDITION SCORE ================= */}
+    <Column
+        header="Condition Score"
+        style={{ minWidth: 140 }}
+        body={(row) => (
+            <Dropdown
+                value={row.conditionScore}
+                options={score}
+                optionLabel="label"
+                optionValue="value"
+                itemTemplate={scoreTemplate}
+                valueTemplate={scoreTemplate}
+                placeholder="Select Score"
+                disabled={effectiveRole === "Assessor"}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                    onConditionScoreChange(row, e.value);
+                    updateConditionScore(row.wagonNumber, e.value);
+                    onConditionStatusInstantUpdate(row, e.value);
+                }}
+                className="w-100"
+            />
+        )}
+    />
+
+    {/* ================= CALCULATED ================= */}
+    <Column field="operationalStatus" header="Operational Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+    <Column field="calScore" header="Calculated Score" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+    <Column field="calOperateStatus" header="Calculated Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+    <Column field="calCondition" header="Calculated Condition" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+
+</DataTable>
+
                     </div>
                 </Card.Body>
             </Card>

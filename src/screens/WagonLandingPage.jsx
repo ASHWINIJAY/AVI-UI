@@ -149,6 +149,18 @@ const WagonLandingPage = () => {
     setShowPendingModal(false);
     navigate("/wagoninfo");
   };
+const getCurrentLocation = () =>
+  new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        resolve({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      reject
+    );
+  });
 
   // =========================================================
   // 6️⃣ SUBMIT / VALIDATE WAGON
@@ -168,10 +180,17 @@ const WagonLandingPage = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const validateResp = await api.get(
-        `/WagonLanding/validateWagon/${wagonNumberInt}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const { lat, lng } = await getCurrentLocation();
+     const validateResp = await api.get(
+    `/WagonLanding/validateWagon/${wagonNumberInt}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      params: {
+        latitude: lat,
+        longitude: lng
+      }
+    }
+  );
  if (!validateResp.data.isValid) {
                 setLoading(false);
                 showError(validateResp.data.message || "Invalid entry.");

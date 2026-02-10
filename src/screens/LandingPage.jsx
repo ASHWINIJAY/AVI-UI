@@ -147,7 +147,18 @@ const LandingPage = () => {
     setShowPendingModal(false);
     navigate("/locoinfo");
   };
-
+const getCurrentLocation = () =>
+  new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        resolve({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      reject
+    );
+  });
   // =========================================================
   // 6️⃣ SUBMIT / VALIDATE LOCO
   // =========================================================
@@ -166,9 +177,15 @@ const LandingPage = () => {
 
     try {
       const token = localStorage.getItem("token");
+       const { lat, lng } = await getCurrentLocation();
       const response = await api.get(
-        `LocoLanding/validateLoco/${locoNumberInt}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `LocoLanding/validateLoco/${locoNumberInt}`,{
+      headers: { Authorization: `Bearer ${token}` },
+      params: {
+        latitude: lat,
+        longitude: lng
+      }
+    }
       );
  if (!response.data.isValid) {
                 setLoading(false);
