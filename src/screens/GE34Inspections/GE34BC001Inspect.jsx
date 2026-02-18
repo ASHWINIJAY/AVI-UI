@@ -28,11 +28,13 @@ const GE34BC001Inspect = () => {
 
     const [showConfirmBackModal, setShowConfirmBackModal] = useState(false);
 
+    //const API = "https://localhost:7066";
+
     useEffect(() => {
         const fetchParts = async () => {
             setLoading(true);
             try {
-                const res = await axios.get(`GE34BC001/getParts/${formID}?t=${Date.now()}`);
+                const res = await axios.get(`GE34Inspect/getParts/${formID}?t=${Date.now()}`);
                 const data = Array.isArray(res.data) ? res.data : [];
                 const prepared = data
                     .map((p, idx) => ({
@@ -48,6 +50,7 @@ const GE34BC001Inspect = () => {
                         ReplaceValue: "0.00",
                         DamagePhoto: null,
                         MissingPhoto: null,
+                        LaborValue: "0.00"
                     }))
                     .sort((a, b) => {
                         const numA = parseInt((a.PartId.match(/\d+/) || ["0"])[0], 10) || 0;
@@ -82,15 +85,20 @@ const GE34BC001Inspect = () => {
     const getPartCost = async (partId, field) => {
         try {
             const res = await axios.get(
-                `GE34BC001/getPartCost?partId=${encodeURIComponent(partId)}&field=${encodeURIComponent(field)}`
+                `GE34Inspect/getPartCost?partId=${encodeURIComponent(partId)}&field=${encodeURIComponent(field)}`
             );
-            if (!res || res.status !== 200) return "0.00";
-            // Ensure we return a string
-            if (res.data == null) return "0.00";
-            if (typeof res.data === "string") return res.data;
-            if (typeof res.data === "number") return res.data.toFixed(2);
-            if (res.data.value) return res.data.value.toString();
-            return "0.00";
+
+            if (!res || res.status !== 200 || !res.data) {
+                return { cost: "0.00", laborValue: "0.00" };
+            }
+
+            const { cost, laborValue } = res.data;
+
+            return {
+                cost: cost ?? "0.00",
+                laborValue: laborValue ?? "0.00"
+            };
+
         } catch (ex) {
             console.error("GetPartCost failed", ex);
             return "0.00";
@@ -108,7 +116,7 @@ const GE34BC001Inspect = () => {
             fd.append("locoNumber", storedLocoNumber);
             fd.append("locoModel", storedLocoModel);
 
-            const res = await axios.post("GE34BC001/UploadPhoto", fd, {
+            const res = await axios.post(`GE34Inspect/UploadPhoto`, fd, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
             if (res.data?.path) return res.data.path;
@@ -124,7 +132,7 @@ const GE34BC001Inspect = () => {
     const deletePhoto = async (photoPath) => {
         if (!photoPath) return;
         try {
-            await axios.post("GE34BC001/DeletePhoto", { path: photoPath });
+            await axios.post(`GE34Inspect/DeletePhoto`, { path: photoPath });
         } catch (ex) {
             console.warn("DeletePhoto failed", ex);
         }
@@ -147,6 +155,7 @@ const GE34BC001Inspect = () => {
             RefurbishValue: "0.00",
             MissingValue: "0.00",
             ReplaceValue: "0.00",
+            LaborValue: "0.00",
             MissingPhoto: null,
             DamagePhoto: null
         };
@@ -166,25 +175,58 @@ const GE34BC001Inspect = () => {
             updatedRow.Good = true;
         } else if (field === "Refurbish") {
             updatedRow.Refurbish = true;
-            updatedRow.RefurbishValue = await getPartCost(current.PartId, "Refurbish");
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartId, "Refurbish");
+            updatedRow.RefurbishValue = cost;
+            updatedRow.LaborValue = laborValue;
         } else if (field === "Missing") {
             updatedRow.Missing = true;
-            updatedRow.MissingValue = await getPartCost(current.PartId, "Missing");
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartId, "Missing");
+            updatedRow.MissingValue = cost;
+            updatedRow.LaborValue = laborValue;
             openPhotoModal(rowId, "Missing");
         } else if (field === "Damage") {
             updatedRow.Damage = true;
-            updatedRow.ReplaceValue = await getPartCost(current.PartId, "Replace");
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartId, "Replace");
+            updatedRow.ReplaceValue = cost;
+            updatedRow.LaborValue = laborValue;
             openPhotoModal(rowId, "Damage");
         }
 
         setRows(prev => prev.map(r => r.id === rowId ? updatedRow : r));
     };
 
-
-
-    const handleSelectAllGood = (checked) => {
+    const handleSelectAllGood = async (checked) => {
         setSelectAllGood(checked);
-        setRows((prev) => prev.map((r) => ({ ...r, Good: checked, Refurbish: false, Missing: false, Damage: false, RefurbishValue: "0.00", MissingValue: "0.00", ReplaceValue: "0.00" })));
+
+        if (checked) {
+            for (const r of rows) {
+                if (r.MissingPhoto) await deletePhoto(r.MissingPhoto);
+                if (r.DamagePhoto) await deletePhoto(r.DamagePhoto);
+            }
+        }
+
+        setRows((prev) =>
+            prev.map((r) =>
+            ({
+                ...r,
+                Good: checked,
+                Refurbish: false,
+                Missing: false,
+                Damage: false,
+                RefurbishValue: "0.00",
+                MissingValue: "0.00",
+                ReplaceValue: "0.00",
+                LaborValue: "0.00",
+                MissingPhoto: null,
+                DamagePhoto: null
+
+            })));
     };
 
     const openPhotoModal = (rowId, photoType) => {
@@ -214,7 +256,9 @@ const GE34BC001Inspect = () => {
                 if (r.id !== modalRowId) return r;
                 const base = { ...r, [modalPhotoType]: false };
                 if (modalPhotoType === "Missing") base.MissingValue = "0.00";
+                if (modalPhotoType === "Missing") base.LaborValue = "0.00";
                 if (modalPhotoType === "Damage") base.ReplaceValue = "0.00";
+                if (modalPhotoType === "Damage") base.LaborValue = "0.00";
                 if (modalPhotoType === "Missing") base.MissingPhoto = null;
                 if (modalPhotoType === "Damage") base.DamagePhoto = null;
                 return base;
@@ -269,10 +313,12 @@ const GE34BC001Inspect = () => {
             setError("Missing loco info.");
             return;
         }
+
         if (!rows || rows.length === 0) {
             setError("No parts to submit.");
             return;
         }
+
         setSubmitting(true);
         try {
             const dtos = rows.map((r) => ({
@@ -291,8 +337,9 @@ const GE34BC001Inspect = () => {
                 ReplaceValue: r.ReplaceValue ?? "0.00",
                 MissingPhoto: r.MissingPhoto ?? "No Photo",
                 DamagePhoto: r.DamagePhoto ?? "No Photo",
+                LaborValue: r.LaborValue ?? "0.00"
             }));
-            await axios.post("GE34BC001/SubmitInspection", dtos,
+            await axios.post(`GE34Inspect/SubmitInspection`, dtos,
                 { headers: { "Content-Type": "application/json" } }
             );
             setInfo("Inspection submitted successfully.");
@@ -327,6 +374,7 @@ const GE34BC001Inspect = () => {
                 RefurbishValue: "0.00",
                 MissingValue: "0.00",
                 ReplaceValue: "0.00",
+                LaborValue: "0.00",
                 MissingPhoto: null,
                 DamagePhoto: null,
             }))
@@ -386,7 +434,7 @@ const GE34BC001Inspect = () => {
             width: 140,
             hidden: true,
             renderCell: (params) => (
-                <input style={{ display: "none" }} className="form-control form-control-sm" readOnly value={params.row.RefurbishValue} />
+                <input className="form-control form-control-sm" readOnly value={params.row.RefurbishValue} />
             )
         },
         {
@@ -394,7 +442,7 @@ const GE34BC001Inspect = () => {
             headerName: "Missing Value",
             width: 140,
             renderCell: (params) => (
-                <input style={{ display: "none" }} className="form-control form-control-sm" readOnly value={params.row.MissingValue} />
+                <input className="form-control form-control-sm" readOnly value={params.row.MissingValue} />
             )
         },
         {
@@ -402,7 +450,15 @@ const GE34BC001Inspect = () => {
             headerName: "Replace Value",
             width: 140,
             renderCell: (params) => (
-                <input style={{ display: "none" }} className="form-control form-control-sm" readOnly value={params.row.ReplaceValue} />
+                <input className="form-control form-control-sm" readOnly value={params.row.ReplaceValue} />
+            )
+        },
+        {
+            field: "LaborValue",
+            headerName: "Labor Value",
+            width: 140,
+            renderCell: (params) => (
+                <input className="form-control form-control-sm" readOnly value={params.row.LaborValue} />
             )
         }
     ];
@@ -445,9 +501,10 @@ const GE34BC001Inspect = () => {
                                 </div>
 
                                 <div style={{ marginTop: 8 }}>
-                                    <input style={{ display: "none" }} className="form-control form-control-sm" readOnly value={row.RefurbishValue} placeholder="Refurbish Value" />
-                                    <input style={{ display: "none" }} className="form-control form-control-sm mt-1" readOnly value={row.MissingValue} placeholder="Missing Value" />
-                                    <input style={{ display: "none" }} className="form-control form-control-sm mt-1" readOnly value={row.ReplaceValue} placeholder="Replace Value" />
+                                    <input className="form-control form-control-sm" readOnly value={row.RefurbishValue} placeholder="Refurbish Value" />
+                                    <input className="form-control form-control-sm mt-1" readOnly value={row.MissingValue} placeholder="Missing Value" />
+                                    <input className="form-control form-control-sm mt-1" readOnly value={row.ReplaceValue} placeholder="Replace Value" />
+                                    <input className="form-control form-control-sm mt-1" readOnly value={row.LaborValue} placeholder="Labor Value" />
                                 </div>
 
                                 <div style={{ marginTop: 8 }}>
@@ -467,10 +524,12 @@ const GE34BC001Inspect = () => {
                                     columnVisibilityModel: {
                                         RefurbishValue: false,
                                         MissingValue: false,
-                                        ReplaceValue: false// hide it on load
+                                        ReplaceValue: false,
+                                        LaborValue: false
                                     },
                                 },
                             }}
+                            disableColumnSorting
                             disableRowSelectionOnClick
                         />
                     </div>

@@ -10,7 +10,7 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; 
 
 function UploadedLocoDashboard() {
-    const BACKEND_URL = "http://41.87.206.94/AVIapi";
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 const token = localStorage.getItem("token");
     const [allRows, setAllRows] = useState([]);
@@ -22,10 +22,41 @@ const token = localStorage.getItem("token");
     const [globalFilterValue, setGlobalFilterValue] = useState("");
 
     const [lazyParams, setLazyParams] = useState({
-        first: 0,
-        rows: 25,
-        globalFilter: ""
-    });
+    first: 0,
+    rows: 25,
+    globalFilter:"",
+    sortField: null,
+    sortOrder: null,
+    filters: {
+        locoNumber: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        locoClass: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        locoModel: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        inspectorName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        city: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        uploadStatus: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+        dateAssessed: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        timeAssessed: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        startTimeInspect: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        uploadDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+        gpsLatitude: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        gpsLongitude: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+        refurbishValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+        missingValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+        replaceValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+        totalLaborValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+        totalValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+        marketValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+        assetValue: { value: null, matchMode: FilterMatchMode.EQUALS },
+
+        calScore: { value: null, matchMode: FilterMatchMode.EQUALS },
+        calOperateStatus: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        calCondition: { value: null, matchMode: FilterMatchMode.CONTAINS }
+    }
+});
+
 
     const [score, setScore] = useState([]);
 
@@ -757,152 +788,215 @@ const handleSaveManualValues = async () => {
 )}
 
 
-                        <DataTable
-                            lazy
-                            value={allRows}
-                            paginator
-                            totalRecords={totalRecords}
-                            first={lazyParams.first}
-                            rows={lazyParams.rows}
-                            rowsPerPageOptions={[25, 50, 100, 200]}
-                            onPage={(e) => {
-                                saveScroll();
-                                setLazyParams(prev => ({
-                                    ...prev,
-                                    first: e.first,
-                                    rows: e.rows
-                                }));
-                            }}
-                            className="p-datatable-sm"
-                            scrollable
-                            scrollHeight="510px"
-                            dataKey="id"
-                            selectionMode="checkbox"
-                            selection={allRows.filter(row => selectedRowIds.has(row.id))}
-                            onSelectionChange={(e) => {
-                                setSelectedRowIds(prev => {
-                                    const next = new Set(prev);
-                                    e.value.forEach(row => next.add(row.id)); // add currently selected
-                                    // remove rows that are currently visible but not selected
-                                    allRows.forEach(row => {
-                                        if (!e.value.some(r => r.id === row.id)) next.delete(row.id);
-                                    });
-                                    return next;
-                                });
-                            }}
-                        >
-                            <Column
-                                    selectionMode="multiple" headerStyle={{ width: '3em' }}
-                                />
-                            {(isAssessorModerator || isAdmin) && (
-                                <Column
-                                    header="Recalculate Values"
-                                    body={(row) => {
-                                        return (
-                                            <Button
-                                                size="sm"
-                                                onClick={(e) => onRecalculateClick(row, e)}
-                                            >
-                                                Recalculate
-                                            </Button>
-                                        );
-                                    }}
-                                    style={{ minWidth: 150 }}
-                                />
-                            )}
-                            {(isAssessorModerator || isAdmin) && ( 
-                                <Column
-                                    header="Regenerate PDFs"
-                                    body={(row) => {
-                                        return (
-                                            <Button
-                                                size="sm"
-                                                onClick={(e) => { e.stopPropagation(); handleGeneratePdfClick(row); }}
-                                            >
-                                                Regenerate
-                                            </Button>
-                                        );
-                                    }}
-                                    style={{ minWidth: 150 }}
-                                />
-                            )}
+<DataTable
+    lazy
+    value={allRows}
+    paginator
+    totalRecords={totalRecords}
+    first={lazyParams.first}
+    rows={lazyParams.rows}
+    rowsPerPageOptions={[25, 50, 100, 200]}
+    sortField={lazyParams.sortField}
+    sortOrder={lazyParams.sortOrder}
+    filters={lazyParams.filters}
+    filterDisplay="menu"
 
-                            <Column field="locoNumber" header="Loco Number" style={{ minWidth: 120 }} />
-                            <Column field="locoClass" header="Loco Class" style={{ minWidth: 120 }} />
-                            <Column field="locoModel" header="Loco Model" style={{ minWidth: 140 }} />
-                            <Column field="inspectorName" header="Inspector" style={{ minWidth: 140 }} />
-                            <Column field="dateAssessed" header="Date Completed" style={{ minWidth: 110 }} />
-                            <Column field="timeAssessed" header="Time Completed" style={{ minWidth: 110 }} />
-                            <Column field="startTimeInspect" header="Time Started" style={{ minWidth: 110 }} />
-                            <Column field="gpsLatitude" header="Gps Latitude" style={{ minWidth: 120 }} />
-                            <Column field="gpsLongitude" header="Gps Longitude" style={{ minWidth: 120 }} />
-                            <Column field="city" header="City" style={{ minWidth: 120 }} />
-                            <Column header="Body Photos" body={(row) => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.bodyPhotos, e); }}>View</Button>} style={{ minWidth: 120 }} />
-                            <Column header="Loco Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'locoPhoto')}</div>} style={{ minWidth: 140 }} />
-                            
-                            <Column field="refurbishValue" header="Refurbish Value" style={{ minWidth: 120 }} />
-                            <Column field="missingValue" header="Missing Value" style={{ minWidth: 120 }} />
-                            <Column field="replaceValue" header="Replace Value" style={{ minWidth: 120 }} />
-                            <Column field="totalLaborValue" header="Labor Value" style={{ minWidth: 120 }} />
-                           
-                            <Column field="totalValue" header="Return to Service Cost" style={{ minWidth: 120 }} />
-                            <Column field="marketValue" header="Benchmarking Value" style={{ minWidth: 140 }} />
-                            <Column field="assetValue" header="Market Value" style={{ minWidth: 120 }} />
-                            <Column header="Assessment Quote" body={(row) => row.assessmentQuote && row.assessmentQuote !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentQuote, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 160 }} />
-                            <Column header="Assessment Cert" body={(row) => row.assessmentCert && row.assessmentCert !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentCert, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />
-                            <Column header="Assessment SOW" body={(row) => row.assessmentSow && row.assessmentSow !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentSow, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />
-                            <Column field="uploadStatus" header="Loco Status" style={{ minWidth: 120 }} />
-                            <Column field="uploadDate" header="Upload Date" style={{ minWidth: 120 }} />
-                             <Column header="Missing Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.missingPhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
-                            <Column header="Replace Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.replacePhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
-                            {(isAssessorModerator || isAdmin) && (
-                                <Column
-                                    header="Condition Score"
-                                    style={{ minWidth: 230 }}
-                                    body={(row) => (
-                                        <Dropdown
-                                            value={row.conditionScore}
-                                            options={score}
-                                            optionLabel="label"
-                                            optionValue="value"
-                                            itemTemplate={scoreTemplate}
-                                            valueTemplate={scoreTemplate}
-                                            placeholder="Select Score"
-                                            onClick={(e) => e.stopPropagation()}
-                                            onChange={(e) => {
-                                                onConditionScoreChange(row, e.value);
-                                                updateConditionScore(row.locoNumber, e.value);
-                                                onConditionStatusInstantUpdate(row, e.value);
-                                            }}
-                                            className="w-100"
-                                        />
-                                    )}
-                                />
-                            )}
-                            {(isAssessorModerator || isAdmin) && (
-                                <Column
-                                    header="Operational Status"
-                                    field="operationalStatus"
-                                    style={{ minWidth: 200 }}
-                                    body={(row) => row?.operationalStatus ?? ""}
-                                />
-                            )}
-                             <Column
-                                header="Calculated Score"
-                                field="calScore"
-                                style={{ minWidth: 140 }}
-                            />
-                            <Column
-                                header="Calculated Status"
-                                field="calOperateStatus"
-                                style={{ minWidth: 140 }}
-                            />
-                            <Column
-                                header="Calculated Condition"
-                                field="calCondition"
-                                style={{ minWidth: 140 }}
-                            />
-                        </DataTable>
+    onPage={(e) => {
+        saveScroll();
+        setLazyParams(prev => ({
+            ...prev,
+            first: e.first,
+            rows: e.rows
+        }));
+    }}
+
+    onSort={(e) => {
+        setLazyParams(prev => ({
+            ...prev,
+            sortField: e.sortField,
+            sortOrder: e.sortOrder
+        }));
+    }}
+
+    onFilter={(e) => {
+        setLazyParams(prev => ({
+            ...prev,
+            filters: e.filters,
+            first: 0
+        }));
+    }}
+
+    className="p-datatable-sm p-datatable-striped"
+    scrollable
+    scrollHeight="510px"
+    dataKey="id"
+
+    selectionMode="checkbox"
+    selection={allRows.filter(row => selectedRowIds.has(row.id))}
+    onSelectionChange={(e) => {
+        setSelectedRowIds(prev => {
+            const next = new Set(prev);
+            e.value.forEach(row => next.add(row.id));
+            allRows.forEach(row => {
+                if (!e.value.some(r => r.id === row.id)) next.delete(row.id);
+            });
+            return next;
+        });
+    }}
+>
+
+    <Column selectionMode="multiple" headerStyle={{ width: '3em' }} />
+
+    {/* ACTION COLUMNS - NO FILTER */}
+    {(isAssessorModerator || isAdmin) && (
+        <Column
+            header="Recalculate Values"
+            style={{ minWidth: 150 }}
+            body={(row) => (
+                <Button size="sm" onClick={(e) => onRecalculateClick(row, e)}>
+                    Recalculate
+                </Button>
+            )}
+        />
+    )}
+
+    {(isAssessorModerator || isAdmin) && (
+        <Column
+            header="Regenerate PDFs"
+            style={{ minWidth: 150 }}
+            body={(row) => (
+                <Button
+                    size="sm"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleGeneratePdfClick(row);
+                    }}
+                >
+                    Regenerate
+                </Button>
+            )}
+        />
+    )}
+
+    {/* FILTERABLE DATA COLUMNS */}
+    <Column field="locoNumber" header="Loco Number" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="locoClass" header="Loco Class" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="locoModel" header="Loco Model" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+    <Column field="inspectorName" header="Inspector" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+
+    <Column field="dateAssessed" header="Date Completed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+    <Column field="timeAssessed" header="Time Completed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+    <Column field="startTimeInspect" header="Time Started" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+
+    <Column field="gpsLatitude" header="Gps Latitude" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="gpsLongitude" header="Gps Longitude" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="city" header="City" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+
+    {/* IMAGE / PDF COLUMNS (NO FILTER) */}
+    <Column
+        header="Body Photos"
+        style={{ minWidth: 120 }}
+        body={(row) => (
+            <Button
+                size="sm"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenModal(row.bodyPhotos, e);
+                }}
+            >
+                View
+            </Button>
+        )}
+    />
+
+    <Column
+        header="Loco Photo"
+        style={{ minWidth: 140 }}
+        body={(row) => (
+            <div onClick={(e) => e.stopPropagation()}>
+                {renderImageCell(row, "locoPhoto")}
+            </div>
+        )}
+    />
+
+    <Column
+        header="Assessment Quote"
+        style={{ minWidth: 160 }}
+        body={(row) =>
+            row.assessmentQuote && row.assessmentQuote !== "N/A" ? (
+                <Button
+                    size="sm"
+                    variant="outline-primary"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenPdf(row.assessmentQuote, e);
+                    }}
+                >
+                    View PDF
+                </Button>
+            ) : <span>N/A</span>
+        }
+    />
+
+    <Column
+        header="Assessment Cert"
+        style={{ minWidth: 140 }}
+        body={(row) =>
+            row.assessmentCert && row.assessmentCert !== "N/A" ? (
+                <Button
+                    size="sm"
+                    variant="outline-primary"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenPdf(row.assessmentCert, e);
+                    }}
+                >
+                    View PDF
+                </Button>
+            ) : <span>N/A</span>
+        }
+    />
+
+    <Column
+        header="Assessment SOW"
+        style={{ minWidth: 140 }}
+        body={(row) =>
+            row.assessmentSow && row.assessmentSow !== "N/A" ? (
+                <Button
+                    size="sm"
+                    variant="outline-primary"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenPdf(row.assessmentSow, e);
+                    }}
+                >
+                    View PDF
+                </Button>
+            ) : <span>N/A</span>
+        }
+    />
+
+    {/* NUMERIC COLUMNS */}
+    <Column field="refurbishValue" header="Refurbish Value" sortable filter filterMatchMode="equals" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="missingValue" header="Missing Value" sortable filter filterMatchMode="equals" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="replaceValue" header="Replace Value" sortable filter filterMatchMode="equals" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="totalLaborValue" header="Labor Value" sortable filter filterMatchMode="equals" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="totalValue" header="Return to Service Cost" sortable filter filterMatchMode="equals" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="marketValue" header="Benchmarking Value" sortable filter filterMatchMode="equals" showFilterMenu style={{ minWidth: 140 }} />
+    <Column field="assetValue" header="Market Value" sortable filter filterMatchMode="equals" showFilterMenu style={{ minWidth: 120 }} />
+
+    {/* STATUS & CALCULATED */}
+    <Column field="uploadStatus" header="Loco Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="uploadDate" header="Upload Date" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+    <Column field="operationalStatus" header="Operational Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 200 }} />
+    <Column field="calScore" header="Calculated Score" sortable filter filterMatchMode="equals" showFilterMenu style={{ minWidth: 140 }} />
+    <Column field="calOperateStatus" header="Calculated Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+    <Column field="calCondition" header="Calculated Condition" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+
+</DataTable>
+
+
+
                     </div>
                 </Card.Body>
             </Card>

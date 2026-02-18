@@ -296,7 +296,7 @@ const storedUserId = localStorage.getItem("userId") ?? "";
                 { headers: { "Content-Type": "application/json" } }
             );
             await axios.post(
-                `Dashboard/insertLoco?locoNumber=${encodeURIComponent(parseInt(storedLocoNumber))}&userId=${encodeURIComponent(storedUserId)}`
+                `LocoDash/insertLoco?locoNumber=${encodeURIComponent(parseInt(storedLocoNumber))}&userId=${encodeURIComponent(storedUserId)}`
             );
             setInfo("Inspection submitted successfully.");
             localStorage.removeItem("locoNumber");

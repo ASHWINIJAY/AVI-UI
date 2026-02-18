@@ -42,7 +42,7 @@ const E18WalkInspectForm = () => {
   const storedLocoClass = localStorage.getItem("locoClass") ?? "";
   const storedLocoModel = localStorage.getItem("locoModel") ?? "";
   const storedUserId = localStorage.getItem("userId") ?? "";
-
+ const storedPhase = localStorage.getItem("phase") ?? "";
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -247,9 +247,11 @@ const E18WalkInspectForm = () => {
         GoodCheck: r.Good ? "Yes" : "No",
         RefurbishCheck: r.Refurbish ? "Yes" : "No",
         MissingCheck: r.Missing ? "Yes" : "No",
-        ReplaceCheck: r.Damage ? "Yes" : "No",
+        DamageCheck: r.Damage ? "Yes" : "No",
         MissingPhoto: r.MissingPhoto,
         ReplacePhoto: r.DamagePhoto,
+         LaborValue: r.LaborValue ?? "0.00",
+         Phase: parseInt(storedPhase)
       }));
 
 await axios.post("E18Inspect/SubmitInspection", dtos);
@@ -262,7 +264,7 @@ await axios.post("E18Inspect/SubmitInspection", dtos);
         alert("✅ All inspections completed!");
         if (formID?.trim().toUpperCase() === "RF001") {
           await axios.post(
-            `Dashboard/insertLoco?locoNumber=${encodeURIComponent(
+            `LocoDash/insertLoco?locoNumber=${encodeURIComponent(
               parseInt(storedLocoNumber)
             )}&userId=${encodeURIComponent(storedUserId)}`
           );

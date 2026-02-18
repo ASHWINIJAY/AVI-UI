@@ -11,6 +11,7 @@ const AirBrakePartsInspect = () => {
     const storedWagonNumber = localStorage.getItem("wagonNumber") ?? "";
     const storedWagonGroup = localStorage.getItem("wagonGroup") ?? "";
     const storedWagonType = localStorage.getItem("wagonType") ?? "";
+    const storedPhase = localStorage.getItem("phase") ?? "";
     const [formID] = useState("AB002");
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -339,7 +340,8 @@ const AirBrakePartsInspect = () => {
                 ReplaceValue: r.ReplaceValue ?? "0.00",
                 MissingPhoto: r.MissingPhoto ?? "No Photo",
                 DamagePhoto: r.DamagePhoto ?? "No Photo",
-                LaborValue: r.LaborValue ?? "0.00" //PLEASE ADD
+                LaborValue: r.LaborValue ?? "0.00",
+                Phase: parseInt(storedPhase),
             }));
             const res = await axios.post("AirBrakeInspect/SubmitInspection", dtos,
                 { headers: { "Content-Type": "application/json" } }
@@ -378,9 +380,10 @@ const AirBrakePartsInspect = () => {
     };
 
     const handleNavigation = (meta) => {
-        const doors = meta.wagonDoors || "N/A";
-        const stanchions = meta.wagonStan || "N/A";
-        const twistlocks = meta.wagonTwist || "N/A";
+        const doors = (!meta.wagonDoors || meta.wagonDoors === "NULL") ? "N/A" : meta.wagonDoors;
+const stanchions = (!meta.wagonStan || meta.wagonStan === "NULL") ? "N/A" : meta.wagonStan;
+const twistlocks = (!meta.wagonTwist || meta.wagonTwist === "NULL") ? "N/A" : meta.wagonTwist;
+
 
         if ((doors === "N/A" || doors === "") && (twistlocks === "N/A" || twistlocks === "") && (stanchions === "N/A" || stanchions === ""))
             return navigate("/wagonfloor");

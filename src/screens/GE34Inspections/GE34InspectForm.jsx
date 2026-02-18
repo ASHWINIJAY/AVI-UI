@@ -35,7 +35,8 @@ const GE34InspectForm = () => {
   const storedLocoNumber = localStorage.getItem("locoNumber") ?? "";
   const storedLocoClass = localStorage.getItem("locoClass") ?? "";
   const storedLocoModel = localStorage.getItem("locoModel") ?? "";
-  const storedUserId = localStorage.getItem("userId") ?? "";
+    const storedUserId = localStorage.getItem("userId") ?? "";
+    const storedPhase = localStorage.getItem("phase") ?? "";
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +61,7 @@ const GE34InspectForm = () => {
     const fetchParts = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`GE34Inspect/getParts/${formID}`);
+        const res = await axios.get(`GE34Inspect/getParts/${formID}?t=${Date.now()}`);
         const parts = Array.isArray(res.data) ? res.data : [];
         setSelectAll({
     Good: false,
@@ -79,7 +80,10 @@ const GE34InspectForm = () => {
           Damage: false,
           MissingPhoto: null,
           DamagePhoto: null,
-        }));
+          RefurbishValue: "0.00",
+            MissingValue: "0.00",
+            ReplaceValue: "0.00",
+            LaborValue: "0.00"        }));
         setRows(prepared);
       } catch {
         alert("Failed to load parts.");
@@ -91,7 +95,55 @@ const GE34InspectForm = () => {
   }, [formID]);
 
 
+ const getPartCost = async (partId, field) => {
+        try {
+            const res = await axios.get(
+                `GE34Inspect/getPartCost?partId=${encodeURIComponent(partId)}&field=${encodeURIComponent(field)}`
+            );
 
+            if (!res || res.status !== 200 || !res.data) {
+                return { cost: "0.00", laborValue: "0.00" };
+            }
+
+            const { cost, laborValue } = res.data;
+
+            return {
+                cost: cost ?? "0.00",
+                laborValue: laborValue ?? "0.00"
+            };
+
+        } catch (ex) {
+            console.error("GetPartCost failed", ex);
+            return "0.00";
+        }
+    };
+    const handleSelectAllGood = async (checked) => {
+        setSelectAllGood(checked);
+
+        if (checked) {
+            for (const r of rows) {
+                if (r.MissingPhoto) await deletePhoto(r.MissingPhoto);
+                if (r.DamagePhoto) await deletePhoto(r.DamagePhoto);
+            }
+        }
+
+        setRows((prev) =>
+            prev.map((r) =>
+            ({
+                ...r,
+                Good: checked,
+                Refurbish: false,
+                Missing: false,
+                Damage: false,
+                RefurbishValue: "0.00",
+                MissingValue: "0.00",
+                ReplaceValue: "0.00",
+                LaborValue: "0.00",
+                MissingPhoto: null,
+                DamagePhoto: null
+
+            })));
+    };
 
   // 🔹 Handle “Select All” Header
   const handleSelectAllHeader = (field, checked) => {
@@ -120,31 +172,68 @@ const GE34InspectForm = () => {
   };
 
   // 🔹 Handle Row Checkbox
-  const handleCheckboxChange = (rowId, field) => {
-    setSelectAll({ Good: false, Refurbish: false, Missing: false, Damage: false });
+ const handleCheckboxChange = async (rowId, field) => {
+       // setError("");
+        const current = rows.find(r => r.id === rowId);
+        if (!current) return;
 
-    setRows((prev) =>
-      prev.map((r) =>
-        r.id === rowId
-          ? {
-              ...r,
-              Good: false,
-              Refurbish: false,
-              Missing: false,
-              Damage: false,
-              [field]: !r[field],
-            }
-          : r
-      )
-    );
+        const willBeOn = !current[field];
 
-    const currentRow = rows.find((r) => r.id === rowId);
-    if (!currentRow) return;
+        // Always reset all checkboxes and their values/photos
+        let updatedRow = {
+            ...current,
+            Good: false,
+            Refurbish: false,
+            Missing: false,
+            Damage: false,
+            RefurbishValue: "0.00",
+            MissingValue: "0.00",
+            ReplaceValue: "0.00",
+            LaborValue: "0.00",
+            MissingPhoto: null,
+            DamagePhoto: null
+        };
 
-    if (!currentRow[field] && (field === "Missing" || field === "Damage")) {
-      openPhotoModal(rowId, field);
-    }
-  };
+        // Remove photo if previously set
+        if (current.MissingPhoto) await deletePhoto(current.MissingPhoto);
+        if (current.DamagePhoto) await deletePhoto(current.DamagePhoto);
+
+        if (!willBeOn) {
+            // If unchecking the same box, leave all reset
+            setRows(prev => prev.map(r => r.id === rowId ? updatedRow : r));
+            return;
+        }
+
+        // Activate the selected checkbox and fetch value if needed
+        if (field === "Good") {
+            updatedRow.Good = true;
+        } else if (field === "Refurbish") {
+            updatedRow.Refurbish = true;
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartId, "Refurbish");
+            updatedRow.RefurbishValue = cost;
+            updatedRow.LaborValue = laborValue;
+        } else if (field === "Missing") {
+            updatedRow.Missing = true;
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartId, "Missing");
+            updatedRow.MissingValue = cost;
+            updatedRow.LaborValue = laborValue;
+            openPhotoModal(rowId, "Missing");
+        } else if (field === "Damage") {
+            updatedRow.Damage = true;
+
+            //PLEASE ADD
+            const { cost, laborValue } = await getPartCost(current.PartId, "Replace");
+            updatedRow.ReplaceValue = cost;
+            updatedRow.LaborValue = laborValue;
+            openPhotoModal(rowId, "Damage");
+        }
+
+        setRows(prev => prev.map(r => r.id === rowId ? updatedRow : r));
+    };
 
   // 🔹 Open Photo Modal
   const openPhotoModal = (rowId = null, type) => {
@@ -252,9 +341,11 @@ const GE34InspectForm = () => {
         GoodCheck: r.Good ? "Yes" : "No",
         RefurbishCheck: r.Refurbish ? "Yes" : "No",
         MissingCheck: r.Missing ? "Yes" : "No",
-        ReplaceCheck: r.Damage ? "Yes" : "No",
+        DamageCheck: r.Damage ? "Yes" : "No",
         MissingPhoto: r.MissingPhoto,
         ReplacePhoto: r.DamagePhoto,
+          LaborValue: r.LaborValue ?? "0.00",
+          Phase: parseInt(storedPhase),
       }));
 
 await axios.post("GE34Inspect/SubmitInspection", dtos);
@@ -267,7 +358,7 @@ await axios.post("GE34Inspect/SubmitInspection", dtos);
         alert("✅ All inspections completed!");
         if (formID?.trim().toUpperCase() === "RF001") {
           await axios.post(
-            `Dashboard/insertLoco?locoNumber=${encodeURIComponent(
+            `LocoDash/insertLoco?locoNumber=${encodeURIComponent(
               parseInt(storedLocoNumber)
             )}&userId=${encodeURIComponent(storedUserId)}`
           );

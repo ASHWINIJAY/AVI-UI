@@ -13,6 +13,7 @@ const WagonFloorInspect = () => {
     const storedWagonGroup = localStorage.getItem("wagonGroup") ?? "";
     const storedWagonType = localStorage.getItem("wagonType") ?? "";
     const storedUserId = localStorage.getItem("userId");
+    const storedPhase = localStorage.getItem("phase");
     const [formID] = useState("FR002");
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -29,7 +30,6 @@ const WagonFloorInspect = () => {
     const [showValidationModal, setShowValidationModal] = useState(false);
 
     const [showConfirmBackModal, setShowConfirmBackModal] = useState(false);
-    //const [pdfTrigger, setPdfTrigger] = useState(false); //REMOVE
 
     useEffect(() => {
         const fetchParts = async () => {
@@ -342,7 +342,8 @@ const WagonFloorInspect = () => {
                 ReplaceValue: r.ReplaceValue ?? "0.00",
                 MissingPhoto: r.MissingPhoto ?? "No Photo",
                 DamagePhoto: r.DamagePhoto ?? "No Photo",
-                LaborValue: r.LaborValue ?? "0.00" 
+                LaborValue: r.LaborValue ?? "0.00",
+                Phase: parseInt(storedPhase),
             }));
 
             await axios.post("WagonFloorInspect/SubmitInspection", dtos,

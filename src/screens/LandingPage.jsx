@@ -33,6 +33,21 @@ const LandingPage = () => {
   const [pendingMessage, setPendingMessage] = useState("");
 
   const navigate = useNavigate();
+const [gpsLocation, setGpsLocation] = useState({
+  lat: null,
+  lng: null,
+});
+
+useEffect(() => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((position) => {
+      setGpsLocation({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      });
+    });
+  }
+});
 
   // =========================================================
   // 1️⃣ LOAD GLOBAL COCKPIT STATUS
@@ -148,17 +163,37 @@ const LandingPage = () => {
     navigate("/locoinfo");
   };
 const getCurrentLocation = () =>
-  new Promise((resolve, reject) => {
+  new Promise((resolve) => {
+    console.log("📍 Requesting location...");
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        console.log("✅ Location success");
+
         resolve({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
       },
-      reject
+      (error) => {
+        console.error("❌ Location failed:", error);
+        console.log("⚠ Returning default location 0,0");
+
+        resolve({
+          lat: 0,
+          lng: 0,
+        });
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 7000,
+        maximumAge: 60000,
+      }
     );
   });
+
+
+
   // =========================================================
   // 6️⃣ SUBMIT / VALIDATE LOCO
   // =========================================================
@@ -178,6 +213,7 @@ const getCurrentLocation = () =>
     try {
       const token = localStorage.getItem("token");
        const { lat, lng } = await getCurrentLocation();
+       //alert(lat);
       const response = await api.get(
         `LocoLanding/validateLoco/${locoNumberInt}`,{
       headers: { Authorization: `Bearer ${token}` },
@@ -196,6 +232,7 @@ const getCurrentLocation = () =>
         localStorage.setItem("locoNumber", locoNumberInt.toString());
         localStorage.setItem("locoClass", response.data.locoClass);
         localStorage.setItem("locoModel", response.data.locoModel);
+        localStorage.setItem("phase", response.data.phase);
         navigate("/locoinfo");
       
     } catch (err) {

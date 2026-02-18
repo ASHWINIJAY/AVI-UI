@@ -150,15 +150,32 @@ const WagonLandingPage = () => {
     navigate("/wagoninfo");
   };
 const getCurrentLocation = () =>
-  new Promise((resolve, reject) => {
+  new Promise((resolve) => {
+    console.log("📍 Requesting location...");
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        console.log("✅ Location success");
+
         resolve({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
       },
-      reject
+      (error) => {
+        console.error("❌ Location failed:", error);
+        console.log("⚠ Returning default location 0,0");
+
+        resolve({
+          lat: 0,
+          lng: 0,
+        });
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 7000,
+        maximumAge: 60000,
+      }
     );
   });
 
@@ -200,6 +217,7 @@ const getCurrentLocation = () =>
         localStorage.setItem("wagonNumber", wagonNumberInt.toString());
         localStorage.setItem("wagonGroup", validateResp.data.wagonGroup);
         localStorage.setItem("wagonType", validateResp.data.wagonType);
+        localStorage.setItem("phase", validateResp.data.phase);
         navigate("/wagoninfo");
      
     } catch (err) {

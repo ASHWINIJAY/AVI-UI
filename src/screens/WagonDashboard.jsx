@@ -4,19 +4,19 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Dropdown } from 'primereact/dropdown';
 import ExcelJS from "exceljs";
-import { InputText } from "primereact/inputtext"; //PLEASE ADD (FILTERING)
+import { InputText } from "primereact/inputtext"; 
 import { FilterMatchMode } from "primereact/api";
 import { saveAs } from "file-saver";
 import '../Dash.css'; // assume your existing css; you can add the small .selected-row rule if needed
 
 export default function WagonDashboard() {
-    const BACKEND_URL = "http://41.87.206.94/AVIapi"; 
-    //const BACKEND_URL = "http://41.87.206.94/AVIapi";
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
+
     const token = localStorage.getItem("token");
     const [userRole] = useState(localStorage.getItem("userRole"));
-const [score, setScore] = useState([]);
+    const [score, setScore] = useState([]);
     const [allRows, setAllRows] = useState([]);
-    const [selectedRows, setSelectedRows] = useState([]); // array of row objects
+    const [selectedRows, setSelectedRows] = useState([]); 
     const [loading, setLoading] = useState(true);
 
     const [modalPhotos, setModalPhotos] = useState([]);
@@ -27,8 +27,8 @@ const [score, setScore] = useState([]);
 
     const [showTickConfirmModal, setShowTickConfirmModal] = useState(false);
     const [tickTargetRow, setTickTargetRow] = useState(null);
-const [showGenerateAllConfirm, setShowGenerateAllConfirm] = useState(false);
-const [showGenerateAllUpload, setShowGenerateAllUploadConfirm] = useState(false);
+    const [showGenerateAllConfirm, setShowGenerateAllConfirm] = useState(false);
+    //const [showGenerateAllUpload, setShowGenerateAllUploadConfirm] = useState(false);
     const [pdfUrl, setPdfUrl] = useState(null);
     const [showPdfModal, setShowPdfModal] = useState(false);
     const [showNoPdf, setShowNoPdf] = useState(false);
@@ -43,80 +43,47 @@ const [showGenerateAllUpload, setShowGenerateAllUploadConfirm] = useState(false)
     const [showTickSuccessModal, setShowTickSuccessModal] = useState(false);
     const [recalculating, setRecalculating] = useState(false);
 
-    const [showNoValues, setShowNoValues] = useState(false);
+    //const [showNoValues, setShowNoValues] = useState(false);
 
     const [showRecalSuccess, setShowRecalSuccess] = useState(false);
-const [showNoInput, setShowNoInput] = useState(false); //PLEASE ADD (NEW)
+    const [showNoInput, setShowNoInput] = useState(false); 
 
     // Pagination/scroll persistence
     const [dtFirst, setDtFirst] = useState(0);
     const [dtRows, setDtRows] = useState(100);
     const scrollPosRef = useRef(0);
     const gridContainerRef = useRef(null);
-        const [filters, setFilters] = useState({
+    const [filters, setFilters] = useState({
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-wagonNumber: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  wagonGroup: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  wagonType: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  inspectorName: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  city: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        wagonNumber: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        wagonGroup: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        inspectorName: { value: null, matchMode: FilterMatchMode.CONTAINS }
+    });
 
-  wagonStatus: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  operationalStatus: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    const STATUS = {
+        INSPECTION_DONE: "Inspection Complete",
+        READY_FOR_ASSESSMENT: "ReadyForAssessment",
+        ASSESSED_READY_FOR_UPLOAD: "AssessedReadyForUpload"
+    };
 
-  calOperateStatus: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  calCondition: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    const [statusFilter, setStatusFilter] = useState(STATUS.INSPECTION_DONE);
 
-  /* ===== DATE / TIME (TEXT MATCH) ===== */
-  dateAssessed: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  timeAssessed: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  startTimeInspect: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    const statusOptions = [
+        { label: "Inspection Complete", value: STATUS.INSPECTION_DONE },
+        { label: "Assessed Ready For Upload", value: STATUS.ASSESSED_READY_FOR_UPLOAD }
+    ];
 
-  liftDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  barrelDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  brakeDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  uploadDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    const PHASE = {
+        PHASE_1: "1",
+        PHASE_2: "2"
+    };
 
-  liftLapsed: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  barrelLapsed: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  brakeLapsed: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    const [phaseFilter, setPhaseFilter] = useState(PHASE.PHASE_1);
 
-  /* ===== LOCATION ===== */
-  gpsLatitude: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  gpsLongitude: { value: null, matchMode: FilterMatchMode.CONTAINS },
-
-  /* ===== NUMERIC FIELDS ===== */
-  refurbishValue: { value: null, matchMode: FilterMatchMode.EQUALS },
-  missingValue: { value: null, matchMode: FilterMatchMode.EQUALS },
-  replaceValue: { value: null, matchMode: FilterMatchMode.EQUALS },
-  totalLaborValue: { value: null, matchMode: FilterMatchMode.EQUALS },
-
-  liftValue: { value: null, matchMode: FilterMatchMode.EQUALS },
-  barrelValue: { value: null, matchMode: FilterMatchMode.EQUALS },
-
-  totalValue: { value: null, matchMode: FilterMatchMode.EQUALS },
-  marketValue: { value: null, matchMode: FilterMatchMode.EQUALS },
-  assetValue: { value: null, matchMode: FilterMatchMode.EQUALS },
-
-  calScore: { value: null, matchMode: FilterMatchMode.EQUALS }
-});
-
-
-    // Status filter (Asset Monitor only)
-
-
-const STATUS = {
-    INSPECTION_DONE: "Inspection Complete",
-    READY_FOR_ASSESSMENT: "ReadyForAssessment",
-    ASSESSED_READY_FOR_UPLOAD: "AssessedReadyForUpload"
-};
-
-const [statusFilter, setStatusFilter] = useState(STATUS.INSPECTION_DONE);
-
-const statusOptions = [
-    { label: "Inspection Complete", value: STATUS.INSPECTION_DONE },
-    { label: "Assessed Ready For Upload", value: STATUS.ASSESSED_READY_FOR_UPLOAD }
-];
+    const phaseOptions = [
+        { label: "Phase 1 (Original Data)", value: PHASE.PHASE_1 },
+        { label: "Phase 2 (TFR Data)", value: PHASE.PHASE_2 }
+    ];
 
     //PLEASE ADD (FILTERING)
     const [globalFilterValue, setGlobalFilterValue] = useState("");
@@ -124,18 +91,15 @@ const statusOptions = [
     // ADMIN view state: default "Inspection Complete"
     const isAdmin = userRole === "Super User";
     //const [adminView, setAdminView] = useState("Inspection Complete"); // "Inspection Complete" | "Assessor Ticked"
-const [adminMode, setAdminMode] = useState("Asset Monitor"); 
-// "Asset Monitor" | "Assessor"
-
-// "Assessor" | "Asset Monitor"
-
+    const [adminMode, setAdminMode] = useState("Asset Monitor");
+    
     const isAssessor = userRole === "Assessor";
     const isAssessorMonitor = userRole === "Asset Monitor";
-const effectiveRole = isAdmin
-    ? adminMode
-    : isAssessor
-        ? "Assessor"
-        : "Asset Monitor";
+    const effectiveRole = isAdmin
+        ? adminMode
+        : isAssessor
+            ? "Assessor"
+            : "Asset Monitor";
 
     const getRowUniqueId = (row) =>
         row.id ?? `${row.wagonNumber ?? "NA"}-${row.inspectorId ?? "NA"}-${row.dateAssessed ?? "NA"}-${row.timeAssessed ?? "NA"}`;
@@ -151,70 +115,70 @@ const effectiveRole = isAdmin
             if (viewport) viewport.scrollTop = scrollPosRef.current;
         }, 50);
     };
-    //PLEASE ADD (NEW)
-    //PLEASE ADD (NEW)
+    
     const fetchScore = async () => {
-    try {
-        let res = await fetch(`${BACKEND_URL}/api/Dashboard/getScoreList`);
-        const data = await res.json();
+        try {
+            let res = await fetch(`${BACKEND_URL}/api/WagonDash/getScoreList`);
+            const data = await res.json();
 
-        // 🔥 Enhance each item: add label with score + condition
-        const formatted = (data || []).map(s => ({
-            ...s,
-            label: ` - ${s.condition}`,
-            value: s.conditionScore,
-            color: getScoreColor(s.conditionScore)
-        }));
+            const formatted = (data || []).map(s => ({
+                ...s,
+                label: ` - ${s.condition}`,
+                value: s.conditionScore,
+                color: getScoreColor(s.conditionScore)
+            }));
 
-        setScore(formatted);
-    }
-    catch (err) {
-        console.error("Error fetching Score data:", err);
-        setScore([]);
-    }
-};
+            setScore(formatted);
+        }
+        catch (err) {
+            console.error("Error fetching Score data:", err);
+            setScore([]);
+        }
+    };
 
-const getScoreColor = (score) => {
-    switch (String(score)) {
-        case "1": return "danger";       // red
-        case "2": return "danger";
-        case "3": return "warning";      // orange/yellow
-        case "4": return "warning";
-        case "5": return "info";         // blueish
-        case "6": return "info";
-        case "7": return "primary";      // blue
-        case "8": return "success";      // green
-        case "9": return "success";
-        case "10": return "success";
-        default: return "secondary";
-    }
-};
-const getBackgroundColor = (score) => {
-    switch (String(score)) {
-        case "1": return "#c71e18ff"
-        case "2": return "#d9534f"; // red
+    const getScoreColor = (score) => {
+        switch (String(score)) {
+            case "1": return "danger";       // red
+            case "2": return "danger";
+            case "3": return "warning";      // orange/yellow
+            case "4": return "warning";
+            case "5": return "info";         // blueish
+            case "6": return "info";
+            case "7": return "primary";      // blue
+            case "8": return "success";      // green
+            case "9": return "success";
+            case "10": return "success";
+            default: return "secondary";
+        }
+    };
 
-        case "3": return "#f0da4eff";
-        case "4": return "#c3c609ff"; // orange/yellow
+    const getBackgroundColor = (score) => {
+        switch (String(score)) {
+            case "1": return "#c71e18ff"
+            case "2": return "#d9534f"; // red
 
-        case "5": return "#5bc0de"; 
-        case "6": return "#3d97b2ff"; // light blue
+            case "3": return "#f0da4eff";
+            case "4": return "#c3c609ff"; // orange/yellow
 
-        case "7": return "#0275d8"; // blue
+            case "5": return "#5bc0de";
+            case "6": return "#3d97b2ff"; // light blue
 
-        case "8": return "#5cb85c";
-        case "9": return "#378537ff";
-        case "10": return "#197219ff"; // green
+            case "7": return "#0275d8"; // blue
 
-        default: return "#6c757d"; // grey
-    }
-};
-  const handlereGenerateAll = async () =>{
-         try {
+            case "8": return "#5cb85c";
+            case "9": return "#378537ff";
+            case "10": return "#197219ff"; // green
+
+            default: return "#6c757d"; // grey
+        }
+    };
+
+    const handlereGenerateAll = async () => {
+        try {
             setUploading(true);
             const endpoints = [
                 { url: `${BACKEND_URL}/api/CertPdf/GenerateAndSaveCertPdfForAllWagonNU` },
-                { url: `${BACKEND_URL}/api/QuotePdf/GenerateAndSaveSOWPdfForAllWagonNU` },
+                { url: `${BACKEND_URL}/api/SowPdf/GenerateAndSaveSOWPdfForAllWagonNU` },
                 { url: `${BACKEND_URL}/api/QuotePdf/ReGenerateAndSaveQuotePdfForAllWagonNU` }
             ];
 
@@ -222,8 +186,8 @@ const getBackgroundColor = (score) => {
                 const res = await fetch(ep.url, {
                     method: "GET",
                     headers: {
-            "Authorization": `Bearer ${token}`
-        }
+                        "Authorization": `Bearer ${token}`
+                    }
                 });
                 if (!res.ok) {
                     const errText = await res.text();
@@ -232,111 +196,113 @@ const getBackgroundColor = (score) => {
                 // wait a tick so UI updates; ensures strict ordering
                 await new Promise(r => setTimeout(r, 250));
             }
-alert("All PDF's Successfully Generated");
+            alert("All PDF's Successfully Generated");
             // success
-            
+
         } catch (err) {
             console.error("Error generating PDFs:", err);
             alert("Error generating PDFs: " + (err.message || err));
         } finally {
             setUploading(false);
         }
-    }
-    const handlereUploadAll = async () => {       
+    };
+
+    const handlereUploadAll = async () => {
 
         try {
             setUploading(true);
-            const resp = await fetch(`${BACKEND_URL}/api/DashBoard/ReuploadAllWagonsNU`, {
+            const resp = await fetch(`${BACKEND_URL}/api/WagonDash/ReuploadAllWagonsNU`, {
                 method: "GET",
             });
 
             if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
             await resp.json();
 
-          alert("Re-upload successfully completed");
-           
+            alert("Re-upload successfully completed");
+
         } catch (err) {
             alert("Re-upload failed: " + err.message);
         } finally {
-          setUploading(false);
+            setUploading(false);
         }
     };
-    const handlereCalculateAll = async () => {       
+
+    const handlereCalculateAll = async () => {
 
         try {
             setUploading(true);
-            const resp = await fetch(`${BACKEND_URL}/api/DashBoard/RecalculateUploadWagonAllNU`, {
+            const resp = await fetch(`${BACKEND_URL}/api/WagonDash/RecalculateUploadWagonAllNU`, {
                 method: "GET",
-                
+
             });
 
             if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
             await resp.json();
 
-          alert("Re-calculate successfully completed");
-           
+            alert("Re-calculate successfully completed");
+
         } catch (err) {
             alert("Re-calculate failed: " + err.message);
         } finally {
-          setUploading(false);
+            setUploading(false);
         }
     };
-const scoreTemplate = (option, props) => {
 
-    // 🔥 When no option selected → show placeholder text
-    if (!option) {
-        return <span style={{ opacity: 0.6 }}>{props?.placeholder}</span>;
-    }
+    const scoreTemplate = (option, props) => {
 
-    return (
-        <div
-            style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "6px 10px",
-                borderRadius: "8px",
-                backgroundColor: getBackgroundColor(option.value),
-                color: "white",
-                fontWeight: "500"
-            }}
-        >
-            <span>{option.value}</span>
-            <span>{option.label}</span>
-        </div>
-    );
-};
+        if (!option) {
+            return <span style={{ opacity: 0.6 }}>{props?.placeholder}</span>;
+        }
+
+        return (
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "6px 10px",
+                    borderRadius: "8px",
+                    backgroundColor: getBackgroundColor(option.value),
+                    color: "white",
+                    fontWeight: "500"
+                }}
+            >
+                <span>{option.value}</span>
+                <span>{option.label}</span>
+            </div>
+        );
+    };
+
     const onConditionScoreChange = (row, value) => {
-    setAllRows(prev =>
-        prev.map(r =>
-            r.id === row.id ? { ...r, conditionScore: value } : r
-        )
-    );
-};
+        setAllRows(prev =>
+            prev.map(r =>
+                r.id === row.id ? { ...r, conditionScore: value } : r
+            )
+        );
+    };
 
-    // Fetch data
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             let res;
             if (userRole === "Assessor") {
-                res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllWagonDashboard`);
+                res = await fetch(`${BACKEND_URL}/api/WagonDash/getAllWagonDashboard`);
             } else if (userRole === "Asset Monitor") {
-                res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllWagonDashboard`);
+                res = await fetch(`${BACKEND_URL}/api/WagonDash/getAllWagonDashboard`);
             } else if (userRole === "Super User" && effectiveRole === "Inspection Complete") {
-                res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllWagonDashboard`);
+                res = await fetch(`${BACKEND_URL}/api/WagonDash/getAllWagonDashboard`);
             } else if (userRole === "Super User" && effectiveRole === "Assessor Ticked") {
-                res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllWagonDashboard`);
+                res = await fetch(`${BACKEND_URL}/api/WagonDash/getAllWagonDashboard`);
             }
             if (userRole === "Super User" && effectiveRole === "Assessor") {
-    res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllWagonDashboard`);
-}
-else if (
-    userRole === "Super User" &&
-    effectiveRole === "Asset Monitor"
-) {
-    res = await fetch(`${BACKEND_URL}/api/Dashboard/getAllWagonDashboard`);
-}
+                res = await fetch(`${BACKEND_URL}/api/WagonDash/getAllWagonDashboard`);
+            }
+            else if (
+                userRole === "Super User" &&
+                effectiveRole === "Asset Monitor"
+            ) {
+                res = await fetch(`${BACKEND_URL}/api/WagonDash/getAllWagonDashboard`);
+            }
 
             const data = await res.json();
             setAllRows(data || []);
@@ -350,55 +316,62 @@ else if (
         }
     }, [userRole, effectiveRole]);
 
-    //PLEASE ADJUST (NEW)
     useEffect(() => {
         fetchScore();
         fetchData();
-         if (isAssessorMonitor || (isAdmin && effectiveRole === "Asset Monitor")) {
-        setStatusFilter("Inspection Complete");
-    } else {
-        setStatusFilter(null);
-    }
+        if (isAssessorMonitor || (isAdmin && effectiveRole === "Asset Monitor")) {
+            setStatusFilter(STATUS.INSPECTION_DONE);
+            setPhaseFilter(PHASE.PHASE_1);
+        }
+        else if (isAssessor || (isAdmin && effectiveRole === "Assessor")) {
+            setStatusFilter(STATUS.READY_FOR_ASSESSMENT);
+            setPhaseFilter(PHASE.PHASE_1);
+        }
+        else
+        {
+            setStatusFilter(null);
+            setPhaseFilter(null);
+        }
         //PLEASE DO NOT REMOVE
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userRole, effectiveRole]);
 
     // Visible rows according to your existing filter rules — NOT changed
-const visibleRows = useMemo(() => {
-    let rows = allRows;
+    const visibleRows = useMemo(() => {
+        let rows = allRows;
 
-    // Role-based visibility
-    if (effectiveRole === "Assessor") {
-        rows = rows.filter(
-            r => r.wagonStatus === STATUS.READY_FOR_ASSESSMENT
-        );
-    }
+        // Role-based visibility
+        if (effectiveRole === "Assessor") {
+            rows = rows.filter(
+                r =>
+                    r.wagonStatus === STATUS.READY_FOR_ASSESSMENT &&
+                    (r.phase === PHASE.PHASE_1 || r.phase === PHASE.PHASE_2)
+            );
+        }
 
-    if (effectiveRole === "Asset Monitor") {
-        rows = rows.filter(
-            r =>
-                r.wagonStatus === STATUS.INSPECTION_DONE ||
-                r.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD
-        );
-    }
+        if (effectiveRole === "Asset Monitor") {
+            rows = rows.filter(
+                r =>
+                    (r.wagonStatus === STATUS.INSPECTION_DONE ||
+                    r.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD) &&
+                    (r.phase === PHASE.PHASE_1 || r.phase === PHASE.PHASE_2)
+            );
+        }
 
-    // Status dropdown filter (final)
-    if (statusFilter) {
-        rows = rows.filter(
-            r => r.wagonStatus === statusFilter
-        );
-    }
+        // Status dropdown filter (final)
+        if (statusFilter && phaseFilter) {
+            rows = rows.filter(
+                r => r.wagonStatus === statusFilter && r.phase === phaseFilter
+            );
+        }
 
-    return rows;
-}, [allRows, effectiveRole, statusFilter]);
-
+        return rows;
+    }, [allRows, effectiveRole, statusFilter, STATUS.READY_FOR_ASSESSMENT, STATUS.INSPECTION_DONE, STATUS.ASSESSED_READY_FOR_UPLOAD, phaseFilter, PHASE.PHASE_1, PHASE.PHASE_2]);
 
     const rowsWithId = useMemo(() => visibleRows.map(row => ({ ...row, id: getRowUniqueId(row) })), [visibleRows]);
 
-    //PLEASE ADD (NEW)
     const prevSelectedRef = useRef(selectedRows);
 
-    //PLEASE ADJUST (NEW)
     useEffect(() => {
         const validIds = new Set(rowsWithId.map(r => r.id));
         const newSelected = prevSelectedRef.current.filter(s => validIds.has(s.id));
@@ -418,17 +391,18 @@ const visibleRows = useMemo(() => {
     // Helper to check "all three PDFs exist" logic
     const okPdf = (v) => !!v && v !== "N/A" && v !== "No File" && v !== "Not Ready" && v !== "NotReady";
     const hasAllPdfs = (row) => {
-    // 🔐 Only allowed in final status
-    if (row?.wagonStatus !== STATUS.ASSESSED_READY_FOR_UPLOAD) {
-        return false;
-    }
 
-    return (
-        okPdf(row?.assessmentQuote) &&
-        okPdf(row?.assessmentCert) &&
-        okPdf(row?.assessmentSow)
-    );
-};
+        if (row?.wagonStatus !== STATUS.ASSESSED_READY_FOR_UPLOAD) {
+            return false;
+        }
+
+        return (
+            okPdf(row?.assessmentQuote) &&
+            okPdf(row?.assessmentCert) &&
+            okPdf(row?.assessmentSow)
+        );
+    };
+
     // Photos modal
     const handleOpenModal = (photosValue, e) => {
         e?.stopPropagation();
@@ -456,7 +430,6 @@ const visibleRows = useMemo(() => {
         return <img src={url} alt={field} style={{ maxWidth: 100, maxHeight: 100, objectFit: "cover" }} />;
     };
 
-    // OPEN PDF view
     const handleOpenPdf = (pdfPath, e) => {
         e?.stopPropagation();
         if (!pdfPath || ["N/A", "No File", "Not Ready"].includes(pdfPath)) {
@@ -468,14 +441,15 @@ const visibleRows = useMemo(() => {
         setPdfUrl(pdfPath.startsWith("http") ? pdfPath : `${BACKEND_URL}/${pdfPath}`);
         setShowPdfModal(true);
     };
-const handleRecalculateClick = async (row) => {
+
+    const handleRecalculateClick = async (row) => {
         if (!row?.wagonNumber) return;
 
         const payload = { wagonNumber: row.wagonNumber.toString() };
         saveScroll();
         setRecalculating(true)
         try {
-            const response = await fetch(`${BACKEND_URL}/api/Dashboard/recalculateValues`, {
+            const response = await fetch(`${BACKEND_URL}/api/WagonDash/recalculateValues`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -485,7 +459,7 @@ const handleRecalculateClick = async (row) => {
                 alert("Error: " + (errorData?.message ?? JSON.stringify(errorData)));
                 return;
             }
-        
+
             setShowRecalSuccess(true);
             await fetchData();
             // don't clear selection automatically; leave that behaviour as before
@@ -498,7 +472,6 @@ const handleRecalculateClick = async (row) => {
         }
     }
 
-    // Export to excel (unchanged)
     const handleExportToExcel = async () => {
         if (!rowsWithId.length) { alert("No rows to export."); return; }
         const workbook = new ExcelJS.Workbook();
@@ -506,25 +479,26 @@ const handleRecalculateClick = async (row) => {
 
         const headers = [
             "Wagon Number", "Wagon Group", "Wagon Type", "Inspector", "Date Completed", "Time Completed",
-            "Time Started", "Gps Latitude", "Gps Longitude","City", "Lift Date", "Lift Lapsed", "Barrel Test Date",
+            "Time Started", "Gps Latitude", "Gps Longitude", "City", "Lift Date", "Lift Lapsed", "Barrel Test Date",
             "Barrel Lapsed", "Brake Test Date", "Brake Lapsed", "Refurbish Value", "Missing Value",
             "Replace Value", "Labor Value", "LiftValue", "BarrelValue", "Return to Service Cost", "Benchmarking  Value", "Market Value", "Wagon Status", "Upload Date",
-            "ConditionScore", "OperationalStatus", "Calculated Score", "Calculated Status", "Calculated Condition" //PLEASE ADD (NEW)
+            "ConditionScore", "OperationalStatus", "Calculated Score", "Calculated Status", "Calculated Condition", "Phase"
         ];
         worksheet.addRow(headers).font = { bold: true };
 
         rowsWithId.forEach(row => worksheet.addRow([
             row.wagonNumber, row.wagonGroup, row.wagonType, row.inspectorName, row.dateAssessed, row.timeAssessed,
-            row.startTimeInspect, row.gpsLatitude, row.gpsLongitude,row.city, row.liftDate, row.liftLapsed, row.barrelDate,
+            row.startTimeInspect, row.gpsLatitude, row.gpsLongitude, row.city, row.liftDate, row.liftLapsed, row.barrelDate,
             row.barrelLapsed, row.brakeDate, row.brakeLapsed, row.refurbishValue, row.missingValue, row.replaceValue,
             row.totalLaborValue, row.liftValue, row.barrelValue, row.totalValue, row.marketValue, row.assetValue, row.wagonStatus, row.uploadDate,
-            row.conditionScore, row.operationalStatus, row.calScore, row.calOperateStatus, row.calCondition //PLEASE ADD (NEW)
+            row.conditionScore, row.operationalStatus, row.calScore, row.calOperateStatus, row.calCondition, row.phase 
         ]));
 
         const buffer = await workbook.xlsx.writeBuffer();
         saveAs(new Blob([buffer], { type: "application/octet-stream" }), `WagonDashboard_${new Date().toISOString().split("T")[0]}.xlsx`);
     };
-const onGlobalFilterChange = (e) => {
+
+    const onGlobalFilterChange = (e) => {
         const value = e.target.value;
         let _filters = { ...filters };
 
@@ -561,7 +535,7 @@ const onGlobalFilterChange = (e) => {
         setShowConfirmModal(false);
         setUploading(true);
         try {
-            const resp = await fetch(`${BACKEND_URL}/api/Dashboard/uploadWagons`, {
+            const resp = await fetch(`${BACKEND_URL}/api/WagonDash/uploadWagons`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -574,101 +548,118 @@ const onGlobalFilterChange = (e) => {
         } catch (err) { alert("Upload failed: " + err.message); }
         finally { setUploading(false); requestAnimationFrame(() => restoreScroll()); }
     };
-const mapOperationalStatus = (score) => {
-    switch (String(score)) {
-        case "1":  return "Scrap only";
-        case "2":  return "Non-operational, wreck repair";
-        case "3":  return "Non-operational, needs major overhaul";
-        case "4":  return "Partially operational or limited use";
-        case "5":  return "Operational but maintenance is needed";
-        case "6":  return "Operational but needs scheduled repair";
-        case "7":  return "Operational with minor issues";
-        case "8":
-        case "9":
-        case "10": return "Fully operational";
-        default:   return "";
-    }
-};
-const onConditionStatusInstantUpdate = (row, value) => {
-    const newStatus = mapOperationalStatus(value);
 
-    setAllRows(prev =>
-        prev.map(r =>
-            r.id === row.id
-                ? {
-                    ...r,
-                    conditionScore: value,
-                    operationalStatus: newStatus
-                }
-                : r
-        )
-    );
-};
+    const mapOperationalStatus = (score) => {
+        switch (String(score)) {
+            case "1": return "Scrap only";
+            case "2": return "Non-operational, wreck repair";
+            case "3": return "Non-operational, needs major overhaul";
+            case "4": return "Partially operational or limited use";
+            case "5": return "Operational but maintenance is needed";
+            case "6": return "Operational but needs scheduled repair";
+            case "7": return "Operational with minor issues";
+            case "8":
+            case "9":
+            case "10": return "Fully operational";
+            default: return "";
+        }
+    };
+
+    const onConditionStatusInstantUpdate = (row, value) => {
+        const newStatus = mapOperationalStatus(value);
+
+        setAllRows(prev =>
+            prev.map(r =>
+                r.id === row.id
+                    ? {
+                        ...r,
+                        conditionScore: value,
+                        operationalStatus: newStatus
+                    }
+                    : r
+            )
+        );
+    };
 
     // Confirm tick (assessor tick)
     const confirmTickWagon = async () => {
-    if (!tickTargetRow) return;
+        if (!tickTargetRow) return;
 
-    saveScroll();
+        saveScroll();
 
-    try {
-        let url = "";
-        let payload = {
-            wagonNumber: Number(tickTargetRow.wagonNumber)
-        };
+        try {
+            let url = "";
+            let payload = {
+                wagonNumber: Number(tickTargetRow.wagonNumber)
+            };
 
-        // 🚦 STATUS-BASED API ROUTING
-        if (
-            effectiveRole === "Asset Monitor" &&
-            tickTargetRow.wagonStatus === STATUS.INSPECTION_DONE
-        ) {
-            // InspectionDone → ReadyForAssessment
-            url = `${BACKEND_URL}/api/Dashboard/markReadyForAssessment`;
+            if (
+                effectiveRole === "Asset Monitor" &&
+                tickTargetRow.wagonStatus === STATUS.INSPECTION_DONE &&
+                tickTargetRow.phase === PHASE.PHASE_1
+            ) {
+                // InspectionDone → ReadyForAssessment
+                url = `${BACKEND_URL}/api/WagonDash/markReadyForAssessment`;
+            }
+            else if (
+                effectiveRole === "Asset Monitor" &&
+                tickTargetRow.wagonStatus === STATUS.INSPECTION_DONE &&
+                tickTargetRow.phase === PHASE.PHASE_2
+            ) {
+                // InspectionDone → ReadyForAssessment
+                url = `${BACKEND_URL}/api/WagonDash/markReadyForAssessment`;
+            }
+            else if (
+                effectiveRole === "Assessor" &&
+                tickTargetRow.wagonStatus === STATUS.READY_FOR_ASSESSMENT &&
+                tickTargetRow.phase === PHASE.PHASE_1
+            ) {
+                // ReadyForAssessment → AssessedReadyForUpload
+                url = `${BACKEND_URL}/api/WagonDash/markAssessedReadyForUpload`;
+            }
+            else if (
+                effectiveRole === "Assessor" &&
+                tickTargetRow.wagonStatus === STATUS.READY_FOR_ASSESSMENT &&
+                tickTargetRow.phase === PHASE.PHASE_2
+            ) {
+                // ReadyForAssessment → AssessedReadyForUpload
+                url = `${BACKEND_URL}/api/WagonDash/markAssessedReadyForUpload`;
+            }
+            else {
+                alert("Invalid status transition");
+                return;
+            }
+
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(err);
+            }
+
+            setShowTickConfirmModal(false);
+            setTickTargetRow(null);
+            setShowTickSuccessModal(true);
+
+            await fetchData();
         }
-        else if (
-            effectiveRole === "Assessor" &&
-            tickTargetRow.wagonStatus === STATUS.READY_FOR_ASSESSMENT
-        ) {
-            // ReadyForAssessment → AssessedReadyForUpload
-            url = `${BACKEND_URL}/api/Dashboard/markAssessedReadyForUpload`;
+        catch (err) {
+            console.error("Tick failed:", err);
+            alert("Failed to update status");
         }
-        else {
-            alert("Invalid status transition");
-            return;
+        finally {
+            requestAnimationFrame(() => restoreScroll());
         }
+    };
 
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            const err = await response.text();
-            throw new Error(err);
-        }
-
-        setShowTickConfirmModal(false);
-        setTickTargetRow(null);
-        setShowTickSuccessModal(true);
-
-        await fetchData();
-    }
-    catch (err) {
-        console.error("Tick failed:", err);
-        alert("Failed to update status");
-    }
-    finally {
-        requestAnimationFrame(() => restoreScroll());
-    }
-};
-
-
-    //PLEASE ADD (NEW)
     const updateConditionScore = async (wagonNumber, value) => {
         saveScroll();
         try {
-            await fetch(`${BACKEND_URL}/api/Dashboard/updateCondition`, {
+            await fetch(`${BACKEND_URL}/api/WagonDash/updateCondition`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -676,7 +667,6 @@ const onConditionStatusInstantUpdate = (row, value) => {
                     conditionScore: String(value)
                 })
             });
-             //await fetchData();
         } catch (err) {
             console.error("Failed to update condition score:", err);
             alert("Failed to save Condition Score");
@@ -692,19 +682,22 @@ const onConditionStatusInstantUpdate = (row, value) => {
     };
 
     const confirmGeneratePdfs = async () => {
-         if (!generatePdfTarget) return;
+        if (!generatePdfTarget) return;
+
         // Save scroll & pagination
         if (!generatePdfTarget?.conditionScore || generatePdfTarget.conditionScore === "") {
-        alert("Please select a Condition Score before generating PDFs.");
-        return;  // stop PDF generation
-    }
-            let resp = await fetch(`${BACKEND_URL}/api/Dashboard/checkWagonInputs/${parseInt(generatePdfTarget.wagonNumber)}`);
+            alert("Please select a Condition Score before generating PDFs.");
+            return;  // stop PDF generation
+        }
+
+        let resp = await fetch(`${BACKEND_URL}/api/WagonDash/checkWagonInputs/${parseInt(generatePdfTarget.wagonNumber)}`);
         const resMessage = await resp.json();
         if (resMessage.message === "No") {
             setShowGeneratePdfModal(false);
             setShowNoInput(true);
             return;
         }
+
         saveScroll();
         setShowGeneratePdfModal(false);
         setGeneratingPdf(true);
@@ -716,7 +709,7 @@ const onConditionStatusInstantUpdate = (row, value) => {
             const endpoints = [
                 { url: `${BACKEND_URL}/api/QuotePdf/GenerateAndSaveQuotePdf` },
                 { url: `${BACKEND_URL}/api/CertPdf/GenerateAndSaveCertPdf` },
-                { url: `${BACKEND_URL}/api/QuotePdf/GenerateAndSaveSowPdf` }
+                { url: `${BACKEND_URL}/api/SowPdf/GenerateAndSaveSowPdf` }
             ];
 
             for (const ep of endpoints) {
@@ -791,111 +784,122 @@ const onConditionStatusInstantUpdate = (row, value) => {
     };
 
     const canTick = (row) => {
-    // Asset Monitor → InspectionDone → ReadyForAssessment
-    if (
-        effectiveRole === "Asset Monitor" &&
-        row.wagonStatus === STATUS.INSPECTION_DONE
-    ) {
-        return true;
-    }
-
-    // Assessor → ReadyForAssessment → AssessedReadyForUpload
-    if (
-        effectiveRole === "Assessor" &&
-        row.wagonStatus === STATUS.READY_FOR_ASSESSMENT
-    ) {
-        return true;
-    }
-
-    return false;
-};
-
-
-const isUploadSelectable = (row) => {
-    return (
-        effectiveRole === "Asset Monitor" &&
-        row.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD &&
-        hasAllPdfs(row)
-    );
-};
-
-const canUpload =
-    effectiveRole === "Asset Monitor" &&
-    selectedRows.length > 0 &&
-    selectedRows.every(
-        r => r.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD
-    );
-
-
-    // Single-row checkbox template (bigger checkbox, disabled when not all PDFs exist)
-const renderRowCheckbox = (row) => {
-    const isChecked = selectedRows.some(r => r.id === row.id);
-    const tickAllowed = canTick(row);
-    const uploadAllowed = isUploadSelectable(row);
-
-    const onChange = (e) => {
-        e.stopPropagation();
-
-        // ✅ STATUS TRANSITION (InspectionDone → ReadyForAssessment)
         if (
             effectiveRole === "Asset Monitor" &&
-            row.wagonStatus === STATUS.INSPECTION_DONE
+            row.wagonStatus === STATUS.INSPECTION_DONE &&
+            row.phase === PHASE.PHASE_1
         ) {
-            setTickTargetRow(row);
-            setShowTickConfirmModal(true);
-            return;
+            return true;
         }
 
-        // ✅ STATUS TRANSITION (ReadyForAssessment → AssessedReadyForUpload)
+        if (
+            effectiveRole === "Asset Monitor" &&
+            row.wagonStatus === STATUS.INSPECTION_DONE &&
+            row.phase === PHASE.PHASE_2
+        ) {
+            return true;
+        }
+
         if (
             effectiveRole === "Assessor" &&
-            row.wagonStatus === STATUS.READY_FOR_ASSESSMENT
+            row.wagonStatus === STATUS.READY_FOR_ASSESSMENT &&
+            row.phase === PHASE.PHASE_1
         ) {
-            setTickTargetRow(row);
-            setShowTickConfirmModal(true);
-            return;
+            return true;
         }
 
-        // ✅ UPLOAD SELECTION ONLY
-        if (uploadAllowed) {
-            if (e.target.checked) {
-                setSelectedRows(prev =>
-                    prev.some(r => r.id === row.id)
-                        ? prev
-                        : [...prev, row]
-                );
-                setShowConfirmModal(true);
-            } else {
-                setSelectedRows(prev =>
-                    prev.filter(r => r.id !== row.id)
-                );
-            }
+        if (
+            effectiveRole === "Assessor" &&
+            row.wagonStatus === STATUS.READY_FOR_ASSESSMENT &&
+            row.phase === PHASE.PHASE_2
+        ) {
+            return true;
         }
+
+        return false;
     };
 
-    return (
-        <div
-            style={{ display: "flex", justifyContent: "center" }}
-            onClick={(ev) => ev.stopPropagation()}
-        >
-            <input
-                type="checkbox"
-                checked={isChecked}
-                disabled={!tickAllowed && !uploadAllowed}
-                onChange={onChange}
-                style={{
-                    transform: "scale(1.35)",
-                    cursor:
-                        tickAllowed || uploadAllowed
-                            ? "pointer"
-                            : "not-allowed"
-                }}
-            />
-        </div>
-    );
-};
+    const isUploadSelectable = (row) => {
+        return (
+            effectiveRole === "Asset Monitor" &&
+            row.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD &&
+            hasAllPdfs(row)
+        );
+    };
 
+    const canUpload =
+        effectiveRole === "Asset Monitor" &&
+        selectedRows.length > 0 &&
+        selectedRows.every(
+            r => r.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD
+            );
 
+    // Single-row checkbox template (bigger checkbox, disabled when not all PDFs exist)
+    const renderRowCheckbox = (row) => {
+        const isChecked = selectedRows.some(r => r.id === row.id);
+        const tickAllowed = canTick(row);
+        const uploadAllowed = isUploadSelectable(row);
+
+        const onChange = (e) => {
+            e.stopPropagation();
+
+            if (
+                effectiveRole === "Asset Monitor" &&
+                row.wagonStatus === STATUS.INSPECTION_DONE &&
+                (row.phase === PHASE.PHASE_1 || row.phase === PHASE.PHASE_2)
+            ) {
+                setTickTargetRow(row);
+                setShowTickConfirmModal(true);
+                return;
+            }
+
+            if (
+                effectiveRole === "Assessor" &&
+                row.wagonStatus === STATUS.READY_FOR_ASSESSMENT &&
+                (row.phase === PHASE.PHASE_1 || row.phase === PHASE.PHASE_2)
+            ) {
+                setTickTargetRow(row);
+                setShowTickConfirmModal(true);
+                return;
+            }
+
+            if (uploadAllowed) {
+                if (e.target.checked) {
+                    setSelectedRows(prev =>
+                        prev.some(r => r.id === row.id)
+                            ? prev
+                            : [...prev, row]
+                    );
+                    setShowConfirmModal(true);
+                } else {
+                    setSelectedRows(prev =>
+                        prev.filter(r => r.id !== row.id)
+                    );
+                }
+            }
+        };
+
+        return (
+            <div
+                style={{ display: "flex", justifyContent: "center" }}
+                onClick={(ev) => ev.stopPropagation()}
+            >
+                <input
+                    type="checkbox"
+                    checked={isChecked}
+                    disabled={!tickAllowed && !uploadAllowed}
+                    onChange={onChange}
+                    style={{
+                        transform: "scale(1.35)",
+                        cursor:
+                            tickAllowed || uploadAllowed
+                                ? "pointer"
+                                : "not-allowed"
+                    }}
+                />
+            </div>
+        );
+    };
 
     // Prevent row clicks from selecting (selection is only via checkbox)
     const onRowClick = (e) => {
@@ -913,75 +917,91 @@ const renderRowCheckbox = (row) => {
         <Container fluid>
             <Card className="mt-3 mb-3">
                 <Card.Header>Wagon Dashboard</Card.Header>
-                <Card.Body style={{ height: 640, width: "100%" }}>
+                <Card.Body style={{ height: 730, width: "100%" }}>
                     <div className="d-flex justify-content-start mb-3">
                         <Button variant="success" size="sm" onClick={handleExportToExcel} className="me-2">Export to Excel</Button>
                         {(isAssessorMonitor || (isAdmin && effectiveRole === "Assessor Ticked")) && (
                             <Button
-    variant="primary"
-    size="sm"
-    disabled={!canUpload}
-    onClick={() =>
-        selectedRows.length
-            ? setShowConfirmModal(true)
-            : setShowNoSelectModal(true)
-    }
->
-    Upload
-</Button>
-   )}
-   <Button variant="success" size="sm" onClick={handlereUploadAll} className="me-2">Upload All Lines</Button>
-                                             <Button variant="success" size="sm" onClick={handlereCalculateAll} className="me-2">Re-Calculate All Lines</Button>
-                                             <Button
-                              variant="success"
-                              size="sm"
-                              className="me-2"
-                              onClick={() => setShowGenerateAllConfirm(true)}
-                          >
-                              Re-Generate All PDF's
-                          </Button>
-                          <br></br>
-   
-                       {isAdmin && (
-                      <div className="d-flex align-items-center mb-2">
-    <span className="me-2 fw-bold">Role:</span>  
-    <Form.Select
-        size="sm"
-        value={adminMode}
-        onChange={(e) => {
-            setAdminMode(e.target.value);
-            setSelectedRows([]);
-            setDtFirst(0);
-            setStatusFilter(STATUS.INSPECTION_DONE);
-        }}
-        style={{ width: 220, marginLeft: 8 }}
-    >
-        <option value="Asset Monitor">Asset Monitor Role</option>
-        <option value="Assessor">Assessor Role</option>
-    </Form.Select>
-    </div>
-)}
-{(isAssessorMonitor || (effectiveRole === "Asset Monitor")) && (
-    <div className="d-flex align-items-center mb-2">
-    <span className="me-2 fw-bold">Status:</span>
-    <Dropdown
-        value={statusFilter}
-        options={statusOptions}
-        onChange={(e) => {
-            setStatusFilter(e.value);
-            setSelectedRows([]);
-            setDtFirst(0);
-        }}
-        style={{ width: 300 }}
-    />
-</div>
+                                variant="primary"
+                                size="sm"
+                                disabled={!canUpload}
+                                onClick={() =>
+                                    selectedRows.length
+                                        ? setShowConfirmModal(true)
+                                        : setShowNoSelectModal(true)
+                                }
+                            >
+                                Upload
+                            </Button>
+                        )}
+                        <Button variant="success" size="sm" onClick={handlereUploadAll} className="me-2">Upload All Lines</Button>
+                        <Button variant="success" size="sm" onClick={handlereCalculateAll} className="me-2">Re-Calculate All Lines</Button>
+                        <Button
+                            variant="success"
+                            size="sm"
+                            className="me-2"
+                            onClick={() => setShowGenerateAllConfirm(true)}
+                        >
+                            Re-Generate All PDF's
+                        </Button>
+                        <br></br>
 
-)}
+                        {isAdmin && (
+                            <div className="d-flex align-items-center mb-2">
+                                <span className="me-2 fw-bold">Role:</span>
+                                <Form.Select
+                                    size="sm"
+                                    value={adminMode}
+                                    onChange={(e) => {
+                                        setAdminMode(e.target.value);
+                                        setSelectedRows([]);
+                                        setDtFirst(0);
+                                        setStatusFilter(STATUS.INSPECTION_DONE);
+                                        setPhaseFilter(PHASE.PHASE_1);
+                                    }}
+                                    style={{ width: 220, marginLeft: 8 }}
+                                >
+                                    <option value="Asset Monitor">Asset Monitor Role</option>
+                                    <option value="Assessor">Assessor Role</option>
+                                </Form.Select>
+                            </div>
+                        )}
+                        {(isAssessorMonitor || (effectiveRole === "Asset Monitor")) && (
+                            <div className="d-flex align-items-center mb-2">
+                                <span className="me-2 fw-bold">Status:</span>
+                                <Dropdown
+                                    value={statusFilter}
+                                    options={statusOptions}
+                                    onChange={(e) => {
+                                        setStatusFilter(e.value);
+                                        setSelectedRows([]);
+                                        setDtFirst(0);
+                                    }}
+                                    style={{ width: 300 }}
+                                />
+                            </div>
+                        )}
+
+                        {(isAssessorMonitor || isAssessor || (effectiveRole === "Asset Monitor" || effectiveRole === "Assessor")) && (
+                            <div className="d-flex align-items-center mb-2">
+                                <span className="me-2 fw-bold">Phase:</span>
+                                <Dropdown
+                                    value={phaseFilter}
+                                    options={phaseOptions}
+                                    onChange={(e) => {
+                                        setPhaseFilter(e.value);
+                                        setSelectedRows([]);
+                                        setDtFirst(0);
+                                    }}
+                                    style={{ width: 300 }}
+                                />
+                            </div>
+                        )}
 
                         <div style={{ marginLeft: 12, alignSelf: "center" }}>{selectedRows.length ? `${selectedRows.length} selected` : ""}</div>
-                           
+
                     </div>
-  <div className="d-flex justify-content-start mb-2">
+                    <div className="d-flex justify-content-start mb-2">
                         <span className="p-input-icon-left">
                             <InputText
                                 value={globalFilterValue}
@@ -990,307 +1010,210 @@ const renderRowCheckbox = (row) => {
                                 style={{ width: "500px" }}
                             />
                         </span>
-                       
-
-
                     </div>
+
                     <div style={{ position: "relative" }} ref={gridContainerRef}>
                         {/* overlay spinners */}
-                        {(uploading || generatingPdf) && (
+                        {(uploading || generatingPdf || recalculating) && (
                             <div
-                                                               style={{
-                                                                   position: "absolute",
-                                                                   zIndex: 10,
-                                                                   top: 0,
-                                                                   left: 400,
-                                                                   right: 0,
-                                                                   bottom: 0,
-                                                                   backgroundColor: "rgba(255,255,255,0.6)",
-                                                                   display: "flex",
-                                                                   flexDirection: "column",
-                                                                   justifyContent: "left",
-                                                                   alignItems: "left",
-                                                                   gap: "10px"
-                                                               }}
-                                                           >
-                                                               <Spinner animation="border" />
-                                                               <div
-                                                           style={{
-                                                               fontWeight: 500,
-                                                               fontSize: "14px",
-                                                               color: "#fda10dff" // Bootstrap primary blue
-                                                           }}
-                                                       >
-                                                           Please wait…
-                                                       </div>
-                                                       
-                                                           </div>
+                                style={{
+                                    position: "absolute",
+                                    zIndex: 10,
+                                    top: 0,
+                                    left: 400,
+                                    right: 0,
+                                    bottom: 0,
+                                    backgroundColor: "rgba(255,255,255,0.6)",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    justifyContent: "left",
+                                    alignItems: "left",
+                                    gap: "10px"
+                                }}
+                            >
+                                <Spinner animation="border" />
+                                <div
+                                    style={{
+                                        fontWeight: 500,
+                                        fontSize: "14px",
+                                        color: "#fda10dff" // Bootstrap primary blue
+                                    }}
+                                >
+                                    Please wait…
+                                </div>
+
+                            </div>
                         )}
 
-                       <DataTable
-    value={rowsWithId}
-    paginator
-    first={dtFirst}
-    rows={dtRows}
-    rowsPerPageOptions={[25, 50, 100, 200]}
-    onPage={(e) => {
-        setDtFirst(e.first);
-        setDtRows(e.rows);
-        saveScroll();
-    }}
-    className="p-datatable-sm p-datatable-striped"
-    scrollable
-    scrollHeight="510px"
-    dataKey="id"
-    rowClassName={rowClassName}
-    onRowClick={onRowClick}
-    filters={filters}
-    globalFilterFields={["wagonNumber", "wagonGroup", "inspectorName"]}
-    filterDisplay="menu"
->
-    {/* ================= CHECKBOX ================= */}
-    <Column
-        header={isAssessor || isAdmin ? "" : renderHeaderSelectAll()}
-        headerStyle={{ width: "3rem" }}
-        body={(row) => renderRowCheckbox(row)}
-        style={{ width: "3rem" }}
-    />
-
-    {/* ================= ACTIONS ================= */}
-    {effectiveRole === "Asset Monitor" && (
-        <Column
-            header="Recalculate Values"
-            style={{ minWidth: 150 }}
-            body={(row) => {
-                const isInsCompleted =
-                    row.wagonStatus === STATUS.INSPECTION_DONE;
-
-                if (isInsCompleted) {
-                    return (
-                        <Button
-                            size="sm"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleRecalculateClick(row);
+                        <DataTable
+                            value={rowsWithId}
+                            paginator
+                            first={dtFirst}
+                            rows={dtRows}
+                            rowsPerPageOptions={[25, 50, 100, 200]}
+                            onPage={(e) => {
+                                setDtFirst(e.first);
+                                setDtRows(e.rows);
+                                saveScroll();
                             }}
+                            className="p-datatable-sm"
+                            scrollable
+                            scrollHeight="510px"
+                            dataKey="id"
+                            rowClassName={rowClassName}
+                            onRowClick={onRowClick}
+                            filters={filters}
+                            globalFilterFields={["wagonNumber", "wagonGroup", "inspectorName"]}
                         >
-                            Recalculate
-                        </Button>
-                    );
-                }
-                return null;
-            }}
-        />
-    )}
+                            {/* Checkbox column (custom checkbox) */}
+                            <Column
+                                header={isAssessor || isAdmin ? "" : renderHeaderSelectAll()}
+                                headerStyle={{ width: '3rem' }}
+                                body={(row) => renderRowCheckbox(row)}
+                                style={{ width: '3rem' }}
+                            />
+                            {(effectiveRole === "Asset Monitor" && statusFilter !== STATUS.ASSESSED_READY_FOR_UPLOAD) && (
+                                <Column
+                                    header="Recalculate Values"
+                                    body={(row) => {
+                                        const isInsCompleted =
+                                            row.wagonStatus === STATUS.INSPECTION_DONE;
 
-    {effectiveRole === "Asset Monitor" && (
-        <Column
-            header="Generate PDFs"
-            style={{ minWidth: 150 }}
-            body={(row) => {
-                const isReadyForAssessment =
-                    row.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD;
-                const disabled =
-                    !isReadyForAssessment || hasAllPdfs(row);
+                                        if (effectiveRole === "Asset Monitor" && isInsCompleted) {
+                                            return (
+                                                <Button
+                                                    size="sm"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleRecalculateClick(row);
+                                                    }}
+                                                >
+                                                    Recalculate
+                                                </Button>
+                                            );
+                                        }
 
-                return (
-                    <Button
-                        size="sm"
-                        disabled={disabled}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleGeneratePdfClick(row);
-                        }}
-                    >
-                        Generate
-                    </Button>
-                );
-            }}
-        />
-    )}
+                                        return null; // hide button
+                                    }}
+                                    style={{ minWidth: 150 }}
+                                />
+                            )}
 
-    {/* ================= WAGON DETAILS ================= */}
-    <Column field="wagonNumber" header="Wagon Number" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
-    <Column field="wagonGroup" header="Wagon Group" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
-    <Column field="wagonType" header="Wagon Type" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
-    <Column field="inspectorName" header="Inspector" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
+                            {effectiveRole === "Asset Monitor" && (
+                                <Column
+                                    header="Generate PDFs"
+                                    body={(row) => {
+                                        const isReadyForAssessment =
+                                            row.wagonStatus === STATUS.ASSESSED_READY_FOR_UPLOAD;
 
-    {/* ================= DATE / TIME ================= */}
-    <Column field="dateAssessed" header="Date Completed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
-    <Column field="timeAssessed" header="Time Completed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
-    <Column field="startTimeInspect" header="Time Started" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+                                        const alreadyGenerated = hasAllPdfs(row);
 
-    {/* ================= LOCATION ================= */}
-    <Column field="gpsLatitude" header="GPS Latitude" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
-    <Column field="gpsLongitude" header="GPS Longitude" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
-    <Column field="city" header="City" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
+                                        const disabled =
+                                            !isReadyForAssessment || alreadyGenerated;
 
-    {/* ================= PHOTOS ================= */}
-    <Column
-        header="Body Photos"
-        style={{ minWidth: 120 }}
-        body={(row) => (
-            <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.bodyPhotos, e); }}>
-                View
-            </Button>
-        )}
-    />
+                                        return (
+                                            <Button
+                                                size="sm"
+                                                disabled={disabled}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleGeneratePdfClick(row);
+                                                }}
+                                            >
+                                                Generate
+                                            </Button>
+                                        );
+                                    }}
+                                    style={{ minWidth: 150 }}
+                                />
+                            )}
 
-    <Column
-        header="Lift Photo"
-        style={{ minWidth: 140 }}
-        body={(row) => (
-            <div onClick={(e) => e.stopPropagation()}>
-                {renderImageCell(row, "liftPhoto")}
-            </div>
-        )}
-    />
+                            {/* All other columns are kept intact */}
+                            <Column field="wagonNumber" header="Wagon Number" style={{ minWidth: 120 }} />
+                            <Column field="wagonGroup" header="Wagon Group" style={{ minWidth: 120 }} />
+                            <Column field="wagonType" header="Wagon Type" style={{ minWidth: 140 }} />
+                            <Column field="phase" header="Phase" style={{ minWidth: 100 }} />
+                            <Column field="inspectorName" header="Inspector" style={{ minWidth: 140 }} />
+                            <Column field="dateAssessed" header="Date Completed" style={{ minWidth: 110 }} />
+                            <Column field="timeAssessed" header="Time Completed" style={{ minWidth: 110 }} />
+                            <Column field="startTimeInspect" header="Time Started" style={{ minWidth: 110 }} />
+                            <Column field="gpsLatitude" header="Gps Latitude" style={{ minWidth: 120 }} />
+                            <Column field="gpsLongitude" header="Gps Longitude" style={{ minWidth: 120 }} />
+                            <Column field="city" header="City" style={{ minWidth: 120 }} />
+                            <Column header="Body Photos" body={(row) => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.bodyPhotos, e); }}>View</Button>} style={{ minWidth: 120 }} />
+                            <Column header="Lift Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'liftPhoto')}</div>} style={{ minWidth: 140 }} />
+                            <Column field="liftDate" header="Lift Date" style={{ minWidth: 110 }} />
+                            <Column field="liftLapsed" header="Lift Lapsed" style={{ minWidth: 110 }} />
+                            <Column header="Barrel Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'barrelPhoto')}</div>} style={{ minWidth: 140 }} />
+                            <Column field="barrelDate" header="Barrel Test Date" style={{ minWidth: 110 }} />
+                            <Column field="barrelLapsed" header="Barrel Lapsed" style={{ minWidth: 110 }} />
+                            <Column header="Brake Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'brakePhoto')}</div>} style={{ minWidth: 140 }} />
+                            <Column field="brakeDate" header="Brake Test Date" style={{ minWidth: 110 }} />
+                            <Column field="brakeLapsed" header="Brake Lapsed" style={{ minWidth: 110 }} />
+                            <Column field="refurbishValue" header="Refurbish Value" style={{ minWidth: 120 }} />
+                            <Column field="missingValue" header="Missing Value" style={{ minWidth: 120 }} />
+                            <Column field="replaceValue" header="Replace Value" style={{ minWidth: 120 }} />
+                            <Column field="totalLaborValue" header="Labor Value" style={{ minWidth: 120 }} />
+                            <Column field="liftValue" header="Lift Value" style={{ minWidth: 120 }} />
+                            <Column field="barrelValue" header="Barrel Value" style={{ minWidth: 120 }} />
+                            <Column field="totalValue" header="Return to Service Cost" style={{ minWidth: 120 }} />
+                            <Column field="marketValue" header="Benchmarking Value" style={{ minWidth: 140 }} />
+                            <Column field="assetValue" header="Market Value" style={{ minWidth: 120 }} />
+                            <Column header="Assessment Quote" body={(row) => row.assessmentQuote && row.assessmentQuote !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentQuote, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 160 }} />
+                            <Column header="Assessment Cert" body={(row) => row.assessmentCert && row.assessmentCert !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentCert, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />
+                            <Column header="Assessment SOW" body={(row) => row.assessmentSow && row.assessmentSow !== "N/A" ? <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentSow, e); }}>View PDF</Button> : <span>N/A</span>} style={{ minWidth: 140 }} />
+                            <Column field="wagonStatus" header="Wagon Status" style={{ minWidth: 120 }} />
+                            <Column field="uploadDate" header="Upload Date" style={{ minWidth: 120 }} />
+                            <Column header="Wagon Photo" body={row => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'wagonPhoto')}</div>} style={{ minWidth: 140 }} />
+                            <Column header="Missing Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.missingPhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
+                            <Column header="Replace Photos" body={row => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.replacePhotos, e); }}>View</Button>} style={{ minWidth: 140 }} />
 
-    <Column field="liftDate" header="Lift Date" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
-    <Column field="liftLapsed" header="Lift Lapsed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
+                            <Column
+                                header="Condition Score"
+                                style={{ minWidth: 140 }}
+                                body={(row) => (
+                                    <Dropdown
+                                        value={row.conditionScore}
+                                        options={score}
+                                        optionLabel="label"
+                                        optionValue="value"
+                                        itemTemplate={scoreTemplate}
+                                        valueTemplate={scoreTemplate}
+                                        placeholder="Select Score"
+                                        disabled={effectiveRole === "Assessor"}   
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => {
+                                            onConditionScoreChange(row, e.value);
+                                            updateConditionScore(row.wagonNumber, e.value);
+                                            onConditionStatusInstantUpdate(row, e.value);
+                                        }}
+                                        className="w-100"
+                                    />
+                                )}
+                            />
 
-    <Column
-        header="Barrel Photo"
-        style={{ minWidth: 140 }}
-        body={(row) => (
-            <div onClick={(e) => e.stopPropagation()}>
-                {renderImageCell(row, "barrelPhoto")}
-            </div>
-        )}
-    />
-
-    <Column field="barrelDate" header="Barrel Test Date" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
-    <Column field="barrelLapsed" header="Barrel Lapsed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
-
-    <Column
-        header="Brake Photo"
-        style={{ minWidth: 140 }}
-        body={(row) => (
-            <div onClick={(e) => e.stopPropagation()}>
-                {renderImageCell(row, "brakePhoto")}
-            </div>
-        )}
-    />
-
-    <Column field="brakeDate" header="Brake Test Date" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
-    <Column field="brakeLapsed" header="Brake Lapsed" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 110 }} />
-
-    {/* ================= VALUES ================= */}
-    <Column field="refurbishValue" header="Refurbish Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
-    <Column field="missingValue" header="Missing Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
-    <Column field="replaceValue" header="Replace Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
-    <Column field="totalLaborValue" header="Labor Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
-    <Column field="liftValue" header="Lift Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
-    <Column field="barrelValue" header="Barrel Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
-    <Column field="totalValue" header="Return to Service Cost" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
-    <Column field="marketValue" header="Benchmarking Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 140 }} />
-    <Column field="assetValue" header="Market Value" sortable filter filterMatchMode="contains" showFilterMenu bodyClassName="text-right" style={{ minWidth: 120 }} />
-
-    {/* ================= PDFs ================= */}
-    <Column
-        header="Assessment Quote"
-        style={{ minWidth: 160 }}
-        body={(row) =>
-            row.assessmentQuote && row.assessmentQuote !== "N/A" ? (
-                <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentQuote, e); }}>
-                    View PDF
-                </Button>
-            ) : <span>N/A</span>
-        }
-    />
-
-    <Column
-        header="Assessment Cert"
-        style={{ minWidth: 140 }}
-        body={(row) =>
-            row.assessmentCert && row.assessmentCert !== "N/A" ? (
-                <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentCert, e); }}>
-                    View PDF
-                </Button>
-            ) : <span>N/A</span>
-        }
-    />
-
-    <Column
-        header="Assessment SOW"
-        style={{ minWidth: 140 }}
-        body={(row) =>
-            row.assessmentSow && row.assessmentSow !== "N/A" ? (
-                <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleOpenPdf(row.assessmentSow, e); }}>
-                    View PDF
-                </Button>
-            ) : <span>N/A</span>
-        }
-    />
-
-    {/* ================= STATUS ================= */}
-    <Column field="wagonStatus" header="Wagon Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
-    <Column field="uploadDate" header="Upload Date" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
-
-    {/* ================= MORE PHOTOS ================= */}
-    <Column
-        header="Wagon Photo"
-        style={{ minWidth: 140 }}
-        body={(row) => (
-            <div onClick={(e) => e.stopPropagation()}>
-                {renderImageCell(row, "wagonPhoto")}
-            </div>
-        )}
-    />
-
-    <Column
-        header="Missing Photos"
-        style={{ minWidth: 140 }}
-        body={(row) => (
-            <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.missingPhotos, e); }}>
-                View
-            </Button>
-        )}
-    />
-
-    <Column
-        header="Replace Photos"
-        style={{ minWidth: 140 }}
-        body={(row) => (
-            <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.replacePhotos, e); }}>
-                View
-            </Button>
-        )}
-    />
-
-    {/* ================= CONDITION SCORE ================= */}
-    <Column
-        header="Condition Score"
-        style={{ minWidth: 140 }}
-        body={(row) => (
-            <Dropdown
-                value={row.conditionScore}
-                options={score}
-                optionLabel="label"
-                optionValue="value"
-                itemTemplate={scoreTemplate}
-                valueTemplate={scoreTemplate}
-                placeholder="Select Score"
-                disabled={effectiveRole === "Assessor"}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                    onConditionScoreChange(row, e.value);
-                    updateConditionScore(row.wagonNumber, e.value);
-                    onConditionStatusInstantUpdate(row, e.value);
-                }}
-                className="w-100"
-            />
-        )}
-    />
-
-    {/* ================= CALCULATED ================= */}
-    <Column field="operationalStatus" header="Operational Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
-    <Column field="calScore" header="Calculated Score" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
-    <Column field="calOperateStatus" header="Calculated Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
-    <Column field="calCondition" header="Calculated Condition" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
-
-</DataTable>
-
+                            <Column
+                                header="Operational Status"
+                                field="operationalStatus"
+                                style={{ minWidth: 140 }}
+                                body={(row) => row?.operationalStatus ?? ""}
+                            />
+                            <Column
+                                header="Calculated Score"
+                                field="calScore"
+                                style={{ minWidth: 140 }}
+                            />
+                            <Column
+                                header="Calculated Status"
+                                field="calOperateStatus"
+                                style={{ minWidth: 140 }}
+                            />
+                            <Column
+                                header="Calculated Condition"
+                                field="calCondition"
+                                style={{ minWidth: 140 }}
+                            />
+                        </DataTable>
                     </div>
                 </Card.Body>
             </Card>
@@ -1330,34 +1253,36 @@ const renderRowCheckbox = (row) => {
                     <Button variant="primary" onClick={() => setShowGenerateSuccessModal(false)}>OK</Button>
                 </Modal.Footer>
             </Modal>
-<Modal show={showRecalSuccess} onHide={() => setShowRecalSuccess(false)}>
+
+            <Modal show={showRecalSuccess} onHide={() => setShowRecalSuccess(false)}>
                 <Modal.Header closeButton><Modal.Title>Values Recalculate</Modal.Title></Modal.Header>
                 <Modal.Body>Missing values recalculated successfully.</Modal.Body>
                 <Modal.Footer>
                     <Button variant="primary" onClick={() => setShowRecalSuccess(false)}>OK</Button>
                 </Modal.Footer>
             </Modal>
+
             {/* Tick Confirmation Modal */}
             <Modal show={showTickConfirmModal} onHide={() => setShowTickConfirmModal(false)}>
                 <Modal.Header closeButton><Modal.Title>Confirm Tick</Modal.Title></Modal.Header>
                 <Modal.Body>
-    {tickTargetRow?.wagonStatus === STATUS.INSPECTION_DONE && (
-        <>
-            Are you sure you want to tick Wagon{" "}
-            <b>{tickTargetRow?.wagonNumber}</b> for{" "}
-            <b>Ready For Assessment</b>?
-        </>
-    )}
+                    {tickTargetRow?.wagonStatus === STATUS.INSPECTION_DONE && (
+                        <>
+                            Are you sure you want to tick Wagon{" "}
+                            <b>{tickTargetRow?.wagonNumber}</b> for{" "}
+                            <b>Ready For Assessment</b>?
+                        </>
+                    )}
 
-    {tickTargetRow?.wagonStatus === STATUS.READY_FOR_ASSESSMENT && (
-        <>
-            Are you sure you want to tick Wagon{" "}
-            <b>{tickTargetRow?.wagonNumber}</b> for{" "}
-            <b>Assessed Ready For Upload</b>?
-        </>
-    )}
-</Modal.Body>
-<Modal.Footer>
+                    {tickTargetRow?.wagonStatus === STATUS.READY_FOR_ASSESSMENT && (
+                        <>
+                            Are you sure you want to tick Wagon{" "}
+                            <b>{tickTargetRow?.wagonNumber}</b> for{" "}
+                            <b>Assessed Ready For Upload</b>?
+                        </>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowTickConfirmModal(false)}>Cancel</Button>
                     <Button variant="primary" onClick={confirmTickWagon}>Confirm</Button>
                 </Modal.Footer>
@@ -1371,46 +1296,48 @@ const renderRowCheckbox = (row) => {
                     <Button variant="primary" onClick={() => setShowTickSuccessModal(false)}>OK</Button>
                 </Modal.Footer>
             </Modal>
-<Modal
-    show={showGenerateAllConfirm}
-    onHide={() => setShowGenerateAllConfirm(false)}
-    backdrop="static"
-    centered
->
-    <Modal.Header closeButton>
-        <Modal.Title>Confirm Re-Generate</Modal.Title>
-    </Modal.Header>
 
-    <Modal.Body>
-        <p>
-            Are you sure you want to <b>Re-Generate all PDFs</b>?
-        </p>
-        <p className="text-danger mb-0">
-            ⚠️ This process may take a long time to complete.
-            <br />
-            Your screen cannot be used until the process finishes.
-        </p>
-    </Modal.Body>
+            <Modal
+                show={showGenerateAllConfirm}
+                onHide={() => setShowGenerateAllConfirm(false)}
+                backdrop="static"
+                centered
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Re-Generate</Modal.Title>
+                </Modal.Header>
 
-    <Modal.Footer>
-        <Button
-            variant="secondary"
-            onClick={() => setShowGenerateAllConfirm(false)}
-        >
-            Cancel
-        </Button>
+                <Modal.Body>
+                    <p>
+                        Are you sure you want to <b>Re-Generate all PDFs</b>?
+                    </p>
+                    <p className="text-danger mb-0">
+                        ⚠️ This process may take a long time to complete.
+                        <br />
+                        Your screen cannot be used until the process finishes.
+                    </p>
+                </Modal.Body>
 
-        <Button
-            variant="danger"
-            onClick={() => {
-                setShowGenerateAllConfirm(false);
-                handlereGenerateAll();
-            }}
-        >
-            Yes, Re-Generate All
-        </Button>
-    </Modal.Footer>
-</Modal>
+                <Modal.Footer>
+                    <Button
+                        variant="secondary"
+                        onClick={() => setShowGenerateAllConfirm(false)}
+                    >
+                        Cancel
+                    </Button>
+
+                    <Button
+                        variant="danger"
+                        onClick={() => {
+                            setShowGenerateAllConfirm(false);
+                            handlereGenerateAll();
+                        }}
+                    >
+                        Yes, Re-Generate All
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
             {/* PDF Viewer Modal */}
             <Modal show={showPdfModal} onHide={() => setShowPdfModal(false)} size="xl">
                 <Modal.Header closeButton><Modal.Title>PDF Viewer</Modal.Title></Modal.Header>
@@ -1419,46 +1346,48 @@ const renderRowCheckbox = (row) => {
                 </Modal.Body>
                 <Modal.Footer><Button variant="secondary" onClick={() => setShowPdfModal(false)}>Close</Button></Modal.Footer>
             </Modal>
-<Modal
-    show={showGenerateAllConfirm}
-    onHide={() => setShowGenerateAllConfirm(false)}
-    backdrop="static"
-    centered
->
-    <Modal.Header closeButton>
-        <Modal.Title>Confirm Re-Generate</Modal.Title>
-    </Modal.Header>
 
-    <Modal.Body>
-        <p>
-            Are you sure you want to <b>Re-Generate all PDFs</b>?
-        </p>
-        <p className="text-danger mb-0">
-            ⚠️ This process may take a long time to complete.
-            <br />
-            Your screen cannot be used until the process finishes.
-        </p>
-    </Modal.Body>
+            <Modal
+                show={showGenerateAllConfirm}
+                onHide={() => setShowGenerateAllConfirm(false)}
+                backdrop="static"
+                centered
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Re-Generate</Modal.Title>
+                </Modal.Header>
 
-    <Modal.Footer>
-        <Button
-            variant="secondary"
-            onClick={() => setShowGenerateAllConfirm(false)}
-        >
-            Cancel
-        </Button>
+                <Modal.Body>
+                    <p>
+                        Are you sure you want to <b>Re-Generate all PDFs</b>?
+                    </p>
+                    <p className="text-danger mb-0">
+                        ⚠️ This process may take a long time to complete.
+                        <br />
+                        Your screen cannot be used until the process finishes.
+                    </p>
+                </Modal.Body>
 
-        <Button
-            variant="danger"
-            onClick={() => {
-                setShowGenerateAllConfirm(false);
-                handlereGenerateAll();
-            }}
-        >
-            Yes, Re-Generate All
-        </Button>
-    </Modal.Footer>
-</Modal>
+                <Modal.Footer>
+                    <Button
+                        variant="secondary"
+                        onClick={() => setShowGenerateAllConfirm(false)}
+                    >
+                        Cancel
+                    </Button>
+
+                    <Button
+                        variant="danger"
+                        onClick={() => {
+                            setShowGenerateAllConfirm(false);
+                            handlereGenerateAll();
+                        }}
+                    >
+                        Yes, Re-Generate All
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
             {/* No PDF Modal */}
             <Modal show={showNoPdf} onHide={() => setShowNoPdf(false)}>
                 <Modal.Header closeButton><Modal.Title>No PDF</Modal.Title></Modal.Header>
@@ -1482,6 +1411,7 @@ const renderRowCheckbox = (row) => {
                     <Button variant="primary" onClick={handleUploadConfirmed}>Upload</Button>
                 </Modal.Footer>
             </Modal>
+
             <Modal show={showNoInput} onHide={() => setShowNoInput(false)}>
                 <Modal.Header closeButton><Modal.Title>Missing Inputs</Modal.Title></Modal.Header>
                 <Modal.Body>The inputs for this wagon cannot be found. Therefore the PDFs cannot be generated. Please contact your administrator.</Modal.Body>

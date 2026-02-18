@@ -11,6 +11,7 @@ const WagonStanchionsInspect = () => {
     const storedWagonNumber = localStorage.getItem("wagonNumber") ?? "";
     const storedWagonGroup = localStorage.getItem("wagonGroup") ?? "";
     const storedWagonType = localStorage.getItem("wagonType") ?? "";
+    const storedPhase = localStorage.getItem("phase") ?? "";
     const [formID] = useState("ST002"); 
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -336,7 +337,8 @@ const WagonStanchionsInspect = () => {
                 ReplaceValue: r.ReplaceValue ?? "0.00",
                 MissingPhoto: r.MissingPhoto ?? "No Photo",
                 DamagePhoto: r.DamagePhoto ?? "No Photo",
-                LaborValue: r.LaborValue ?? "0.00" //PLEASE ADD
+                LaborValue: r.LaborValue ?? "0.00",
+                Phase: parseInt(storedPhase),
             }));
             await axios.post("WagonStanchionsInspect/SubmitInspection", dtos,
                 { headers: { "Content-Type": "application/json" } }

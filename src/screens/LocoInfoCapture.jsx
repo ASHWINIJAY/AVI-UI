@@ -11,8 +11,9 @@ const LocoInfoCapture = () => {
   const navigate = useNavigate();
   const storedLocoNumber = localStorage.getItem("locoNumber");
   const storedLocoClass = localStorage.getItem("locoClass");
-  const storedLocoModel = localStorage.getItem("locoModel");
-
+    const storedLocoModel = localStorage.getItem("locoModel");
+    const storedPhase = localStorage.getItem("phase");
+const storedUser = localStorage.getItem("userId");
   const [formData, setFormData] = useState({
     LocoNumTxt: storedLocoNumber || "",
     InventoryNumTxt: "",
@@ -32,7 +33,9 @@ const LocoInfoCapture = () => {
     LocoModelTxt: storedLocoModel || "",
     LiftingPhoto: null,
     LiftingPhotoPreview: null,
-    LiftDateTxt: null,
+      LiftDateTxt: null,
+      Phase: storedPhase,
+      UserID: storedUser || "",
   });
 
   const [showConfirmBack, setShowConfirmBack] = useState(false);
@@ -117,7 +120,8 @@ const [locoMasterList, setLocoMasterList] = useState([]);
   const handleBack = () => {
     localStorage.removeItem("locoNumber");
     localStorage.removeItem("locoClass");
-    localStorage.removeItem("locoModel");
+      localStorage.removeItem("locoModel");
+      localStorage.removeItem("phase");
     navigate("/landing");
   };
 
@@ -172,8 +176,9 @@ if (!formData.GpsLat && !formData.GpsLong) {
     data.append("InventoryNumber", formData.InventoryNumTxt);
     data.append("NetBookValue", formData.NetBookVal);
     data.append("GpsLatitude", formData.GpsLat??1.0);
-    data.append("GpsLongitude", formData.GpsLong??1.0);
-
+      data.append("GpsLongitude", formData.GpsLong ?? 1.0);
+      data.append("Phase", parseInt(formData.Phase));
+data.append("UserID", formData.UserID);
     // files - append only real File objects. If missing, backend handles "No Photo" or "N/A"
     if (formData.LocoPhoto) data.append("LocoPhoto", formData.LocoPhoto);
     if (formData.BodyPhoto1) data.append("BodyPhoto1", formData.BodyPhoto1);

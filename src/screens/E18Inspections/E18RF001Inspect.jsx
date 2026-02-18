@@ -263,7 +263,7 @@ const storedUserId = localStorage.getItem("userId") ?? "";
         ReplacePhoto: r.DamagePhoto ?? null, 
       }));
       await axios.post("E18RF001/SubmitInspection", dtos);
-       await axios.post(`Dashboard/insertLoco?locoNumber=${encodeURIComponent(parseInt(storedLocoNumber))}&userId=${encodeURIComponent(storedUserId)}`);
+       await axios.post(`LocoDash/insertLoco?locoNumber=${encodeURIComponent(parseInt(storedLocoNumber))}&userId=${encodeURIComponent(storedUserId)}`);
                 
       setInfo("Inspection submitted successfully.");
       navigate("/choose");

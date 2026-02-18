@@ -11,6 +11,7 @@ const WagonBottomDischargeInspect = () => {
     const storedWagonNumber = localStorage.getItem("wagonNumber") ?? "";
     const storedWagonGroup = localStorage.getItem("wagonGroup") ?? "";
     const storedWagonType = localStorage.getItem("wagonType") ?? "";
+    const storedPhase = localStorage.getItem("phase") ?? "";
     const [formID] = useState("BD002");
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -51,7 +52,7 @@ const WagonBottomDischargeInspect = () => {
                         LaborValue: "0.00", //PLEASE ADD
                         DamagePhoto: null,
                         MissingPhoto: null,
-                        MechanismQty: 0
+                        MechanismQty: 0,
                     }))
                     .sort((a, b) => {
                         const numA = parseInt((a.PartType.match(/\d+/) || ["0"])[0], 10) || 0;
@@ -338,7 +339,8 @@ const WagonBottomDischargeInspect = () => {
                 ReplaceValue: r.ReplaceValue ?? "0.00",
                 MissingPhoto: r.MissingPhoto ?? "No Photo",
                 DamagePhoto: r.DamagePhoto ?? "No Photo",
-                LaborValue: r.LaborValue ?? "0.00" //PLEASE ADD
+                LaborValue: r.LaborValue ?? "0.00",
+                Phase: parseInt(storedPhase),
             }));
             const res = await axios.post("WagonBottomDischargeInspect/SubmitInspection", dtos,
                 { headers: { "Content-Type": "application/json" } }
@@ -358,9 +360,10 @@ const WagonBottomDischargeInspect = () => {
     };
 
     const handleNavigation = (meta) => {
-        const doors = meta.wagonDoors || "N/A";
-        const stanchions = meta.wagonStan || "N/A";
-        const twistlocks = meta.wagonTwist || "N/A";
+         const doors = (!meta.wagonDoors || meta.wagonDoors === "NULL") ? "N/A" : meta.wagonDoors;
+const stanchions = (!meta.wagonStan || meta.wagonStan === "NULL") ? "N/A" : meta.wagonStan;
+const twistlocks = (!meta.wagonTwist || meta.wagonTwist === "NULL") ? "N/A" : meta.wagonTwist;
+
 
         if ((doors === "N/A" || doors === "") && (twistlocks === "N/A" || twistlocks === "") && (stanchions === "N/A" || stanchions === ""))
             return navigate("/wagonfloor");

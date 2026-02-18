@@ -27,7 +27,7 @@ const DashBoardItems = () => {
   const [selectedRows, setSelectedRows] = useState([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
-  const baseUrl = "http://41.87.206.94/AVIapi/"; // fallback base URL
+  const baseUrl = "https://avi-app.co.za/AVIapi/"; // fallback base URL
 
   useEffect(() => {
     fetchDashboardData();
@@ -64,7 +64,7 @@ const normalizeSinglePath = (p) => {
   // ✅ 1. If it’s already a full URL, verify /AVIapi/ is present
   if (/^https?:\/\//i.test(clean)) {
     if (!clean.includes("/AVIapi/")) {
-      clean = clean.replace("http://41.87.206.94/", "http://41.87.206.94/AVIapi/");
+      clean = clean.replace("https://avi-app.co.za/", "https://avi-app.co.za/AVIapi/");
     }
     return encodeURI(clean);
   }
@@ -73,7 +73,7 @@ const normalizeSinglePath = (p) => {
   if (clean.startsWith("avi-app.co.za/")) {
     clean = "http://" + clean;
     if (!clean.includes("/AVIapi/")) {
-      clean = clean.replace("http://41.87.206.94/", "http://41.87.206.94/AVIapi/");
+      clean = clean.replace("https://avi-app.co.za/", "https://avi-app.co.za/AVIapi/");
     }
     return encodeURI(clean);
   }

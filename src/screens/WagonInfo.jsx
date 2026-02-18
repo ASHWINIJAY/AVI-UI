@@ -10,7 +10,8 @@ const WagonInfo = () => {
   const navigate = useNavigate();
   const storedWagonNumber = localStorage.getItem("wagonNumber");
   const storedWagonGroup = localStorage.getItem("wagonGroup");
-  const storedWagonType = localStorage.getItem("wagonType");
+    const storedWagonType = localStorage.getItem("wagonType");
+    const storedPhase = localStorage.getItem("phase");
 
   const [formData, setFormData] = useState({
     WagonNumTxt: storedWagonNumber || "",
@@ -38,7 +39,8 @@ const WagonInfo = () => {
     BarrelDateTxt: null,
     BrakePhoto: null,
     BrakePhotoPreview: null,
-    BrakeDateTxt: null
+      BrakeDateTxt: null,
+    Phase: storedPhase,
   });
 
   const [showConfirmBack, setShowConfirmBack] = useState(false);
@@ -110,7 +112,8 @@ const WagonInfo = () => {
   const handleBack = () => {
     localStorage.removeItem("wagonNumber");
     localStorage.removeItem("wagonGroup");
-    localStorage.removeItem("wagonType");
+      localStorage.removeItem("wagonType");
+      localStorage.removeItem("phase");
     navigate("/wagonland");
   };
 
@@ -186,7 +189,8 @@ if (!formData.GpsLat && !formData.GpsLong) {
     data.append("InventoryNumber", formData.InventoryNumTxt);
     data.append("NetBookValue", formData.NetBookVal);
     data.append("GpsLatitude", formData.GpsLat);
-    data.append("GpsLongitude", formData.GpsLong);
+      data.append("GpsLongitude", formData.GpsLong);
+      data.append("Phase", parseInt(formData.Phase));
 
     // files - append only real File objects. If missing, backend handles "No Photo" or "N/A"
     if (formData.WagonPhoto) data.append("WagonPhoto", formData.WagonPhoto);
