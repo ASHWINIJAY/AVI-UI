@@ -89,7 +89,20 @@ const GE36InspectForm = () => {
   }, [formID]);
 
 
+const validateAtLeastOneChecked = () => {
+  const invalidRows = rows.filter(
+    (r) => !r.Good && !r.Refurbish && !r.Missing && !r.Damage
+  );
 
+  if (invalidRows.length > 0) {
+    alert(
+      `Please select at least one option for all parts.\nMissing selection in ${invalidRows.length} row(s).`
+    );
+    return false;
+  }
+
+  return true;
+};
 
   // 🔹 Handle “Select All” Header
   const handleSelectAllHeader = (field, checked) => {
@@ -236,6 +249,7 @@ const GE36InspectForm = () => {
       alert("Missing loco or user info.");
       return;
     }
+    if (!validateAtLeastOneChecked()) return;
     if (!validatePhotos()) return;
 
     setSubmitting(true);

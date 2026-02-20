@@ -371,7 +371,20 @@ const WagonPartsInspect = () => {
             setSubmitting(false);
         }
     };
+const validateAtLeastOneChecked = () => {
+  const invalidRows = rows.filter(
+    (r) => !r.Good && !r.Refurbish && !r.Missing && !r.Damage
+  );
 
+  if (invalidRows.length > 0) {
+    alert(
+      `Please select at least one option for all parts.\nMissing selection in ${invalidRows.length} row(s).`
+    );
+    return false;
+  }
+
+  return true;
+};
     const handleNavigation = (meta) => {
          const doors = (!meta.wagonDoors || meta.wagonDoors === "NULL") ? "N/A" : meta.wagonDoors;
 const stanchions = (!meta.wagonStan || meta.wagonStan === "NULL") ? "N/A" : meta.wagonStan;

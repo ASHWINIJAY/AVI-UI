@@ -113,6 +113,35 @@ const E18WalkInspectForm = () => {
       openPhotoModal(null, field);
     }
   };
+  // 🔹 Validate each row has at least one checkbox selected
+const validateAtLeastOneChecked = () => {
+  const invalidRows = rows.filter(
+    (r) => !r.Good && !r.Refurbish && !r.Missing && !r.Damage
+  );
+
+  if (invalidRows.length > 0) {
+    alert(
+      `Please select at least one option for all parts.\nMissing selection in ${invalidRows.length} row(s).`
+    );
+    return false;
+  }
+
+  return true;
+};
+
+// 🔹 Validate at least one checkbox selected
+const validateAtLeastOneChecked1 = () => {
+  const isAnyChecked = rows.some(
+    (r) => r.Good || r.Refurbish || r.Missing || r.Damage
+  );
+
+  if (!isAnyChecked) {
+    alert("Please select at least one checkbox before submitting.");
+    return false;
+  }
+
+  return true;
+};
 
   // 🔹 Handle Row Checkbox
   const handleCheckboxChange = (rowId, field) => {
@@ -233,6 +262,7 @@ const E18WalkInspectForm = () => {
       alert("Missing loco or user info.");
       return;
     }
+     if (!validateAtLeastOneChecked()) return;
     if (!validatePhotos()) return;
 
     setSubmitting(true);

@@ -352,7 +352,7 @@ const WagonFloorInspect = () => {
 
             //MOVE HERE
             await axios.post(
-                `Dashboard/insertWagon?wagonNumber=${encodeURIComponent(parseInt(storedWagonNumber))}&userId=${encodeURIComponent(storedUserId)}`
+                `WagonDash/insertWagon?wagonNumber=${encodeURIComponent(parseInt(storedWagonNumber))}&userId=${encodeURIComponent(storedUserId)}`
             );
 
             //PLEASE ADD
@@ -392,7 +392,20 @@ const WagonFloorInspect = () => {
     const handleBackClick = () => {
         setShowConfirmBackModal(true);
     };
+const validateAtLeastOneChecked = () => {
+  const invalidRows = rows.filter(
+    (r) => !r.Good && !r.Refurbish && !r.Missing && !r.Damage
+  );
 
+  if (invalidRows.length > 0) {
+    alert(
+      `Please select at least one option for all parts.\nMissing selection in ${invalidRows.length} row(s).`
+    );
+    return false;
+  }
+
+  return true;
+};
     const confirmGoBack = async () => {
         // Delete all uploaded photos
         for (const r of rows) {

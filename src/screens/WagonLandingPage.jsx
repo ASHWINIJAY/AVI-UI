@@ -135,7 +135,13 @@ const WagonLandingPage = () => {
         handleSubmit({ preventDefault: () => {} }, wagonNum);
       }, 400);
     } catch (err) {
-      alert("Failed to delete selected wagon.");
+     // alert("Failed to delete selected wagon.");
+     setWagonNumber(wagonNum.toString());
+      setShowCleanupModal(false);
+
+      setTimeout(() => {
+        handleSubmit({ preventDefault: () => {} }, wagonNum);
+      }, 400);
     } finally {
       setLoading(false);
     }

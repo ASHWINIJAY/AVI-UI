@@ -3,7 +3,7 @@ import { Container, Card, Spinner, Button, Modal } from "react-bootstrap";
 import { ExcelRenderer } from "react-excel-renderer";
 import { useNavigate } from "react-router-dom";
 
-const API = "https://avi-app.co.za/AVIapi";
+const API = "http://41.87.206.94/AVIapi";
 
 export default function DCFConReportAll() {
     const [showConfirmBack, setShowConfirmBack] = useState(false);

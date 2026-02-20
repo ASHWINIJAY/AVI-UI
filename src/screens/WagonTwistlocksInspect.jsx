@@ -81,7 +81,20 @@ const WagonTwistlocksInspect = () => {
             }
         };
     }, [photoPreview]);
+const validateAtLeastOneChecked = () => {
+  const invalidRows = rows.filter(
+    (r) => !r.Good && !r.Refurbish && !r.Missing && !r.Damage
+  );
 
+  if (invalidRows.length > 0) {
+    alert(
+      `Please select at least one option for all parts.\nMissing selection in ${invalidRows.length} row(s).`
+    );
+    return false;
+  }
+
+  return true;
+};
     //PLEASE ADD AND ADJUST
     const getPartCost = async (partType, field) => {
         try {

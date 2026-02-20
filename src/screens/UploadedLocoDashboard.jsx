@@ -10,7 +10,7 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; 
 
 function UploadedLocoDashboard() {
-    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
+    const BACKEND_URL = "http://41.87.206.94/AVIapi";
     const [userRole] = useState(localStorage.getItem("userRole"));
 const token = localStorage.getItem("token");
     const [allRows, setAllRows] = useState([]);
@@ -988,8 +988,38 @@ const handleSaveManualValues = async () => {
     {/* STATUS & CALCULATED */}
     <Column field="uploadStatus" header="Loco Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
     <Column field="uploadDate" header="Upload Date" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 120 }} />
-    <Column field="operationalStatus" header="Operational Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 200 }} />
-    <Column field="calScore" header="Calculated Score" sortable filter filterMatchMode="equals" showFilterMenu style={{ minWidth: 140 }} />
+    {(isAssessorModerator || isAdmin) && (
+                                <Column
+                                    header="Condition Score"
+                                    style={{ minWidth: 230 }}
+                                    body={(row) => (
+                                        <Dropdown
+                                            value={row.conditionScore}
+                                            options={score}
+                                            optionLabel="label"
+                                            optionValue="value"
+                                            itemTemplate={scoreTemplate}
+                                            valueTemplate={scoreTemplate}
+                                            placeholder="Select Score"
+                                            onClick={(e) => e.stopPropagation()}
+                                            onChange={(e) => {
+                                                onConditionScoreChange(row, e.value);
+                                                updateConditionScore(row.locoNumber, e.value);
+                                                onConditionStatusInstantUpdate(row, e.value);
+                                            }}
+                                            className="w-100"
+                                        />
+                                    )}
+                                />
+                            )}
+                            {(isAssessorModerator || isAdmin) && (
+                                <Column
+                                    header="Operational Status"
+                                    field="operationalStatus"
+                                    style={{ minWidth: 200 }}
+                                    body={(row) => row?.operationalStatus ?? ""}
+                                />
+                            )}<Column field="calScore" header="Calculated Score" sortable filter filterMatchMode="equals" showFilterMenu style={{ minWidth: 140 }} />
     <Column field="calOperateStatus" header="Calculated Status" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
     <Column field="calCondition" header="Calculated Condition" sortable filter filterMatchMode="contains" showFilterMenu style={{ minWidth: 140 }} />
 

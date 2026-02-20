@@ -94,7 +94,20 @@ const GE34InspectForm = () => {
     fetchParts();
   }, [formID]);
 
+const validateAtLeastOneChecked = () => {
+  const invalidRows = rows.filter(
+    (r) => !r.Good && !r.Refurbish && !r.Missing && !r.Damage
+  );
 
+  if (invalidRows.length > 0) {
+    alert(
+      `Please select at least one option for all parts.\nMissing selection in ${invalidRows.length} row(s).`
+    );
+    return false;
+  }
+
+  return true;
+};
  const getPartCost = async (partId, field) => {
         try {
             const res = await axios.get(
@@ -327,6 +340,7 @@ const GE34InspectForm = () => {
       alert("Missing loco or user info.");
       return;
     }
+    if (!validateAtLeastOneChecked()) return;
     if (!validatePhotos()) return;
 
     setSubmitting(true);
