@@ -253,7 +253,7 @@ if (formData.WagonTypeTxt === "Tanker" && formData.BarrelPhoto) {
 
         handleNavigation(meta); //(Luca) Add
 
-      setShowSuccess(true);
+      //setShowSuccess(true);
     } catch (err) {
       console.error(err);
       setErrorMessages(["Error submitting wagon info. See console for details."]);
@@ -262,37 +262,57 @@ if (formData.WagonTypeTxt === "Tanker" && formData.BarrelPhoto) {
       setLoading(false);
     }
     };
+const goTo = (path) => {
+  navigate(path);
 
+  // Retry once if redirect did not happen
+  setTimeout(() => {
+    if (window.location.pathname !== path) {
+      console.log("Retrying navigation...");
+      navigate(path);
+    }
+  }, 500); // wait 500ms
+};
+const cleanValue = (val) => {
+  if (!val) return "N/A";
+
+  const normalized = val.toString().trim().toLowerCase();
+
+  if (normalized === "null" || normalized === "n/a" || normalized === "")
+    return "N/A";
+
+  return val;
+};
     //(Luca) Add
     const handleNavigation = (meta) => {
         const lift = meta.LiftLapsed ?? meta.liftLapsed ?? "N/A";
         const brake = meta.BrakeLapsed ?? meta.brakeLapsed ?? "N/A";
         const brakeType = meta.BrakeType ?? meta.brakeType ?? formData.BrakeTypeTxt ?? "";
-        const doors = meta.wagonDoors || "N/A";
-        const stanchions = meta.wagonStan || "N/A";
-        const twistlocks = meta.wagonTwist || "N/A";
+        const doors = cleanValue(meta.wagonDoors);
+const stanchions = cleanValue(meta.wagonStan);
+const twistlocks = cleanValue(meta.wagonTwist);
 
         const wagonType = formData.WagonTypeTxt;
 
-        if (lift === "No" && brake === "No") return navigate("/wagonparts");
+        if (lift === "No" && brake === "No") return goTo("/wagonparts");
 
         if (lift === "Yes" && brake === "No") {
-            if (brakeType === "Air Brake" || brakeType === "Dual Brake") return navigate("/airbrakeparts");
-            if (brakeType === "Vacuum Brake") return navigate("/vacbrakeparts");
+            if (brakeType === "Air Brake" || brakeType === "Dual Brake") return goTo ("/airbrakeparts");
+            if (brakeType === "Vacuum Brake") return goTo("/vacbrakeparts");
         }
 
-        if (lift === "No" && brake === "Yes") return navigate("/wagonparts");
+        if (lift === "No" && brake === "Yes") return goTo("/wagonparts");
 
         if (lift === "Yes" && brake === "Yes") {
-            if (wagonType === "Tanker") return navigate("/wagontanker");
-            if (wagonType === "Bottom Discharge") return navigate("/wagonbottom");
+            if (wagonType === "Tanker") return goTo("/wagontanker");
+            if (wagonType === "Bottom Discharge") return goTo("/wagonbottom");
 
             if ((doors === "N/A" || doors === "") && (twistlocks === "N/A" || twistlocks === "") && (stanchions === "N/A" || stanchions === ""))
-                return navigate("/wagonfloor");
+                return goTo("/wagonfloor");
 
-            if (doors === "Yes") return navigate("/wagondoors");
-            if (twistlocks === "Yes") return navigate("/wagontwist");
-            if (stanchions === "Yes") return navigate("/wagonstan");
+            if (doors === "Yes") return goTo("/wagondoors");
+            if (twistlocks === "Yes") return goTo("/wagontwist");
+            if (stanchions === "Yes") return goTo("/wagonstan");
         }
     };
 
