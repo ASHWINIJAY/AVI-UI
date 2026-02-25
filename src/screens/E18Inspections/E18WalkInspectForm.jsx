@@ -5,6 +5,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import useMediaQuery from "@mui/material/useMediaQuery"; 
 import axios from "../../api/axios";
 import Loader from "../../components/Loader";
+import { compressImage } from "../../utils/imageUtils";
 
 // 🔹 Define form order
 export const FORM_ORDER = [
@@ -205,7 +206,9 @@ const validateAtLeastOneChecked1 = () => {
     }
 
     const fd = new FormData();
-    fd.append("file", photoFile);
+        const compressedFile = await compressImage(photoFile);
+    
+    fd.append("file", compressedFile);
     fd.append("formId", formID);
     fd.append("partId", partId);
     fd.append("photoType", modalPhotoType);

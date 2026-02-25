@@ -6,12 +6,11 @@ import axios from "axios";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
-const API = "http://41.87.206.94/AVIapi";
+const API = "https://avi-app.co.za/AVIapi";
 
 function WagonInputs() {
     const [wagonList, setWagonList] = useState([]);
 
-    // ADJUST ↓
     const [formData, setFormData] = useState({
         WagonNumber: "",
         WagonType: "",
@@ -67,7 +66,6 @@ function WagonInputs() {
         navigate("/master/adminoptions");
     };
 
-    // ADJUST ↓
     const handleChange = (e) => {
         const { name, value } = e.target;
 
@@ -85,7 +83,6 @@ function WagonInputs() {
         });
     };
 
-    // ADJUST ↓
     const handleWagonChange = async (e) => {
         setLoading(true);
 
@@ -113,7 +110,7 @@ function WagonInputs() {
                 UseAfterRefurbish: res.data.useAfterRefurbish || "",
                 ResidualValue: res.data.residualValue || "",
                 PostTax: res.data.postTax,
-                WearTearPeriod: res.data.wearTearPeriod || "",
+                WearTearPeriod: res.data.wearTearPeriod || 0,
                 OperatingCosts: res.data.operatingCosts || "",
                 OperatingCostsEscalation: res.data.operatingCostsEscalation || "",
                 CorporateTaxRate: res.data.corporateTaxRate || "",
@@ -195,7 +192,6 @@ function WagonInputs() {
         }
     };
 
-    // ADD ENTIRE FUNCTION ↓
     const calculateNewScrapValue = async (scrapValue, scrappingCost) => {
 
         try {
@@ -222,15 +218,15 @@ function WagonInputs() {
         }
 
         if (!formData.ScrapValue) {
-            errors.push("Scrap Value is required.")
+            errors.push("Disposal Value (Time of) is required.")
         }
 
         if (!formData.ScrappingCost) {
-            errors.push("Scrapping Cost is required.")
+            errors.push("Disposal Cost (Time of) is required.")
         }
 
         if (!formData.NewScrapValue) {
-            errors.push("New Scrap Value is required.")
+            errors.push("Net Disposal Value (Time of) is required.")
         }
 
         if (!formData.TotalCost) {
@@ -262,11 +258,11 @@ function WagonInputs() {
         }
 
         if (!formData.OperatingCosts) {
-            errors.push("Operating Costs is required.")
+            errors.push("Inspection Costs is required.")
         }
 
         if (!formData.OperatingCostsEscalation) {
-            errors.push("Operating Costs Escalation is required.")
+            errors.push("Inspection Costs Escalation is required.")
         }
 
         if (!formData.CorporateTaxRate) {
@@ -276,7 +272,6 @@ function WagonInputs() {
         return errors;
     };
 
-    // ADJUST ↓
     const handleUpdateInsert = async () => {
 
         setShowConfirm(false);
@@ -358,7 +353,7 @@ function WagonInputs() {
         setShowSuccess(false);
     };
 
-    // ADJUST ENTIRE FORM ↓
+    // ADJUST ALL FORM LABELS ↓
     return (
         <Container className="mt-5 d-flex justify-content-center" style={{ minHeight: "82.5vh" }}>
             <Form className="p-4 border rounded shadow-sm" style={{ minHeight: "200px", maxWidth: "450px", width: "100%", backgroundColor: "white", marginBottom: "3rem" }}>
@@ -370,6 +365,8 @@ function WagonInputs() {
                 </Form.Group>
                 {formData.WagonNumber !== "" && (
                     <>
+                        { /* ADD ↓ */}
+                        <h4 className="text-center mb-4" style={{ fontFamily: "Poppins, sans-serif", color: "red" }}>Editable fields are indicated with a *</h4>
                         <Form.Group className="mb-3">
                             <Form.Label>Asset Type</Form.Label>
                             <Form.Control
@@ -382,7 +379,7 @@ function WagonInputs() {
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Net Book Value (ZAR)</Form.Label>
+                            <Form.Label>Net Book Value (ZAR) *</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="NetBookValue"
@@ -400,7 +397,7 @@ function WagonInputs() {
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Scrap Value (ZAR)</Form.Label>
+                            <Form.Label>Disposal Value (Time of) (ZAR) *</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="ScrapValue"
@@ -418,7 +415,7 @@ function WagonInputs() {
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Scrapping Cost (ZAR)</Form.Label>
+                            <Form.Label>Disposal Cost (Time of) (ZAR) *</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="ScrappingCost"
@@ -436,7 +433,7 @@ function WagonInputs() {
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>New Scrap Value (ZAR)</Form.Label>
+                            <Form.Label>Net Disposal Value (Time of) (ZAR)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="NewScrapValue"
@@ -502,7 +499,7 @@ function WagonInputs() {
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Residual Value (ZAR)</Form.Label>
+                            <Form.Label>Residual Value (ZAR) *</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="ResidualValue"
@@ -531,7 +528,7 @@ function WagonInputs() {
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Wear & Tear Period (Years) (Auto-Populated)</Form.Label>
+                            <Form.Label>Wear & Tear Period (Years)</Form.Label>
                             <Form.Control
                                 type="number"
                                 name="WearTearPeriod"
@@ -542,7 +539,7 @@ function WagonInputs() {
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Operating Costs (ZAR) (Auto-Populated)</Form.Label>
+                            <Form.Label>Inspection Costs (ZAR)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="OperatingCosts"
@@ -553,7 +550,7 @@ function WagonInputs() {
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Operating Costs Escalation (%) (Auto-Populated)</Form.Label>
+                            <Form.Label>Inspection Costs Escalation (%)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="OperatingCostsEscalation"
@@ -564,7 +561,7 @@ function WagonInputs() {
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Corporate Tax Rate (%) (Auto-Populated)</Form.Label>
+                            <Form.Label>Corporate Tax Rate (%)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="CorporateTaxRate"
@@ -575,7 +572,7 @@ function WagonInputs() {
                             </Form.Control>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>WACC (Pre-Tax) (%) (Auto-Populated)</Form.Label>
+                            <Form.Label>WACC (Pre-Tax) (%)</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="PreTax"

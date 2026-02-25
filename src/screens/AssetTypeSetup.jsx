@@ -4,16 +4,20 @@ import { Dropdown } from 'primereact/dropdown';
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const API = "http://41.87.206.94/AVIapi";
+const API = "https://avi-app.co.za/AVIApi";
 
 function AssetTypeSetup() {
     const locoType = [
         "18E",
-        "D34",
-        "D35",
-        "D36"
+        "GE34",
+        "GE35",
+        "GE36",
+        "GM34",
+        "GM35",
+        "GM36"
     ]
 
+    // ADJUST ↓
     const wagonType = [
         "AKJ1",
         "AKLJ1",
@@ -413,7 +417,15 @@ function AssetTypeSetup() {
         "XZJ7",
         "XZLJ5",
         "XZLJ6",
-        "XZLJ7"
+        "XZLJ7",
+        "FKMLJ6",
+        "SCL4",
+        "SCLV9",
+        "SCML14",
+        "XN3",
+        "XNJ8",
+        "XX2",
+        "XX4"
     ] 
 
     const optionList = [
@@ -421,7 +433,6 @@ function AssetTypeSetup() {
         "Wagon"
     ]
 
-    // ADJUST ↓
     const [formData, setFormData] = useState({
         TypeAsset: "",
         LocoType: "",
@@ -449,7 +460,6 @@ function AssetTypeSetup() {
         navigate("/master/adminoptions");
     };
 
-    // ADJUST ↓
     const handleAssetChange = async (e) => {
         setLoading(true);
 
@@ -473,7 +483,6 @@ function AssetTypeSetup() {
         setLoading(false);
     };
 
-    // ADJUST ↓
     const handleLocoChange = async (e) => {
 
         setLoading(true);
@@ -508,7 +517,6 @@ function AssetTypeSetup() {
         }
     };
 
-    // ADJUST ↓
     const handleWagonChange = async (e) => {
 
         setLoading(true);
@@ -640,11 +648,11 @@ function AssetTypeSetup() {
         }
 
         if (!formData.OperatingCosts) {
-            errors.push("Operating Costs is required.");
+            errors.push("Inspection Costs is required.");
         }
 
         if (!formData.OperatingCostsEscalation) {
-            errors.push("Operating Costs Escalation is required.");
+            errors.push("Inspection Costs Escalation is required.");
         }
 
         if (!formData.CorporateTaxRate) {
@@ -654,7 +662,6 @@ function AssetTypeSetup() {
         return errors;
     };
 
-    // ADJUST ↓
     const handleSave = async () => {
         setShowConfirm(false);
 
@@ -726,7 +733,7 @@ function AssetTypeSetup() {
         setShowSuccess(false);
     };
 
-    // ADJUST ENTIRE FORM ↓
+    // ADJUST ALL FORM LABELS
     return (
         <Container fluid className="d-flex justify-content-center align-items-center" style={{ backgroundColor: "#025373", minHeight: "82.5vh", maxWidth: "100%" }}>
             <Row>
@@ -758,8 +765,9 @@ function AssetTypeSetup() {
                                 )}
                                 {(formData.LocoType !== "" || formData.WagonType !== "") && (
                                     <>
+                                        <h4 className="text-center mb-4" style={{ fontFamily: "Poppins, sans-serif", color: "red" }}>Editable fields are indicated with a *</h4>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Lease Income/Revenue (ZAR)</Form.Label>
+                                            <Form.Label>Lease Income/Revenue (ZAR) *</Form.Label>
                                             <Form.Control
                                                 type="text"
                                                 name="LeaseIncome"
@@ -777,7 +785,7 @@ function AssetTypeSetup() {
                                             </Form.Control>
                                         </Form.Group>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Lease Term (Years)</Form.Label>
+                                            <Form.Label>Lease Term (Years) *</Form.Label>
                                             <Form.Control
                                                 type="number"
                                                 name="LeaseTerm"
@@ -789,7 +797,7 @@ function AssetTypeSetup() {
                                             </Form.Control>
                                         </Form.Group>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Escalation Rate (%)</Form.Label>
+                                            <Form.Label>Escalation Rate (%) *</Form.Label>
                                             <Form.Control
                                                 type="text"
                                                 name="EscalationRate"
@@ -807,7 +815,7 @@ function AssetTypeSetup() {
                                             </Form.Control>
                                         </Form.Group>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Useful Life After Refurbishment (Years)</Form.Label>
+                                            <Form.Label>Useful Life After Refurbishment (Years) *</Form.Label>
                                             <Form.Control
                                                 type="number"
                                                 name="UseAfterRefurbish"
@@ -819,7 +827,7 @@ function AssetTypeSetup() {
                                             </Form.Control>
                                         </Form.Group>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Wear & Tear Period (Years)</Form.Label>
+                                            <Form.Label>Wear & Tear Period (Years) *</Form.Label>
                                             <Form.Control
                                                 type="number"
                                                 name="WearTearPeriod"
@@ -831,7 +839,7 @@ function AssetTypeSetup() {
                                             </Form.Control>
                                         </Form.Group>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Operating Costs (ZAR)</Form.Label>
+                                            <Form.Label>Inspection Costs (ZAR) *</Form.Label>
                                             <Form.Control
                                                 type="text"
                                                 name="OperatingCosts"
@@ -849,7 +857,7 @@ function AssetTypeSetup() {
                                             </Form.Control>
                                         </Form.Group>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Operating Costs Escalation (%)</Form.Label>
+                                            <Form.Label>Inspection Costs Escalation (%) *</Form.Label>
                                             <Form.Control
                                                 type="text"
                                                 name="OperatingCostsEscalation"
@@ -867,7 +875,7 @@ function AssetTypeSetup() {
                                             </Form.Control>
                                         </Form.Group>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Coporate Tax Rate (%)</Form.Label>
+                                            <Form.Label>Coporate Tax Rate (%) *</Form.Label>
                                             <Form.Control
                                                 type="text"
                                                 name="CorporateTaxRate"

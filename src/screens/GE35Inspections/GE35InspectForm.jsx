@@ -5,7 +5,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import useMediaQuery from "@mui/material/useMediaQuery"; 
 import axios from "../../api/axios";
 import Loader from "../../components/Loader";
-
+import { compressImage } from "../../utils/imageUtils";
 const FORM_ORDER = [
   "BD001", "FL001", "SN001", "CL001", "EC001", "BS001",
   "OD001", "BC001", "MG001", "ED001", "CF001", "DE001", "RF001"
@@ -193,8 +193,9 @@ const validateAtLeastOneChecked = () => {
       return;
     }
 
-    const fd = new FormData();
-    fd.append("file", photoFile);
+    const fd = new FormData(); const compressedFile = await compressImage(photoFile);
+    
+    fd.append("file", compressedFile);
     fd.append("formId", formID);
     fd.append("partId", partId);
     fd.append("photoType", modalPhotoType);

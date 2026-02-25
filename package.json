@@ -19,6 +19,7 @@
     "@mui/x-date-pickers": "^8.11.0",
     "axios": "^1.13.4",
     "bootstrap": "^5.3.8",
+    "browser-image-compression": "^2.0.2",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
     "exceljs": "^4.4.0",

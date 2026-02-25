@@ -28,7 +28,7 @@ const GE34BC001Inspect = () => {
 
     const [showConfirmBackModal, setShowConfirmBackModal] = useState(false);
 
-    //const API = "https://localhost:7066";
+    //const API = "https://avi-app.co.za";
 
     useEffect(() => {
         const fetchParts = async () => {

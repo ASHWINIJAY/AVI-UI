@@ -10,7 +10,7 @@ import { saveAs } from "file-saver";
 import '../Dash.css'; // assume your existing css; you can add the small .selected-row rule if needed
 
 export default function WagonDashboard() {
-    const BACKEND_URL = "http://41.87.206.94/AVIapi";
+    const BACKEND_URL = "https://avi-app.co.za/AVIapi";
 
     const token = localStorage.getItem("token");
     const [userRole] = useState(localStorage.getItem("userRole"));

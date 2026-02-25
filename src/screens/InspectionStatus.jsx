@@ -35,15 +35,16 @@ const CARD_COLORS = [
 const InspectionStatus = () => {
   const [data, setData] = useState([]);
 const [loading, setLoading] = useState(false);
-  useEffect(() => {
-    loadStatus();
-  }, []);
+const [phase, setPhase] = useState("1");
+useEffect(() => {
+  loadStatus(phase);
+}, [phase]);
 
-  const loadStatus = async () => {
+  const loadStatus = async (selectedPhase) => {
     try
     {
         setLoading(true);
-    const res = await axios.get("Dashboard/GetInspectionStatus");
+    const res = await axios.get(`Dashboard/GetInspectionStatus?phase=${selectedPhase}`);
     setData(res.data);
     }
     catch
@@ -72,14 +73,29 @@ const [loading, setLoading] = useState(false);
     <>
           {loading && <Loader fullscreen />}
     <div className="container mt-3">
+<div className="d-flex justify-content-end align-items-center gap-3 mb-3">
+  <label className="fw-bold mb-0">Phase</label>
 
+  <select
+    className="form-select w-auto"
+    value={phase}
+    onChange={(e) => setPhase(e.target.value)}
+  >
+    <option value="1">Phase 1 (Original Data)</option>
+    <option value="2">Phase 2 (TFR Data)</option>
+    <option value="3">Phase 3 (TE Data)</option>
+  </select>
+</div>
       {/* ---------- Cards Section ---------- */}
       <div className="row mb-4">
+      
         {data.map((d, index) => {
           const bg = CARD_COLORS[index % CARD_COLORS.length];
 
           return (
             <div className="col-md-6 mb-3" key={d.inspectionType}>
+              {/* ---------- Phase Dropdown ---------- */}
+
               <Card
                 className="p-3 shadow-sm card-hover"
                 style={{

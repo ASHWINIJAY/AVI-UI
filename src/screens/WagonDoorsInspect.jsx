@@ -4,7 +4,7 @@ import { Container, Button, Modal, Spinner } from "react-bootstrap";
 import { DataGrid } from "@mui/x-data-grid";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import axios from "../api/axios";
-
+import { compressImage } from "../utils/imageUtils";
 const WagonDoorsInspect = () => {
     const navigate = useNavigate();
     const isMobile = useMediaQuery("(max-width:768px)");
@@ -111,7 +111,9 @@ const WagonDoorsInspect = () => {
         if (!file) return null;
         try {
             const fd = new FormData();
-            fd.append("file", file);
+             const compressedFile = await compressImage(photoFile);
+            
+            fd.append("file", compressedFile);
             fd.append("formId", formID);
             fd.append("partType", partType);
             fd.append("photoType", photoType);

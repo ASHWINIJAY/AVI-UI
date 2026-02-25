@@ -3,7 +3,7 @@ import { Container, Card, Spinner, Button, Modal } from "react-bootstrap";
 import { ExcelRenderer } from "react-excel-renderer";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://41.87.206.94/AVIapi";
+const API = "https://avi-app.co.za/AVIapi";
 
 export default function DCFReport() {
     const storedLocoNumber = localStorage.getItem("locoNumber");
@@ -40,7 +40,10 @@ export default function DCFReport() {
                 }
 
                 const res = await fetch(url);
-                if (!res.ok) throw new Error(`Server returned ${res.status}`);
+
+                if (!res.ok) {
+                    throw new Error(`Server returned ${res.status}`);
+                }
 
                 const data = await res.json(); 
 

@@ -5,7 +5,7 @@ import axios from "../api/axios";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { format } from "date-fns";
-
+import { compressImage } from "../utils/imageUtils";
 const WagonInfo = () => {
   const navigate = useNavigate();
   const storedWagonNumber = localStorage.getItem("wagonNumber");
@@ -193,28 +193,54 @@ if (!formData.GpsLat && !formData.GpsLong) {
       data.append("Phase", parseInt(formData.Phase));
 
     // files - append only real File objects. If missing, backend handles "No Photo" or "N/A"
-    if (formData.WagonPhoto) data.append("WagonPhoto", formData.WagonPhoto);
-    if (formData.BodyPhoto1) data.append("BodyPhoto1", formData.BodyPhoto1);
-    if (formData.BodyPhoto2) data.append("BodyPhoto2", formData.BodyPhoto2);
-    if (formData.BodyPhoto3) data.append("BodyPhoto3", formData.BodyPhoto3);
+   
+// ✅ Compress and append files
+if (formData.WagonPhoto) {
+  const compressed = await compressImage(formData.WagonPhoto);
+  data.append("WagonPhoto", compressed);
+}
 
+if (formData.BodyPhoto1) {
+  const compressed = await compressImage(formData.BodyPhoto1);
+  data.append("BodyPhoto1", compressed);
+}
+
+if (formData.BodyPhoto2) {
+  const compressed = await compressImage(formData.BodyPhoto2);
+  data.append("BodyPhoto2", compressed);
+}
+
+if (formData.BodyPhoto3) {
+  const compressed = await compressImage(formData.BodyPhoto3);
+  data.append("BodyPhoto3", compressed);
+}
+
+if (formData.LiftingPhoto) {
+  const compressed = await compressImage(formData.LiftingPhoto);
+  data.append("LiftPhoto", compressed);
+}
+
+if (formData.BrakePhoto) {
+  const compressed = await compressImage(formData.BrakePhoto);
+  data.append("BrakePhoto", compressed);
+}
+
+if (formData.WagonTypeTxt === "Tanker" && formData.BarrelPhoto) {
+  const compressed = await compressImage(formData.BarrelPhoto);
+  data.append("BarrelPhoto", compressed);
+}
     data.append("BodyDamage", formData.BodyDamageTxt);
     data.append("WagonGroup", formData.WagonGroupTxt);
     data.append("BrakeType", formData.BrakeTypeTxt);
       data.append("WagonType", formData.WagonTypeTxt);
 
-      if (formData.LiftingPhoto) {
-          data.append("LiftPhoto", formData.LiftingPhoto);
-      }
+    
       data.append("LiftDate", liftDate);
 
-      if (formData.BrakePhoto) {
-          data.append("BrakePhoto", formData.BrakePhoto);
-      }
+      
       data.append("BrakeDate", brakeDate);
 
     if (formData.WagonTypeTxt === "Tanker") {
-      if (formData.BarrelPhoto) data.append("BarrelPhoto", formData.BarrelPhoto);
       data.append("BarrelDate", barrelDate);
     }
 
