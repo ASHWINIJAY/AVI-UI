@@ -15,16 +15,24 @@ const [loading, setLoading] = useState(false);
     wagonType: "",
     status: "",
   });
-
+const [phase, setPhase] = useState(
+  localStorage.getItem("phase") || "1"
+);
   useEffect(() => {
     loadData();
-  }, []);
+  }, [phase]);
 
   const loadData = async () => {
     try
     {
         setLoading(true);
-    const res = await axios.get("Dashboard/GetWagonStatusList");
+    const res = await axios.get(
+      "Dashboard/GetWagonStatusList",
+      {
+        params: { phase }   // ✅ send phase
+      }
+    );
+
     const data = res.data.map((item, index) => ({
       id: index + 1,
       ...item,
@@ -120,19 +128,44 @@ const [loading, setLoading] = useState(false);
     <div className="container mt-4">
 
       {/* Search & Export Buttons */}
-      <div className="d-flex justify-content-between mb-3">
-        <input
-          type="text"
-          placeholder="Search..."
-          className="form-control w-50"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+     <div className="d-flex justify-content-between align-items-center mb-3">
 
-        <Button variant="success" onClick={exportToExcel}>
-          Export to Excel
-        </Button>
-      </div>
+  <div className="d-flex align-items-center gap-3">
+
+    {/* 🔹 Phase Dropdown */}
+    <div>
+      <label className="me-2 fw-bold">Phase:</label>
+      <select
+        className="form-select d-inline-block"
+        style={{ width: 200 }}
+        value={phase}
+        onChange={(e) => {
+          setPhase(e.target.value);
+          localStorage.setItem("phase", e.target.value);
+        }}
+      >
+        <option value="1">Phase 1(Orginal Data)</option>
+        <option value="2">Phase 2(TFR Data)</option>
+        
+      </select>
+    </div>
+
+    {/* 🔹 Search */}
+    <input
+      type="text"
+      placeholder="Search..."
+      className="form-control"
+      style={{ width: 250 }}
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+
+  </div>
+
+  <Button variant="success" onClick={exportToExcel}>
+    Export to Excel
+  </Button>
+</div>
 
       {/* Column Filters */}
       <div className="d-flex gap-3 mb-3">

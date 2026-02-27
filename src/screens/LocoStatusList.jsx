@@ -17,18 +17,24 @@ const [loading, setLoading] = useState(false);
     locoModel: "",
     status: "",
   });
-
+const [phase, setPhase] = useState(
+  localStorage.getItem("phase") || "1"
+);
   // Load Data
   useEffect(() => {
     loadData();
-  }, []);
+  }, [phase]);
 
   const loadData = async () => {
     try
     {
         setLoading(true);
-    const res = await axios.get("Dashboard/GetLocoStatusList");
-
+     const res = await axios.get(
+      "Dashboard/GetLocoStatusList",
+      {
+        params: { phase }   // ✅ send phase
+      }
+    );
     const data = res.data.map((item, index) => ({
       id: index + 1,
       ...item,
@@ -123,19 +129,44 @@ const [loading, setLoading] = useState(false);
     <div className="container mt-4">
   
       {/* Search + Export */}
-      <div className="d-flex justify-content-between mb-3">
-        <input
-          type="text"
-          className="form-control w-50"
-          placeholder="Search..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+     <div className="d-flex justify-content-between align-items-center mb-3">
 
-        <Button variant="success" onClick={exportToExcel}>
-          Export to Excel
-        </Button>
-      </div>
+  <div className="d-flex align-items-center gap-3">
+
+    {/* 🔹 Phase Dropdown */}
+    <div>
+      <label className="me-2 fw-bold">Phase:</label>
+      <select
+        className="form-select d-inline-block"
+        style={{ width: 140 }}
+        value={phase}
+        onChange={(e) => {
+          setPhase(e.target.value);
+          localStorage.setItem("phase", e.target.value);
+        }}
+      >
+        <option value="1">Phase 1(Orginal Data)</option>
+        <option value="2">Phase 2(TFR Data)</option>
+        <option value="3">Phase 3(TE Data)</option>
+      </select>
+    </div>
+
+    {/* 🔹 Search */}
+    <input
+      type="text"
+      className="form-control"
+      style={{ width: 250 }}
+      placeholder="Search..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+
+  </div>
+
+  <Button variant="success" onClick={exportToExcel}>
+    Export to Excel
+  </Button>
+</div>
 
       {/* Dropdown Filters */}
       <div className="d-flex gap-3 mb-3">

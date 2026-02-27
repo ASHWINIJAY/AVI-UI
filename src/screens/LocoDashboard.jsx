@@ -525,7 +525,7 @@ export default function LocoDashboard() {
         try {
             let url = "";
             let payload = {
-                wagonNumber: Number(tickTargetRow.locoNumber)
+                locoNumber: Number(tickTargetRow.locoNumber)
             };
 
             if (
@@ -570,7 +570,7 @@ export default function LocoDashboard() {
             }
             else if (
                 effectiveRole === "Assessor" &&
-                tickTargetRow.uploadStatus === STATUS.INSPECTION_DONE &&
+                tickTargetRow.uploadStatus === STATUS.READY_FOR_ASSESSMENT &&
                 tickTargetRow.phase === PHASE.PHASE_3
             ) {
                 // InspectionDone → ReadyForAssessment

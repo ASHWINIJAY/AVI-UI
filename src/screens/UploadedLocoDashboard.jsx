@@ -20,13 +20,16 @@ const token = localStorage.getItem("token");
     const [tableLoading, setTableLoading] = useState(false);
 
     const [globalFilterValue, setGlobalFilterValue] = useState("");
-
+const [phase, setPhase] = useState(
+  localStorage.getItem("phase") || "1"
+);
     const [lazyParams, setLazyParams] = useState({
     first: 0,
     rows: 25,
     globalFilter:"",
     sortField: null,
     sortOrder: null,
+    phase: localStorage.getItem("phase") || "1",
     filters: {
         locoNumber: { value: null, matchMode: FilterMatchMode.CONTAINS },
         locoClass: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -100,7 +103,19 @@ const [manualValues, setManualValues] = useState({
     refurbishValue: "",
     transferValue: ""
 });
+const handlePhaseChange = (e) => {
+    const selectedPhase = e.value;
 
+    setPhase(selectedPhase);
+
+    localStorage.setItem("phase", selectedPhase);
+
+    setLazyParams(prev => ({
+        ...prev,
+        first: 0,
+        phase: selectedPhase   // ✅ update API parameter
+    }));
+};
     const saveScroll = useCallback(() => {
         const viewport = gridContainerRef.current?.querySelector(".p-datatable-wrapper");
         if (viewport) {
@@ -383,7 +398,8 @@ const fetchAllForExport = async () => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                globalFilter: lazyParams.globalFilter
+                globalFilter: lazyParams.globalFilter,
+    phase: lazyParams.phase
             })
         }
     );
@@ -734,15 +750,34 @@ const handleSaveManualValues = async () => {
 
                     </div>
 
-                   <div className="d-flex justify-content-between align-items-center mb-3">
-    <span className="p-input-icon-left">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+
+    <div className="d-flex align-items-center gap-3">
+
+        {/* 🔹 Phase Dropdown */}
+        <div style={{ minWidth: 180 }}>
+            <label className="me-2 fw-bold">Phase:</label>
+            <Dropdown
+                value={phase}
+                options={[
+                    { label: "Phase 1(Original Data)", value: "1" },
+                    { label: "Phase 2(TFR Data)", value: "2" },
+                    { label: "Phase 3(TE Data)", value: "3" }
+                ]}
+                onChange={handlePhaseChange}
+                placeholder="Select Phase"
+                className="w-100"
+            />
+        </div>
+
+        {/* 🔹 Search */}
         <InputText
             value={globalFilterValue}
             onChange={onGlobalFilterChange}
             placeholder="Search Loco Number, Class, Inspector"
             style={{ width: "300px" }}
         />
-    </span>
+    </div>
 
     <Button
         variant="success"

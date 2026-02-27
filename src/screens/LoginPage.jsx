@@ -187,6 +187,9 @@ startGeoLocationUploader();
                     Login
                   </Button>
                 </Form>
+                <div className="text-center mt-3" style={{ fontSize: "12px", color: "#888" }}>
+  Version {import.meta.env.VITE_APP_VERSION}
+</div>
               </Card.Body>
             </Card>
           </Col>

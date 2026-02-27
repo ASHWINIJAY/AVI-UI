@@ -18,7 +18,9 @@ const token = localStorage.getItem("token");
     const [totalRecords, setTotalRecords] = useState(0);
     const [loading, setLoading] = useState(true);
     const [tableLoading, setTableLoading] = useState(false);
-
+const [phase, setPhase] = useState(
+  localStorage.getItem("phase") || "1"
+);
     const [globalFilterValue, setGlobalFilterValue] = useState("");
 
     const [lazyParams, setLazyParams] = useState({
@@ -27,6 +29,7 @@ const token = localStorage.getItem("token");
     globalFilter:"",
     sortField: null,
     sortOrder: null,
+     phase: localStorage.getItem("phase") || "1",
     filters: {
         wagonNumber: { value: null, matchMode: FilterMatchMode.CONTAINS },
         wagonGroup: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -109,6 +112,19 @@ const [manualValues, setManualValues] = useState({
     refurbishValue: "",
     transferValue: ""
 });
+const handlePhaseChange = (e) => {
+    const selectedPhase = e.value;
+
+    setPhase(selectedPhase);
+
+    localStorage.setItem("phase", selectedPhase);
+
+    setLazyParams(prev => ({
+        ...prev,
+        first: 0,
+        phase: selectedPhase   // ✅ update API parameter
+    }));
+};
     const saveScroll = useCallback(() => {
         const viewport = gridContainerRef.current?.querySelector(".p-datatable-wrapper");
         if (viewport) {
@@ -187,7 +203,8 @@ const fetchAllForExport = async () => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                globalFilter: lazyParams.globalFilter
+                globalFilter: lazyParams.globalFilter,
+    phase: lazyParams.phase
             })
         }
     );
@@ -694,7 +711,9 @@ const handleSaveManualValues = async () => {
             <Card className="mt-3 mb-3">
                 <Card.Header>Wagon Dashboard (Uploaded)</Card.Header>
                 <Card.Body style={{ height: 680, width: "100%" }}>
-                    <div className="d-flex justify-content-start mb-3">
+                      <div className="d-flex justify-content-start mb-3">
+                   
+                     
                         <Button variant="success" size="sm" onClick={handleExportToExcel} className="me-2">Export to Excel</Button>
                     
                             <Button variant="primary" size="sm" onClick={() => selectedRowIds.size > 0 ? setShowConfirmModal(true) : setShowNoSelectModal(true)}>Re-upload</Button>
@@ -710,18 +729,39 @@ const handleSaveManualValues = async () => {
                         </Button>
                     </div>
 
-                     <div className="d-flex justify-content-between align-items-center mb-3">
-  
-                        <span className="p-input-icon-left">
-                            <InputText
-                                value={globalFilterValue}
-                                onChange={onGlobalFilterChange}
-                                placeholder="Search Wagon Number, Group, Inspector"
-                                style={{ width: "300px" }}
-                            />
-                        </span>
-                    </div>
+                      <div className="d-flex justify-content-between align-items-center mb-3">
 
+  <div className="d-flex align-items-center justify-content-between gap-4 flex-wrap">
+
+  {/* 🔹 Phase Dropdown */}
+  <div className="d-flex align-items-center" style={{ minWidth: 280 }}>
+    <label className="me-2 fw-bold mb-0">Phase:</label>
+
+    <Dropdown
+      value={phase}
+      options={[
+        { label: "Phase 1 (Original Data)", value: "1" },
+        { label: "Phase 2 (TFR Data)", value: "2" },
+        { label: "Phase 3 (TE Data)", value: "3" }
+      ]}
+      onChange={handlePhaseChange}
+      placeholder="Select"
+      style={{ width: "200px" }}
+    />
+  </div>
+
+  {/* 🔹 Search */}
+  <span className="p-input-icon-left">
+    <InputText
+      value={globalFilterValue}
+      onChange={onGlobalFilterChange}
+      placeholder="Search Wagon Number, Group, Inspector"
+      style={{ width: "300px" }}
+    />
+  </span>
+
+</div>
+</div>
                     <div style={{ position: "relative" }} ref={gridContainerRef}>
 
                         {(generatingPdf || recalculating || tableLoading) && (
