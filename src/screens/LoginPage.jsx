@@ -137,7 +137,7 @@ startGeoLocationUploader();
           setError("No internet connection and no valid saved session.");
         }
       } else if (err.response && err.response.status === 401) {
-        setError("Invalid username or password.");
+        setError(err.response.data);
       } else {
         setError("Something went wrong. Please try again.");
       }
@@ -186,6 +186,14 @@ startGeoLocationUploader();
                   <Button variant="primary" type="submit" className="w-100">
                     Login
                   </Button>
+                  <div className="text-center mt-3">
+  <span
+    style={{ cursor: "pointer", color: "#007bff" }}
+    onClick={() => navigate("/changepassword")}
+  >
+    Change Password
+  </span>
+</div>
                 </Form>
                 <div className="text-center mt-3" style={{ fontSize: "12px", color: "#888" }}>
   Version {import.meta.env.VITE_APP_VERSION}

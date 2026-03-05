@@ -5,7 +5,7 @@ import api from "../api/axios";
 import Loader from "../components/Loader"; // 👈 common loader
 const UserCreationForm = () => {
   const navigate = useNavigate();
-
+const storedUserId = localStorage.getItem("userId") ?? "";
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -13,17 +13,23 @@ const UserCreationForm = () => {
     password: "",
     confirmPassword: "",
     userRole: "", // New field
+    active: 1,
+    createdBy: storedUserId
   });
 
   const [errors, setErrors] = useState({});
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
  const [loading, setLoading] = useState(false);
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  
+const handleChange = (e) => {
+  const { name, value, type, checked } = e.target;
 
+  setFormData((prev) => ({
+    ...prev,
+    [name]: type === "checkbox" ? (checked ? 1 : 0) : value
+  }));
+};
   const validate = () => {
     let newErrors = {};
 
@@ -126,7 +132,17 @@ const UserCreationForm = () => {
         </Form.Group>
 
        
-
+<Form.Group className="mb-3">
+  <Form.Label>Status</Form.Label>
+  <Form.Check
+    type="switch"
+    id="active-switch"
+    label={formData.Active === 1 ? "Active" : "Inactive"}
+    name="Active"
+    checked={formData.Active === 1}
+    onChange={handleChange}
+  />
+</Form.Group>
         <Row>
           <Col>
             <Form.Group className="mb-3">

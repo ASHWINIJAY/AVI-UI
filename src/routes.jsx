@@ -136,6 +136,7 @@ import AssetTypeSetup from './screens/AssetTypeSetup.jsx';
 import GenerateDCFConsolidated from './screens/GenerateDCFConsolidated.jsx'; 
 import DCFConReportAll from './screens/DCFConReportAll.jsx';
 import DCFConReportSingle from './screens/DCFConReportSingle.jsx';
+import ChangePassword from "./screens/ChangePassword.jsx";
 import { hasOfflineData, syncOfflineData } from "./utils/offlineSync";
 import api from "./api/axios";
 // ✅ Auth guard
@@ -214,7 +215,10 @@ export default function AppRoutes() {
       <Routes>
         {/* Public Route */}
         <Route path="/" element={<LoginPage />} />
-
+<Route
+        path="/changepassword"
+        element={<ChangePassword/>}
+      />
         {/* Super User gets MasterForm layout */}
         <Route
           path="/master"
@@ -291,6 +295,7 @@ export default function AppRoutes() {
         path="/locoinfo"
         element={<PrivateRoute><LocoInfoCapture/></PrivateRoute>}
       />
+      
       <Route
         path="/E18BD001"
         element={<PrivateRoute><E18BD001Inspect/></PrivateRoute>}

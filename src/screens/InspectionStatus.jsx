@@ -72,7 +72,7 @@ useEffect(() => {
   return (
     <>
           {loading && <Loader fullscreen />}
-    <div className="container mt-3">
+    <div className="container mt-3 dashboard-scroll">
 <div className="d-flex justify-content-end align-items-center gap-3 mb-3">
   <label className="fw-bold mb-0">Phase</label>
 
@@ -130,20 +130,67 @@ useEffect(() => {
                     </span>
                     <strong className="text-danger">{d.pending}</strong>
                   </div>
+                  <div className="d-flex justify-content-between px-2 py-1">
+  <span className="text-primary">
+    <FaCheckCircle className="me-1" />
+    Uploaded
+  </span>
+  <strong className="text-primary">{d.uploaded}</strong>
+</div>
+
+<div className="d-flex justify-content-between px-2 py-1">
+  <span className="text-warning">
+    <FaClock className="me-1" />
+    Pending Upload
+  </span>
+  <strong className="text-warning">{d.pendingUploaded}</strong>
+</div>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="progress mt-3" style={{ height: 16 }}>
-                  <div
-                    className="progress-bar"
-                    style={{
-                      width: `${d.completionPercent}%`,
-                      background: "linear-gradient(90deg, #2ecc71, #27ae60)",
-                    }}
-                  >
-                    {d.completionPercent}%
-                  </div>
-                </div>
+                {/* Inspection Progress */}
+<div className="mt-3">
+  <div className="d-flex justify-content-between">
+    <small className="fw-bold text-dark">
+      Inspection Completion
+    </small>
+    <small className="fw-bold text-success">
+      {Number(d.completionPercent).toFixed(1)}%
+    </small>
+  </div>
+
+  <div className="progress mt-1" style={{ height: 14 }}>
+    <div
+      className="progress-bar"
+      style={{
+        width: `${d.completionPercent}%`,
+        background: "linear-gradient(90deg, #2ecc71, #27ae60)",
+      }}
+    />
+  </div>
+</div>
+
+
+{/* Upload Progress */}
+<div className="mt-3">
+  <div className="d-flex justify-content-between">
+    <small className="fw-bold text-dark">
+      Upload Completion
+    </small>
+    <small className="fw-bold text-info">
+      {Number(d.completionUploadedPercent).toFixed(1)}%
+    </small>
+  </div>
+
+  <div className="progress mt-1" style={{ height: 14 }}>
+    <div
+      className="progress-bar bg-info"
+      style={{
+        width: `${d.completionUploadedPercent}%`,
+      }}
+    />
+  </div>
+</div>
               </Card>
             </div>
           );
@@ -151,10 +198,10 @@ useEffect(() => {
       </div>
 
       {/* ---------- CHARTS SECTION ---------- */}
-      <div className="row mt-4">
+      <div className="row mt-4 pb-5">
 
         {/* -------- Donut Chart -------- */}
-        <div className="col-md-6 d-flex justify-content-center mb-4">
+        <div className="col-md-6 d-flex justify-content-center mb-4" style={{ minHeight: 300 }}>
           <PieChart width={300} height={300}>
             <defs>
               {/* Unique IDs for PIE (fixes overwrite issue) */}
@@ -244,6 +291,12 @@ useEffect(() => {
           transform: translateY(-5px);
           box-shadow: 0 14px 28px rgba(0,0,0,0.2);
         }
+          .dashboard-scroll {
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;   /* vertical scroll */
+  overflow-x: hidden; /* prevent horizontal scroll */
+  padding-right: 10px;
+}
       `}</style>
     </div>
     </>
