@@ -11,3 +11,7 @@
     /* keep the PrimeReact highlighted look if desired */
     background-color: rgba(0, 123, 255, 0.08) !important;
 }
+img:hover{
+  transform: scale(1.05);
+  transition: 0.2s;
+}

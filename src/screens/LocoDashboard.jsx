@@ -7,6 +7,8 @@ import { Dropdown } from 'primereact/dropdown';
 import ExcelJS from "exceljs";
 import { InputText } from "primereact/inputtext"; 
 import { FilterMatchMode } from "primereact/api";
+import 'react-photo-view/dist/react-photo-view.css';
+import { PhotoProvider, PhotoView } from 'react-photo-view';
 import { saveAs } from "file-saver";
 import '../Dash.css'; 
 
@@ -374,12 +376,32 @@ export default function LocoDashboard() {
         setShowModal(true);
     };
 
-    const renderImageCell = (rowData, field) => {
-        const value = rowData[field];
-        if (!value || value === "N/A") return <span>N/A</span>;
-        const url = value.startsWith("http") ? value : `${BACKEND_URL}/${value}`;
-        return <img src={url} alt={field} style={{ maxWidth: 100, maxHeight: 100, objectFit: "cover" }} />;
-    };
+  const renderImageCell = (rowData, field) => {
+    const value = rowData[field];
+
+    if (!value || value === "N/A") return <span>N/A</span>;
+
+    const url = value.startsWith("http")
+        ? value
+        : `${BACKEND_URL}/${value}`;
+
+    return (
+        <PhotoView src={url}>
+            <img
+                src={url}
+                alt={field}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                    maxWidth: 100,
+                    maxHeight: 100,
+                    objectFit: "cover",
+                    cursor: "pointer",
+                    borderRadius: "6px"
+                }}
+            />
+        </PhotoView>
+    );
+};
 
     // OPEN PDF view
     const handleOpenPdf = (pdfPath, e) => {
@@ -418,7 +440,7 @@ export default function LocoDashboard() {
     const handleRecalculateClick = async (row) => {
         if (!row?.locoNumber) return;
 
-        const payload = { wagonNumber: row.locoNumber.toString() };
+        const payload = { locoNumber: row.locoNumber.toString() };
         saveScroll();
         setRecalculating(true)
         try {
@@ -951,7 +973,8 @@ export default function LocoDashboard() {
                             />
                         </span>
                     </div>
-                    <div style={{ position: "relative" }} ref={gridContainerRef}>
+                    <PhotoProvider>
+<div style={{ position: "relative" }} ref={gridContainerRef}>
                         {/* overlay spinners */}
                         {(uploading || generatingPdf || recalculating) && (
                             <div style={{ position: "absolute", zIndex: 10, top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(255,255,255,0.6)", display: "flex", justifyContent: "center", alignItems: "center" }}>
@@ -1058,7 +1081,15 @@ export default function LocoDashboard() {
                             <Column field="gpsLongitude" header="Gps Longitude" style={{ minWidth: 120 }} />
                             <Column field="city" header="City" style={{ minWidth: 120 }} />
                             <Column header="Body Photos" body={(row) => <Button size="sm" onClick={(e) => { e.stopPropagation(); handleOpenModal(row.bodyPhotos, e); }}>View</Button>} style={{ minWidth: 120 }} />
-                            <Column header="Loco Photo" body={(row) => <div onClick={e => e.stopPropagation()}>{renderImageCell(row, 'locoPhoto')}</div>} style={{ minWidth: 140 }} />
+                            <Column
+    header="Loco Photo"
+    body={(row) => (
+        <div onClick={(e) => e.stopPropagation()}>
+            {renderImageCell(row, "locoPhoto")}
+        </div>
+    )}
+    style={{ minWidth: 140 }}
+/>
                             <Column field="refurbishValue" header="Refurbish Value" style={{ minWidth: 120 }} />
                             <Column field="missingValue" header="Missing Value" style={{ minWidth: 120 }} />
                             <Column field="replaceValue" header="Replace Value" style={{ minWidth: 120 }} />
@@ -1121,6 +1152,7 @@ export default function LocoDashboard() {
                             />
                         </DataTable>
                     </div>
+                    </PhotoProvider>
                 </Card.Body>
             </Card>
 
@@ -1128,16 +1160,36 @@ export default function LocoDashboard() {
             <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" scrollable>
                 <Modal.Header closeButton><Modal.Title>Photos</Modal.Title></Modal.Header>
                 <Modal.Body>
-                    {modalPhotos.length ? (
-                        <div className="d-flex flex-wrap gap-2">
-                            {modalPhotos.map((url, idx) => (
-                                <img key={idx} src={url.startsWith("http") ? url : `${BACKEND_URL}/${url}`} alt={`photo-${idx}`} style={{ maxWidth: 150, maxHeight: 150, objectFit: "cover" }} />
-                            ))}
-                        </div>
-                    ) : (
-                        <p>No photos available.</p>
-                    )}
-                </Modal.Body>
+  {modalPhotos.length ? (
+    <PhotoProvider>
+      <div className="d-flex flex-wrap gap-2">
+        {modalPhotos.map((url, idx) => {
+          const imgUrl = url.startsWith("http")
+            ? url
+            : `${BACKEND_URL}/${url}`;
+
+          return (
+            <PhotoView src={imgUrl} key={idx}>
+              <img
+                src={imgUrl}
+                alt={`photo-${idx}`}
+                style={{
+                  maxWidth: 150,
+                  maxHeight: 150,
+                  objectFit: "cover",
+                  cursor: "pointer",
+                  borderRadius: "6px"
+                }}
+              />
+            </PhotoView>
+          );
+        })}
+      </div>
+    </PhotoProvider>
+  ) : (
+    <p>No photos available.</p>
+  )}
+</Modal.Body>
                 <Modal.Footer><Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button></Modal.Footer>
             </Modal>
             <Modal show={showNoInput} onHide={() => setShowNoInput(false)}>
